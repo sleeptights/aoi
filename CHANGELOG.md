@@ -2,12 +2,11 @@
 
 <br/>
 
-# aoi 1.1.2
+# aoi 1.1.2a
 
 <br/>
 
-*crate can close.*<br/>
-*ink wash behind the cover*
+*cover glow, not a blob.*
 
 <br/>
 
@@ -17,16 +16,21 @@
 
 <br/>
 
-small polish pass. shared crate finally has a way out. cover ring sticks are gone.
+tightened the cover halo. bass still pumps it — quietly.
 
 <br/>
 
 ## changelog
 
-- **crate remove / clear** — × on each track in общий ящик, «очистить» clears the list
-- **ink wash bloom** — soft accent blot behind album art, pumps with bass like a speaker cone (replaces the spinning stick ring)
+- **cover glow pulse** — removed the huge ink blot; AmbientGlow stays a small halo behind the art and breathes with bass
 
-<br/>
+<details>
+<summary>1.1.2</summary>
+
+- crate remove / clear
+- ink wash bloom (superseded by 1.1.2a)
+
+</details>
 
 <details>
 <summary>1.1.0</summary>

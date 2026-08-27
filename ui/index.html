@@ -1787,14 +1787,20 @@ function AlbumArt({ track, isPlaying, sleepy, someoneElse }) {
   );
 }
 
-/* ── AmbientGlow ─────────────────────────────────────────────────────────── */
-/* glow за обложкой: два слоя crossfade'ятся по opacity при смене accent —
-   композитится на gpu, без покадрового перерасчёта blur (в отличие от
-   transition:background, который дёргал слайд) */
-function AmbientGlow({ accent, visible, isPlaying }) {
+/* ── AmbientGlow — soft cover halo; on play gently pumps with bass ───────── */
+function AmbientGlow({ accent, visible, isPlaying, audioRef, eqAnalyserRef }) {
   const [slots, setSlots] = useState(() => [{ a: accent, on: true }, { a: accent, on: false }]);
   const activeRef = useRef(0);
   const keyRef = useRef(accent.r + ',' + accent.g + ',' + accent.b);
+  const wrapRef = useRef(null);
+  const playingRef = useRef(isPlaying);
+  const visibleRef = useRef(visible);
+  playingRef.current = isPlaying;
+  visibleRef.current = visible;
+  const smoothRef = useRef(0);
+  const kickRef = useRef(0);
+  const avgRef = useRef(0.12);
+  const freqBufRef = useRef(null);
   useEffect(() => {
     const key = accent.r + ',' + accent.g + ',' + accent.b;
     if (key === keyRef.current) return;
@@ -1803,41 +1809,12 @@ function AmbientGlow({ accent, visible, isPlaying }) {
     activeRef.current = next;
     setSlots(prev => prev.map((s, i) => i === next ? { a: accent, on: true } : { ...s, on: false }));
   }, [accent.r, accent.g, accent.b]);
-  const grad = (a) => `radial-gradient(circle at center, rgba(${a.r},${a.g},${a.b},0.55) 0%, rgba(${a.r},${a.g},${a.b},0.26) 36%, rgba(${a.r},${a.g},${a.b},0.08) 64%, rgba(${a.r},${a.g},${a.b},0) 90%)`;
-  const vis = visible ? (isPlaying ? 1 : 0.5) : 0;
-  return (
-    <div style={{
-      position:'absolute', inset:'-30%', borderRadius:'50%',
-      opacity: vis, transition:'opacity 0.55s ease',
-      pointerEvents:'none', zIndex:0,
-    }}>
-      {slots.map((s, i) => (
-        <div key={i} style={{
-          position:'absolute', inset:0, borderRadius:'50%',
-          background: grad(s.a), filter:'blur(42px)',
-          opacity: s.on ? 1 : 0, transition:'opacity 0.6s ease',
-        }}/>
-      ))}
-    </div>
-  );
-}
-
-/* ── InkWashBloom — A07: пятно за обложкой, пульс как динамик (bass analyser) ─ */
-function InkWashBloom({ isPlaying, accent, audioRef, eqAnalyserRef }) {
-  const layerRef = useRef(null);
-  const playingRef = useRef(isPlaying);
-  playingRef.current = isPlaying;
-  const smoothRef = useRef(0);
-  const kickRef = useRef(0);
-  const avgRef = useRef(0.12);
-  const freqBufRef = useRef(null);
   useEffect(() => {
-    const layer = layerRef.current;
-    if (!layer) return;
+    const wrap = wrapRef.current;
+    if (!wrap) return;
     let raf = 0;
-    layer.style.opacity = '0';
     const tick = (t) => {
-      const playing = playingRef.current;
+      const playing = playingRef.current && visibleRef.current;
       let raw = 0;
       if (playing) {
         try {
@@ -1852,69 +1829,53 @@ function InkWashBloom({ isPlaying, accent, audioRef, eqAnalyserRef }) {
             const data = freqBufRef.current;
             an.getByteFrequencyData(data);
             let sum = 0, wsum = 0;
-            const lim = Math.max(4, Math.floor(n * 0.12));
+            const lim = Math.max(4, Math.floor(n * 0.1));
             for (let i = 0; i < lim; i++) {
-              const w = 1 + (lim - i) * 0.18;
+              const w = 1 + (lim - i) * 0.2;
               sum += data[i] * w;
               wsum += w;
             }
             raw = sum / (wsum * 255);
-            let mid = 0;
-            const mid1 = Math.min(n, lim + 8);
-            for (let i = lim; i < mid1; i++) mid += data[i];
-            mid = mid / (Math.max(1, mid1 - lim) * 255);
-            raw = Math.min(1, raw * 0.82 + mid * 0.18);
           } else {
             const sec = t * 0.001;
-            raw = 0.2 + 0.16 * (0.5 + 0.5 * Math.sin(sec * 4.1))
-              + 0.1 * (0.5 + 0.5 * Math.sin(sec * 2.05 + 1.2));
+            raw = 0.18 + 0.12 * (0.5 + 0.5 * Math.sin(sec * 3.6));
           }
         } catch { raw = 0; }
       }
-      avgRef.current = avgRef.current * 0.96 + raw * 0.04;
-      if (raw > avgRef.current * 1.32 && raw > 0.16) {
-        kickRef.current = Math.min(1, kickRef.current + (raw - avgRef.current) * 2.6);
+      avgRef.current = avgRef.current * 0.97 + raw * 0.03;
+      if (raw > avgRef.current * 1.28 && raw > 0.14) {
+        kickRef.current = Math.min(1, kickRef.current + (raw - avgRef.current) * 2.2);
       }
-      kickRef.current *= 0.84;
-      const target = playing ? Math.min(1, raw * 0.7 + kickRef.current * 0.58) : 0;
-      const e = (smoothRef.current = smoothRef.current * 0.7 + target * 0.3);
-      /* cone: сильнее по вертикали — как мембрана динамика */
-      const pump = 0.88 + e * 0.48;
-      const sx = pump * (0.96 + e * 0.1);
-      const sy = pump * (0.94 + e * 0.28);
-      const op = playing ? (0.22 + e * 0.48) : 0;
-      const wx = Math.sin(t * 0.00105) * (3 + e * 9);
-      const wy = Math.cos(t * 0.00088) * (2.5 + e * 7);
-      layer.style.opacity = String(op);
-      layer.style.transform = `translate(${wx}%, ${wy}%) scale(${sx}, ${sy})`;
+      kickRef.current *= 0.88;
+      const target = playing ? Math.min(1, raw * 0.65 + kickRef.current * 0.45) : 0;
+      const e = (smoothRef.current = smoothRef.current * 0.78 + target * 0.22);
+      /* tiny speaker pump — stays a cover glow, not a blob */
+      const base = visibleRef.current ? (playingRef.current ? 0.92 : 0.5) : 0;
+      const op = base + e * 0.18;
+      const sc = 1 + e * 0.055;
+      wrap.style.opacity = String(op);
+      wrap.style.transform = `scale(${sc})`;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [audioRef, eqAnalyserRef]);
-  const { r, g, b } = accent;
+  const grad = (a) => `radial-gradient(circle at center, rgba(${a.r},${a.g},${a.b},0.55) 0%, rgba(${a.r},${a.g},${a.b},0.26) 36%, rgba(${a.r},${a.g},${a.b},0.08) 64%, rgba(${a.r},${a.g},${a.b},0) 90%)`;
   return (
-    <div style={{
-      position:'absolute', inset:'-44%', zIndex:0, pointerEvents:'none',
-      display:'flex', alignItems:'center', justifyContent:'center',
+    <div ref={wrapRef} style={{
+      position:'absolute', inset:'-18%', borderRadius:'50%',
+      opacity: visible ? (isPlaying ? 0.92 : 0.5) : 0,
+      transform:'scale(1)',
+      willChange:'transform, opacity',
+      pointerEvents:'none', zIndex:0,
     }}>
-      <div ref={layerRef} style={{
-        position:'relative', width:'100%', height:'100%',
-        willChange:'transform, opacity',
-      }}>
-        <div style={{
-          position:'absolute', inset:'10%', borderRadius:'50%',
-          background:`radial-gradient(ellipse at 42% 44%, rgba(${r},${g},${b},0.58) 0%, rgba(${r},${g},${b},0.24) 36%, rgba(${r},${g},${b},0.07) 58%, transparent 76%)`,
-          filter:'blur(52px)',
-          transition:'background 0.65s ease',
+      {slots.map((s, i) => (
+        <div key={i} style={{
+          position:'absolute', inset:0, borderRadius:'50%',
+          background: grad(s.a), filter:'blur(36px)',
+          opacity: s.on ? 1 : 0, transition:'opacity 0.6s ease',
         }}/>
-        <div style={{
-          position:'absolute', inset:'2% 10% 14% 6%', borderRadius:'50%',
-          background:`radial-gradient(ellipse at 62% 58%, rgba(${r},${g},${b},0.32) 0%, rgba(${r},${g},${b},0.1) 42%, transparent 72%)`,
-          filter:'blur(64px)',
-          transition:'background 0.65s ease',
-        }}/>
-      </div>
+      ))}
     </div>
   );
 }
@@ -8704,10 +8665,10 @@ function App() {
                 position:'relative',
               }}>
                 {/* ambient glow blob — uses app accent (cover-derived or preset) */}
-                <AmbientGlow accent={appAccent} isPlaying={isPlaying} visible={!((hero && !heroExiting) || reverseHero)}/>
-                <InkWashBloom
-                  isPlaying={isPlaying}
+                <AmbientGlow
                   accent={appAccent}
+                  isPlaying={isPlaying}
+                  visible={!((hero && !heroExiting) || reverseHero)}
                   audioRef={audioRef}
                   eqAnalyserRef={eqAnalyserRef}
                 />
