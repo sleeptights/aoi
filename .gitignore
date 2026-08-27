@@ -1,0 +1,11 @@
+/src-tauri/target
+/loader/target
+/dist
+/rooms-worker/node_modules
+/rooms-worker/.wrangler
+/rooms-worker/.claim
+/.cursor
+/build-ui.log
+*.exe
+!dist/installers/.gitkeep
+

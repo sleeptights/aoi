@@ -1,0 +1,11 @@
+﻿{
+    "notes":  "aoi 1.0.3",
+    "changelog":  [
+                      "account: online + notifications",
+                      "auto-update",
+                      "room invites in notifications"
+                  ],
+    "url":  "",
+    "version":  "1.0.3",
+    "sha256":  "9330f5a2c88fbadf78d1ef8ce412b147367a28341049bc9a415496b2b63b23b6"
+}
