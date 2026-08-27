@@ -283,6 +283,10 @@
         roomCode: opts.roomCode || '',
         fromName: opts.fromName || '',
         fromAvatar: opts.fromAvatar || '',
+        trackId: opts.trackId || '',
+        trackTitle: opts.trackTitle || '',
+        trackArtist: opts.trackArtist || '',
+        seekSec: opts.seekSec || 0,
       }),
     }).then(function (r) {
       if (!r.ok) return { ok: false };

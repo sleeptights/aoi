@@ -1,1 +1,13 @@
-﻿{"changelog":["account screen: online + notifications","auto-update","room invites in notifications"],"version":"1.0.3","sha256":"9330f5a2c88fbadf78d1ef8ce412b147367a28341049bc9a415496b2b63b23b6","key":"aoi-ship-2026","url":"https://github.com/funpaubust-cyber/aoi/releases/download/v1.0.3/aoi-setup-win-x64.exe","notes":"aoi 1.0.3"}
+﻿{
+    "notes":  "aoi 1.1.0",
+    "changelog":  [
+                      "friends + crate",
+                      "multi accounts",
+                      "notif duck",
+                      "quiet likes",
+                      "overnight pack"
+                  ],
+    "url":  "https://github.com/sleeptights/aoi/releases/download/v1.1.0/aoi-setup-win-x64.exe",
+    "version":  "1.1.0",
+    "sha256":  "45bcb34d3e4d23e67d34590e130de48d278c22c38e4f7448959a6b2d2cedc982"
+}

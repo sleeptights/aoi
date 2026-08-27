@@ -2,6 +2,24 @@
 # Use only when giving to friends / installer — not for day-to-day UI edits.
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
+
+function Get-TomlVersion([string]$path) {
+  $m = Select-String -Path $path -Pattern '^\s*version\s*=\s*"([^"]+)"' | Select-Object -First 1
+  if (-not $m) { throw "version not found in $path" }
+  return $m.Matches[0].Groups[1].Value
+}
+
+$confPath = Join-Path $root 'src-tauri\tauri.conf.json'
+$conf = Get-Content -Raw $confPath | ConvertFrom-Json
+$vConf = [string]$conf.version
+$vApp = Get-TomlVersion (Join-Path $root 'src-tauri\Cargo.toml')
+$vLoader = Get-TomlVersion (Join-Path $root 'loader\Cargo.toml')
+if ($vConf -ne $vApp -or $vConf -ne $vLoader) {
+  Write-Error "Version mismatch: tauri.conf=$vConf src-tauri/Cargo=$vApp loader/Cargo=$vLoader"
+  exit 1
+}
+Write-Host "Version check OK → $vConf" -ForegroundColor Green
+
 Set-Location $root\src-tauri
 
 Write-Host 'Building release (embeds ui/)...' -ForegroundColor Cyan

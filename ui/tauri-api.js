@@ -47,6 +47,8 @@
     },
     loadSettings: function () { return invoke('load_settings'); },
     saveSettings: function (data) { return invoke('save_settings', { data: data }); },
+    backupSettings: function () { return invoke('backup_settings'); },
+    restoreSettingsBackup: function (path) { return invoke('restore_settings_backup', { path: path }); },
     onMediaPlayPause: function (cb) { listen('media-play-pause', cb); },
     onMediaNext: function (cb) { listen('media-next', cb); },
     onMediaPrev: function (cb) { listen('media-prev', cb); },

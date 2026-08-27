@@ -720,6 +720,10 @@ export class PresenceHub {
         roomCode: inv.roomCode,
         fromName: inv.fromName,
         fromAvatar: inv.fromAvatar,
+        trackId: inv.trackId || '',
+        trackTitle: inv.trackTitle || '',
+        trackArtist: inv.trackArtist || '',
+        seekSec: inv.seekSec || 0,
         at: inv.at,
       });
       else keep.push(inv);
@@ -842,6 +846,10 @@ export class PresenceHub {
         roomCode,
         fromName: clampName(body.fromName || (from && from.name)),
         fromAvatar: clampAvatar(body.fromAvatar || (from && from.avatar)),
+        trackId: String(body.trackId || '').replace(/[^\w-]/g, '').slice(0, 32),
+        trackTitle: String(body.trackTitle || '').slice(0, 120),
+        trackArtist: String(body.trackArtist || '').slice(0, 80),
+        seekSec: Math.max(0, Math.min(86400, Number(body.seekSec) || 0)),
         at: now,
         exp: now + INVITE_TTL_MS,
       };

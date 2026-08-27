@@ -35,14 +35,17 @@ pub fn run() {
             Some(vec![]),
         ))
         .manage(Mutex::new(AppState::default()))
-        .register_asynchronous_uri_scheme_protocol("media", |_ctx, request, responder| {
+        .register_asynchronous_uri_scheme_protocol("media", |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
             std::thread::spawn(move || {
-                responder.respond(media_protocol::response(request));
+                responder.respond(media_protocol::response(&app, request));
             });
         })
         .invoke_handler(tauri::generate_handler![
             settings::load_settings,
             settings::save_settings,
+            settings::backup_settings,
+            settings::restore_settings_backup,
             settings::set_login_item,
             music::select_music_folder,
             music::scan_music_folder,

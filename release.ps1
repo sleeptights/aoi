@@ -19,9 +19,17 @@ Write-Host "sha256: $sha" -ForegroundColor Green
 
 $notes = "aoi $version"
 $changelog = @(
-  'экран аккаунта: онлайн и уведомления',
-  'автообновление клиента',
-  'приглашения в комнату в уведомлениях'
+  'friends + shared crate next to online users',
+  'multi SoundCloud accounts on the account screen',
+  'invite carries track context; soft notif chime + music duck',
+  'toggle for notification sound',
+  'quiet likes: no retry loop — result in notifications',
+  'crossfade smarter for same artist',
+  'sleep by N tracks, dawn queue, candle / deep work / quiet hours',
+  'atomic settings write + backup button',
+  'queue persistence, shuffle artist cooldown, HLS quality',
+  'visual: quiet chrome, desat until play, pause rain, buffer edge, black lift',
+  'stricter media:// path allowlist'
 )
 
 $gh = "$env:LOCALAPPDATA\aoi-tools\gh\gh.exe"

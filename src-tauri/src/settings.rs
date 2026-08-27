@@ -94,8 +94,53 @@ pub fn load_settings(app: AppHandle) -> Value {
 pub fn save_settings(app: AppHandle, data: Value) -> Result<(), String> {
     let dir = app_data_dir(&app);
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = settings_path(&app);
+    let tmp = dir.join("settings.json.tmp");
     let text = serde_json::to_string_pretty(&data).map_err(|e| e.to_string())?;
-    fs::write(settings_path(&app), text).map_err(|e| e.to_string())
+    fs::write(&tmp, &text).map_err(|e| e.to_string())?;
+    if path.exists() {
+        let _ = fs::remove_file(&path);
+    }
+    fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn backup_settings(app: AppHandle) -> Result<String, String> {
+    let src = settings_path(&app);
+    if !src.exists() {
+        return Err("settings.json missing".into());
+    }
+    let stamp = chrono_lite_stamp();
+    let dest = app_data_dir(&app).join(format!("settings-backup-{stamp}.json"));
+    fs::copy(&src, &dest).map_err(|e| e.to_string())?;
+    Ok(dest.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn restore_settings_backup(app: AppHandle, path: String) -> Result<Value, String> {
+    let p = PathBuf::from(&path);
+    if !p.is_file() {
+        return Err("backup file not found".into());
+    }
+    // only restore from our app data dir
+    let data_dir = app_data_dir(&app);
+    let canon_p = p.canonicalize().map_err(|e| e.to_string())?;
+    let canon_d = data_dir.canonicalize().map_err(|e| e.to_string())?;
+    if !canon_p.starts_with(&canon_d) {
+        return Err("backup path not allowed".into());
+    }
+    let data = read_json(&p).ok_or_else(|| "invalid backup json".to_string())?;
+    save_settings(app, data.clone())?;
+    Ok(data)
+}
+
+fn chrono_lite_stamp() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs().to_string())
+        .unwrap_or_else(|_| "0".into())
 }
 
 #[tauri::command]

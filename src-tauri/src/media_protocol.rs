@@ -6,7 +6,7 @@ use tauri::http::{header::*, Request, Response, StatusCode};
 const MAX_RANGE: u64 = 1000 * 1024;
 const MAX_FULL: u64 = 32 * 1024 * 1024;
 
-pub fn response(request: Request<Vec<u8>>) -> Response<Vec<u8>> {
+pub fn response(app: &tauri::AppHandle, request: Request<Vec<u8>>) -> Response<Vec<u8>> {
     let origin = request
         .headers()
         .get(ORIGIN)
@@ -36,6 +36,9 @@ pub fn response(request: Request<Vec<u8>>) -> Response<Vec<u8>> {
     let Some(path) = path_from_uri(request.uri()) else {
         return deny(StatusCode::BAD_REQUEST);
     };
+    if !path_allowed(app, &path) {
+        return deny(StatusCode::FORBIDDEN);
+    }
     if !path.is_file() {
         return deny(StatusCode::NOT_FOUND);
     }
@@ -104,6 +107,29 @@ pub fn response(request: Request<Vec<u8>>) -> Response<Vec<u8>> {
         .header(CONTENT_LENGTH, buf.len() as u64)
         .body(buf)
         .unwrap_or_else(|_| Response::new(Vec::new()))
+}
+
+fn path_allowed(app: &tauri::AppHandle, path: &Path) -> bool {
+    let Ok(canon) = path.canonicalize() else {
+        return false;
+    };
+    let data = crate::settings::app_data_dir(app);
+    if let Ok(d) = data.canonicalize() {
+        if canon.starts_with(&d) {
+            return true;
+        }
+    }
+    let settings = crate::settings::read_settings_file(app);
+    if let Some(folder) = settings.get("musicFolder").and_then(|v| v.as_str()) {
+        if !folder.is_empty() {
+            if let Ok(root) = PathBuf::from(folder).canonicalize() {
+                if canon.starts_with(&root) {
+                    return true;
+                }
+            }
+        }
+    }
+    false
 }
 
 fn path_from_uri(uri: &tauri::http::Uri) -> Option<PathBuf> {

@@ -17,6 +17,7 @@
 </style>
 <script src="./tauri-api.js"></script>
 <script src="./rooms-client.js"></script>
+<script src="./aoi-night.js"></script>
 <script src="./vendor/react.production.min.js"></script>
 <script src="./vendor/react-dom.production.min.js"></script>
 <script src="./vendor/babel.min.js"></script>
@@ -215,6 +216,32 @@ window.addEventListener('keydown', function (e) {
     background:
       radial-gradient(ellipse 115% 80% at 50% -8%, rgba(255,150,80,0.14) 0%, transparent 52%),
       radial-gradient(ellipse at center, transparent 45%, rgba(40,16,6,0.5) 100%);
+  }
+  /* aoi-night-css */
+  :root { --black-lift: 0; }
+  #app-shell { filter: brightness(calc(1 + var(--black-lift) * 0.35)); }
+  #app-shell.chrome-quiet #titlebar,
+  #app-shell.chrome-quiet .sidebar-chrome { opacity:0; pointer-events:none; transition:opacity 0.55s ease; }
+  #app-shell.lib-desat .home-grid, #app-shell.lib-desat .track-list-wrap { filter:grayscale(1) saturate(0); transition:filter 0.7s ease; }
+  #app-shell.has-played .home-grid, #app-shell.has-played .track-list-wrap { filter:none; }
+  #app-shell.buffering { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb),0.35), inset 0 0 40px rgba(var(--accent-rgb),0.08); }
+  #app-shell.pause-rain::before {
+    background-image: radial-gradient(1px 8px at 20% 30%, rgba(255,255,255,0.18), transparent),
+      radial-gradient(1px 10px at 60% 10%, rgba(255,255,255,0.12), transparent),
+      radial-gradient(1px 6px at 80% 50%, rgba(255,255,255,0.1), transparent);
+    background-size: 120px 180px; animation: aoiRain 1.2s linear infinite; opacity:0.35;
+  }
+  @keyframes aoiRain { to { background-position: 0 180px; } }
+  @keyframes aoiBreathe { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.018);} }
+  .aoi-breathe { animation: aoiBreathe 1.6s ease-in-out infinite; transform-origin:center; }
+  .aoi-dual-tone { position:relative; overflow:hidden; }
+  .aoi-dual-tone::after {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background: linear-gradient(105deg, rgba(var(--accent-rgb),0.35) 0 48%, transparent 52% 100%);
+    mix-blend-mode: soft-light;
+  }
+  html.aoi-cinema *, html.aoi-cinema *::before, html.aoi-cinema *::after {
+    animation:none !important; transition:none !important;
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -774,7 +801,6 @@ const STRINGS = {
     eq:'эквалайзер', eq_flat:'ровно', eq_bass:'бас', eq_vocal:'голос', eq_treble:'верх',
     eq_electronic:'электро', eq_acoustic:'акустика', eq_custom:'свой',
     eq_save:'сохранить', eq_save_ph:'имя пресета', eq_saved:'пресет сохранён',
-    dusty_shelf:'пыльная полка', dusty_blow:'дослушать',
     someone_else:'кто-то ещё слушает это сейчас',
     needle_fwd:'удержи: игла вперёд',
     presence_online:'онлайн',
@@ -796,6 +822,22 @@ const STRINGS = {
     presence_show_me:'показывать меня в сети',
     presence_show_me_sub:'другие увидят тебя в списке онлайн',
     notif_title:'уведомления',
+    notif_sound:'звук уведомлений', notif_sound_sub:'тихий сигнал и приглушение музыки',
+    notif_like_ok:'лайк сохранён', notif_like_fail:'не удалось сохранить лайк',
+    notif_unlike_ok:'лайк убран', notif_unlike_fail:'не удалось убрать лайк',
+    backup_settings:'бэкап настроек', backup_ok:'бэкап сохранён', backup_err:'не удалось сохранить бэкап',
+    friends_section:'друзья', online_section:'онлайн', add_friend:'в друзья', remove_friend:'из друзей',
+    crate_title:'общий ящик', crate_add:'в ящик', crate_empty:'ящик пуст',
+    accounts_title:'аккаунты SoundCloud', accounts_add:'добавить аккаунт', accounts_switch:'переключить',
+    accounts_active:'активный', sleep_tracks:'сон по трекам', sleep_tracks_sub:'сколько треков до паузы (0 = выкл)',
+    deep_work:'глубокая работа', deep_work_sub:'заглушить presence на часы',
+    quiet_hours:'тихие часы', quiet_hours_sub:'меньше опроса presence ночью',
+    black_lift:'подъём чёрного', black_lift_sub:'OLED: чуть поднять тени',
+    hls_quality:'качество потока', hls_auto:'авто',
+    moment_copy:'код момента скопирован', moment_bad:'неверный код момента',
+    veto_btn:'veto', veto_sent:'предложение отклонено',
+    dawn_queue:'утренняя очередь', dawn_queue_sub:'час автостарта (0–23, −1 выкл)',
+    candle_timer:'свеча (яркость к нулю)', chapter_add:'метка',
     notif_empty:'пока тихо',
     notif_update:'доступно обновление',
     notif_update_btn:'обновить',
@@ -934,7 +976,6 @@ const STRINGS = {
     eq:'equalizer', eq_flat:'flat', eq_bass:'bass', eq_vocal:'vocal', eq_treble:'treble',
     eq_electronic:'electronic', eq_acoustic:'acoustic', eq_custom:'custom',
     eq_save:'save', eq_save_ph:'preset name', eq_saved:'preset saved',
-    dusty_shelf:'dusty shelf', dusty_blow:'finish it',
     someone_else:'someone else is on this track',
     needle_fwd:'hold: needle forward',
     presence_online:'online',
@@ -956,6 +997,22 @@ const STRINGS = {
     presence_show_me:'show me online',
     presence_show_me_sub:'others will see you in the online list',
     notif_title:'notifications',
+    notif_sound:'notification sound', notif_sound_sub:'soft chime + brief duck',
+    notif_like_ok:'like saved', notif_like_fail:'could not save like',
+    notif_unlike_ok:'like removed', notif_unlike_fail:'could not remove like',
+    backup_settings:'backup settings', backup_ok:'backup saved', backup_err:'backup failed',
+    friends_section:'friends', online_section:'online', add_friend:'add friend', remove_friend:'remove friend',
+    crate_title:'shared crate', crate_add:'to crate', crate_empty:'crate is empty',
+    accounts_title:'SoundCloud accounts', accounts_add:'add account', accounts_switch:'switch',
+    accounts_active:'active', sleep_tracks:'sleep by tracks', sleep_tracks_sub:'tracks until pause (0 = off)',
+    deep_work:'deep work', deep_work_sub:'mute presence for hours',
+    quiet_hours:'quiet hours', quiet_hours_sub:'slower presence polling at night',
+    black_lift:'black lift', black_lift_sub:'OLED: lift crushed blacks',
+    hls_quality:'stream quality', hls_auto:'auto',
+    moment_copy:'moment code copied', moment_bad:'bad moment code',
+    veto_btn:'veto', veto_sent:'suggestion vetoed',
+    dawn_queue:'dawn queue', dawn_queue_sub:'auto-start hour (0–23, −1 off)',
+    candle_timer:'candle (fade UI)', chapter_add:'mark',
     notif_empty:'all quiet',
     notif_update:'update available',
     notif_update_btn:'update',
@@ -1160,10 +1217,29 @@ function computePresenceStatus({ isPlaying, hasTrack, hidden, idleMs }) {
 
 function buildScShuffle(list, currentId) {
   const ids = list.map(t => t.id);
+  const byId = new Map(list.map(t => [t.id, t]));
   const rest = currentId != null ? ids.filter(id => id !== currentId) : ids.slice();
   for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+  // L04 — avoid three same artists in a row
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 2; i < rest.length; i++) {
+      const a0 = window.AoiNight?.artistKey?.(byId.get(rest[i - 2]));
+      const a1 = window.AoiNight?.artistKey?.(byId.get(rest[i - 1]));
+      const a2 = window.AoiNight?.artistKey?.(byId.get(rest[i]));
+      if (a0 && a0 === a1 && a1 === a2) {
+        let swap = -1;
+        for (let k = i + 1; k < rest.length; k++) {
+          const ak = window.AoiNight?.artistKey?.(byId.get(rest[k]));
+          if (ak !== a2) { swap = k; break; }
+        }
+        if (swap > i) {
+          const tmp = rest[i]; rest[i] = rest[swap]; rest[swap] = tmp;
+        }
+      }
+    }
   }
   return currentId != null ? [currentId, ...rest] : rest;
 }
@@ -2800,7 +2876,7 @@ function MemberContextMenu({ menu, onClose, onKick, onBan, onTransfer, busy }) {
 }
 
 /* ── Presence (online users) ─────────────────────────────────────────────── */
-function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock }) {
+function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onToggleFriend, isFriend }) {
   const ref = useRef(null);
   const [pos, setPos] = useState({ x: menu.x, y: menu.y, ready: false });
   const t = useLang();
@@ -2853,14 +2929,16 @@ function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock }) {
       boxShadow:'0 12px 36px rgba(0,0,0,0.55)',
     }}>
       <Item label={t('presence_open_profile')} disabled={!profile} onClick={onOpenProfile}/>
+      <Item label={isFriend ? t('remove_friend') : t('add_friend')} onClick={onToggleFriend}/>
       <Item label={t('presence_invite')} onClick={onInvite}/>
+      <Item label={t('crate_add')} onClick={(p) => { try { window.__aoiAddCrate?.(p); } catch(_){} }}/>
       <Item label={t('presence_block')} onClick={onBlock}/>
     </div>,
     document.body
   );
 }
 
-function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible }) {
+function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, friendCrate, onPlayCrate }) {
   const t = useLang();
   useEffect(() => {
     if (!open) return;
@@ -2870,6 +2948,9 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
   }, [open, onClose]);
   if (!open) return null;
   const visible = (peers || []).filter(p => !isPresenceBlocked(p, blocked));
+  const friendKeys = new Set((friends || []).map(f => window.AoiNight?.peerKey?.(f) || ''));
+  const friendPeers = visible.filter(p => friendKeys.has(window.AoiNight?.peerKey?.(p) || ''));
+  const otherPeers = visible.filter(p => !friendKeys.has(window.AoiNight?.peerKey?.(p) || ''));
   return ReactDOM.createPortal(
     <div style={{ position:'fixed', inset:0, zIndex:9800, pointerEvents:'auto' }}
       onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -2895,11 +2976,58 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
           </div>
         </div>
         <div className="scroll-thin" style={{ flex:1, overflowY:'auto', padding:'10px 12px 16px' }}>
+          {(friendCrate || []).length > 0 && (
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>{t('crate_title')}</div>
+              {(friendCrate || []).slice(0, 12).map((item, i) => (
+                <div key={(item.id || i) + '-crate'} onClick={() => onPlayCrate?.(item)}
+                  style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, marginBottom:3, cursor:'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                  <div style={{ minWidth:0, flex:1 }}>
+                    <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.85)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.title || 'track'}</div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:2 }}>{item.artist || ''}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {visible.length === 0 ? (
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.28)', textAlign:'center', padding:'48px 16px', lineHeight:1.5 }}>
               {t('presence_empty')}
             </div>
-          ) : visible.map(p => {
+          ) : (
+            <>
+              {friendPeers.length > 0 && (
+                <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>{t('friends_section')}</div>
+              )}
+              {friendPeers.map(p => {
+                const mine = p.token && p.token === selfToken;
+                const activity = presenceActivityLabel(p, t);
+                return (
+                  <div key={'f-'+(p.token || p.uid || p.name)}
+                    onContextMenu={e => { e.preventDefault(); onUserMenu?.(p, e.clientX, e.clientY); }}
+                    style={{
+                      display:'flex', alignItems:'center', gap:12,
+                      padding:'10px 10px', borderRadius:12, marginBottom:4,
+                      background: mine ? 'rgba(var(--accent-rgb),0.08)' : 'rgba(var(--accent-rgb),0.04)',
+                      cursor:'context-menu', userSelect:'none',
+                    }}>
+                    <RoomAvatar src={p.avatar} size={40} radius={11}/>
+                    <div style={{ minWidth:0, flex:1 }}>
+                      <div style={{ fontSize:13.5, fontWeight:600, color:'rgba(255,255,255,0.88)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {p.name || 'friend'}{mine ? ' · ' + t('presence_you') : ''}
+                      </div>
+                      <div style={{ fontSize:11.5, marginTop:3, color: p.status === 'listening' ? 'rgba(var(--accent-rgb),0.85)' : 'rgba(255,255,255,0.34)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{activity}</div>
+                    </div>
+                    <div style={{ width:7, height:7, borderRadius:99, flexShrink:0, background: p.status === 'afk' ? 'rgba(255,255,255,0.22)' : '#4ade80' }}/>
+                  </div>
+                );
+              })}
+              {otherPeers.length > 0 && (
+                <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'12px 8px 8px' }}>{t('online_section')}</div>
+              )}
+              {otherPeers.map(p => {
             const mine = p.token && p.token === selfToken;
             const activity = presenceActivityLabel(p, t);
             return (
@@ -2932,6 +3060,8 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
               </div>
             );
           })}
+            </>
+          )}
         </div>
         <div style={{
           padding:'12px 16px 18px', borderTop:'1px solid rgba(255,255,255,0.05)', flexShrink:0,
@@ -3336,7 +3466,7 @@ function ClearCacheCard({ Card, Row, onClearCoversCache, onClearLikesCache }) {
 }
 
 /* ── SettingsView ─────────────────────────────────────────────────────────── */
-function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFolder, onClearCoversCache, onClearLikesCache, appAccent, onOpenMini }) {
+function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFolder, onClearCoversCache, onClearLikesCache, appAccent, onOpenMini, appVersion }) {
   const t = useLang();
   const set = (k, v) => onSettings({ ...settings, [k]: v });
   const [sec, setSec] = useState('playback');
@@ -3657,6 +3787,54 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
       <Card title={t('card_startup')}>
         <Row label={t('start_windows')}><Toggle k="startWithWindows"/></Row>
         <Row label={t('minimize_tray')}><Toggle k="minimizeToTray"/></Row>
+        <Row label={t('notif_sound')} sub={t('notif_sound_sub')}><Toggle k="notifSound"/></Row>
+        <Row label={t('quiet_hours')} sub={t('quiet_hours_sub')}><Toggle k="quietHours"/></Row>
+        <Row label={t('deep_work')} sub={t('deep_work_sub')}>
+          <div onClick={() => set('deepWorkUntil', Date.now() + 3 * 60 * 60 * 1000)}
+            style={{ fontSize:12, color:'rgba(255,255,255,0.55)', cursor:'pointer', background:'rgba(255,255,255,0.055)', borderRadius:7, padding:'5px 12px' }}>3h</div>
+        </Row>
+        <Row label={t('candle_timer')}><Toggle k="candleSleep"/></Row>
+        <Row label={t('black_lift')} sub={t('black_lift_sub')}>
+          <input type="range" min="0" max="100" value={Math.round((settings.blackLift||0)*100)}
+            onChange={e => set('blackLift', Math.max(0, Math.min(1, Number(e.target.value)/100)))}
+            style={{ width:110, accentColor:'rgb(var(--accent-rgb))' }}/>
+        </Row>
+        <Row label={t('sleep_tracks')} sub={t('sleep_tracks_sub')}>
+          <div style={{display:'flex', alignItems:'center', gap:8}}>
+            <div onClick={()=>set('sleepTracksLeft', Math.max(0, (settings.sleepTracksLeft||0)-1))}
+              style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,0.055)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'rgba(255,255,255,0.5)'}}>−</div>
+            <span style={{fontSize:12,color:'rgba(255,255,255,0.55)',minWidth:20,textAlign:'center'}}>{settings.sleepTracksLeft||0}</span>
+            <div onClick={()=>set('sleepTracksLeft', Math.min(30, (settings.sleepTracksLeft||0)+1))}
+              style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,0.055)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'rgba(255,255,255,0.5)'}}>+</div>
+          </div>
+        </Row>
+        <Row label={t('dawn_queue')} sub={t('dawn_queue_sub')}>
+          <input type="number" min={-1} max={23} value={settings.dawnHour ?? -1}
+            onChange={e => set('dawnHour', Math.max(-1, Math.min(23, Number(e.target.value)||-1)))}
+            style={{ width:64, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'rgba(255,255,255,0.7)', padding:'4px 8px', fontSize:12 }}/>
+        </Row>
+        <Row label={t('hls_quality')}>
+          <div style={{display:'flex', gap:6}}>
+            {['auto','sq','hq'].map(q => {
+              const active = (settings.hlsQuality||'auto') === q;
+              return (
+                <div key={q} onClick={()=>set('hlsQuality', q)} style={{
+                  fontSize:11, padding:'4px 10px', borderRadius:7, cursor:'pointer',
+                  background: active ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.04)',
+                  color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)',
+                }}>{q === 'auto' ? t('hls_auto') : q}</div>
+              );
+            })}
+          </div>
+        </Row>
+        <Row label={t('backup_settings')}>
+          <div onClick={async () => {
+            try { await window.electronAPI.backupSettings(); } catch {}
+          }} style={{
+            fontSize:12, color:'rgba(255,255,255,0.55)', cursor:'pointer',
+            background:'rgba(255,255,255,0.055)', borderRadius:7, padding:'5px 14px',
+          }}>{t('backup_settings')}</div>
+        </Row>
         <Row label={t('mini_player')} sub={t('mini_player_sub')} last>
           <div
             onClick={() => onOpenMini?.()}
@@ -3730,7 +3908,7 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
           <AoiMark size={40} radius={10}/>
           <div>
             <div style={{fontSize:14, fontWeight:650, color:'rgba(255,255,255,0.86)'}}>{window.appInfo?.name || 'aoi'}</div>
-            <div style={{fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:2}}>{window.appInfo?.version || '1.0.1'}</div>
+            <div style={{fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:2}}>{appVersion || window.appInfo?.version || '—'}</div>
           </div>
         </div>
         <Row label={t('stack')} last><span style={{fontSize:12, color:'rgba(255,255,255,0.3)'}}>Tauri · React</span></Row>
@@ -3820,6 +3998,7 @@ function AvatarFlyClone({ fly, exiting }) {
 /* ── SoundCloudView ──────────────────────────────────────────────────────── */
 function SoundCloudView({
   visible, scAuth, onLogin, onLogout, avatarRef,
+  scAccounts, onAddAccount, onSwitchAccount,
   presenceConnected, presenceCount, presenceProfile, onOpenOnline, onOpenOnlineCount,
   notifUnread, onOpenNotifs,
 }) {
@@ -3919,6 +4098,35 @@ function SoundCloudView({
           onMouseEnter={e=>{ e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.color='rgba(255,255,255,0.75)'; }}
           onMouseLeave={e=>{ e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.color='rgba(255,255,255,0.5)'; }}
         >{t('logout')}</button>
+        <button onClick={onAddAccount} style={{
+          background:'rgba(255,255,255,0.04)', border:'none',
+          borderRadius:9, padding:'7px 18px', marginTop:4,
+          fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.45)',
+          cursor:'pointer', fontFamily:'inherit',
+        }}>{t('accounts_add')}</button>
+        {(scAccounts || []).length > 0 && (
+          <div style={{ marginTop:16, width:'min(280px, 80vw)' }}>
+            <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)', marginBottom:8 }}>{t('accounts_title')}</div>
+            {(scAccounts || []).map((acc, i) => {
+              const active = scAuth && String(scAuth.userId||'') === String(acc.userId||'') && String(scAuth.username||'') === String(acc.username||'');
+              return (
+                <div key={(acc.userId||acc.username||i)+''} onClick={() => !active && onSwitchAccount?.(acc)}
+                  style={{
+                    display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, marginBottom:4,
+                    background: active ? 'rgba(var(--accent-rgb),0.1)' : 'rgba(255,255,255,0.03)',
+                    cursor: active ? 'default' : 'pointer',
+                  }}>
+                  <div style={{ width:28, height:28, borderRadius:99, overflow:'hidden', background:'#111' }}>
+                    {acc.avatarUrl ? <img src={acc.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : null}
+                  </div>
+                  <div style={{ flex:1, minWidth:0, fontSize:12.5, color:'rgba(255,255,255,0.75)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {acc.username || t('unknown')}{active ? ' · ' + t('accounts_active') : ''}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -4945,11 +5153,28 @@ function App() {
     sourceMode: 'local', discordRpc: true, discordClientId: '',
     discordTimestamp: 'progress', discordPause: 'show', discordCover: true,
     accentMode: 'default', playlists: [],
-    dusty: [], eqId: 'flat', eqGains: [0, 0, 0, 0, 0, 0], eqCustom: [],
+    eqId: 'flat', eqGains: [0, 0, 0, 0, 0, 0], eqCustom: [],
     miniAlwaysOnTop: true,
     presenceEnabled: true,
     blockedPresence: [],
     notifications: [],
+    notifSound: true,
+    friends: [],
+    friendCrate: [],
+    scAccounts: [],
+    sleepTracksLeft: 0,
+    deepWorkUntil: 0,
+    quietHours: true,
+    blackLift: 0,
+    hlsQuality: 'auto',
+    dawnHour: -1,
+    dawnQueue: [],
+    chapters: {},
+    playbackQueue: null,
+    undoStack: [],
+    errorQuarantine: [],
+    candleSleep: false,
+    hasPlayedOnce: false,
   });
   const [settingsHydrated, setSettingsHydrated] = useState(false);
   const [sort,         setSort]         = useState('added');
@@ -4974,6 +5199,7 @@ function App() {
   const [notifPanelOpen, setNotifPanelOpen] = useState(false);
   const [presenceUserMenu, setPresenceUserMenu] = useState(null);
   const [updateInstalling, setUpdateInstalling] = useState(false);
+  const [appVersion, setAppVersion] = useState(window.appInfo?.version || '');
   const lastActivityRef = useRef(Date.now());
   const presenceTokenRef = useRef('');
   const seenInviteRef = useRef(new Set());
@@ -5005,6 +5231,20 @@ function App() {
     const titles = [t('minimize'), t('maximize'), t('close')];
     btns.forEach((b, i) => { if (titles[i]) b.title = titles[i]; });
   }, [lang]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const v = await window.electronAPI?.appVersion?.();
+        if (cancelled || !v) return;
+        window.appInfo = { name: 'aoi', version: String(v) };
+        document.title = 'aoi';
+        setAppVersion(String(v));
+      } catch (_) {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const customTitlesRef = useRef({});
   customTitlesRef.current = settings.customTitles || {};
@@ -5078,9 +5318,6 @@ function App() {
   const aftertasteRef     = useRef(false);
   const aftertasteRafRef  = useRef(null);
   const finishingBarRef   = useRef(false);
-  const dustyPrevRef      = useRef(null);
-  const dustyProgressRef  = useRef(0);
-  const dustyDoneRef      = useRef(false);
   const lastToggleRef     = useRef(0);
   const sleepTimerRef     = useRef(null);
   const sleepStartVolRef  = useRef(0.7);
@@ -5122,28 +5359,6 @@ function App() {
     });
     return () => { cancelled = true; };
   }, [track?.id, track?.coverUrl]);
-
-  useEffect(() => {
-    const cur = track && track.id ? {
-      id: track.id, title: track.title || '', artist: track.artist || '',
-      coverUrl: track.coverUrl || null, path: track.path || null,
-      streamUrl: track.streamUrl || null, hlsUrl: track.hlsUrl || null,
-    } : null;
-    const prev = dustyPrevRef.current;
-    if (prev && cur && String(prev.id) !== String(cur.id)) {
-      const p = dustyProgressRef.current;
-      if (p >= 0.04 && p < 0.85) {
-        setSettings(s => {
-          const rest = (s.dusty || []).filter(x => String(x.id) !== String(prev.id));
-          return { ...s, dusty: [prev, ...rest].slice(0, 12) };
-        });
-      } else if (p >= 0.85) {
-        setSettings(s => ({ ...s, dusty: (s.dusty || []).filter(x => String(x.id) !== String(prev.id)) }));
-      }
-    }
-    dustyPrevRef.current = cur;
-    dustyDoneRef.current = false;
-  }, [track?.id]);
 
   useEffect(() => {
     let stop = false;
@@ -5203,6 +5418,11 @@ function App() {
       try { window.AoiRooms?.presenceLeave?.(); } catch {}
       return;
     }
+    if ((Number(settings.deepWorkUntil) || 0) > Date.now()) {
+      setPresenceConnected(false);
+      try { window.AoiRooms?.presenceLeave?.(); } catch {}
+      return;
+    }
     const api = window.AoiRooms;
     if (!api?.presenceBeat) return;
     presenceTokenRef.current = api.presenceToken?.() || '';
@@ -5246,9 +5466,16 @@ function App() {
                 body,
                 at: inv.at || Date.now(),
                 read: false,
-                meta: { roomCode: inv.roomCode, fromName: inv.fromName, fromAvatar: inv.fromAvatar },
+                meta: {
+                  roomCode: inv.roomCode, fromName: inv.fromName, fromAvatar: inv.fromAvatar,
+                  trackId: inv.trackId || '', trackTitle: inv.trackTitle || '', trackArtist: inv.trackArtist || '',
+                  seekSec: inv.seekSec || 0,
+                },
               }, ...notifications].slice(0, 40);
               changed = true;
+            }
+            if (changed) {
+              try { window.AoiNight?.onNotificationEvent?.(s); } catch {}
             }
             return changed ? { ...s, notifications } : s;
           });
@@ -5267,7 +5494,7 @@ function App() {
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('beforeunload', onUnload);
     };
-  }, [settingsHydrated, settings.presenceEnabled, settings.soundcloudAuth?.username, settings.soundcloudAuth?.avatarUrl, settings.soundcloudAuth?.userId, isPlaying, track?.id, scPlayingTrack?.id]);
+  }, [settingsHydrated, settings.presenceEnabled, settings.deepWorkUntil, settings.soundcloudAuth?.username, settings.soundcloudAuth?.avatarUrl, settings.soundcloudAuth?.userId, isPlaying, track?.id, scPlayingTrack?.id]);
 
   useEffect(() => {
     if (!settingsHydrated) return;
@@ -5283,9 +5510,10 @@ function App() {
       setPresenceCount(Number(res.n) || 0);
     };
     pull();
-    const id = setInterval(pull, (onlinePanelOpen || view === 'soundcloud') ? 15000 : 35000);
+    const night = settings.quietHours !== false && (new Date().getHours() < 7 || new Date().getHours() >= 23);
+    const id = setInterval(pull, (onlinePanelOpen || view === 'soundcloud') ? (night ? 25000 : 15000) : (night ? 60000 : 35000));
     return () => { stop = true; clearInterval(id); };
-  }, [settingsHydrated, homeVisible, onlinePanelOpen, view, notifPanelOpen]);
+  }, [settingsHydrated, homeVisible, onlinePanelOpen, view, notifPanelOpen, settings.quietHours]);
 
   useEffect(() => {
     if (!settingsHydrated) return;
@@ -5302,6 +5530,7 @@ function App() {
           if (notifications.some(n => n.id === id)) return s;
           const lines = Array.isArray(info.changelog) ? info.changelog.filter(Boolean) : [];
           const body = lines.length ? lines.map(l => '· ' + l).join('\n') : (info.notes || '');
+          try { window.AoiNight?.onNotificationEvent?.(s); } catch {}
           return {
             ...s,
             notifications: [{
@@ -5472,12 +5701,6 @@ function App() {
       if (!audio.duration || !isFinite(audio.duration)) return;
       progressRef.current = audio.currentTime / audio.duration;
       discordProgressRef.current = progressRef.current;
-      dustyProgressRef.current = progressRef.current;
-      if (progressRef.current >= 0.85 && !dustyDoneRef.current) {
-        dustyDoneRef.current = true;
-        const id = dustyPrevRef.current?.id;
-        if (id != null) setSettings(s => ({ ...s, dusty: (s.dusty || []).filter(x => String(x.id) !== String(id)) }));
-      }
       if (repeatRef.current === 'one' || fadingRef.current || cfLockRef.current || aftertasteRef.current || peekingRef.current || finishingBarRef.current) return;
       const cf = settingsRef.current?.crossfade || 0;
       if (cf <= 0 || !isPlayingRef.current) return;
@@ -5592,6 +5815,85 @@ function App() {
     const shell = document.getElementById('app-shell');
     if (shell) shell.classList.toggle('is-playing', !!isPlaying);
   }, [isPlaying]);
+
+  // V20 quiet chrome, V49 desat library, V28 rain on pause, V50 buffer glow, V33 cinema, V56 black lift
+  useEffect(() => {
+    const shell = document.getElementById('app-shell');
+    if (!shell) return;
+    let quietTimer = null;
+    const bump = () => {
+      shell.classList.remove('chrome-quiet');
+      clearTimeout(quietTimer);
+      quietTimer = setTimeout(() => shell.classList.add('chrome-quiet'), 4500);
+    };
+    bump();
+    window.addEventListener('mousemove', bump);
+    window.addEventListener('keydown', bump);
+    return () => {
+      clearTimeout(quietTimer);
+      window.removeEventListener('mousemove', bump);
+      window.removeEventListener('keydown', bump);
+      shell.classList.remove('chrome-quiet');
+    };
+  }, []);
+
+  useEffect(() => {
+    const shell = document.getElementById('app-shell');
+    if (!shell) return;
+    shell.classList.toggle('lib-desat', true);
+    if (isPlaying || settingsHydrated && (settings.hasPlayedOnce || isPlaying)) {
+      shell.classList.add('has-played');
+      if (!settings.hasPlayedOnce && isPlaying) setSettings(s => ({ ...s, hasPlayedOnce: true }));
+    }
+    shell.classList.toggle('pause-rain', !isPlaying && !!(scPlayingTrack || tracks[trackIdx]));
+    document.documentElement.style.setProperty('--black-lift', String(settings.blackLift || 0));
+    document.documentElement.classList.toggle('aoi-cinema', !!(window.AoiNight?.prefersReducedMotion?.()));
+  }, [isPlaying, settings.blackLift, settings.hasPlayedOnce, settingsHydrated, scPlayingTrack, trackIdx, tracks]);
+
+  // R45 deep work / R50 quiet hours → slow presence
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    const deep = Number(settings.deepWorkUntil) || 0;
+    if (deep && Date.now() < deep) {
+      // presence effect also checks this via settings
+    }
+  }, [settings.deepWorkUntil, settingsHydrated]);
+
+  // L09 queue persistence
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    const q = {
+      scPlayingId: scPlayingTrack?.id || null,
+      trackIdx,
+      isPlaying: !!isPlaying,
+      progress: progressRef.current || 0,
+      at: Date.now(),
+    };
+    setSettings(s => {
+      const prev = s.playbackQueue || {};
+      if (prev.scPlayingId === q.scPlayingId && prev.trackIdx === q.trackIdx && Math.abs((prev.progress||0) - q.progress) < 0.05) return s;
+      return { ...s, playbackQueue: q };
+    });
+  }, [scPlayingTrack?.id, trackIdx, isPlaying, settingsHydrated]);
+
+  // R01 dawn queue
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    const hour = settings.dawnHour;
+    if (hour == null || hour < 0) return;
+    const id = setInterval(() => {
+      const h = new Date().getHours();
+      if (h !== hour) return;
+      const key = 'dawn:' + new Date().toDateString();
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+      const q = settings.dawnQueue || [];
+      if (q.length && !isPlayingRef.current) {
+        handleScTrackClick(q[0], -1, false);
+      }
+    }, 30000);
+    return () => clearInterval(id);
+  }, [settings.dawnHour, settings.dawnQueue, settingsHydrated]);
 
   const stopSleep = useCallback((restore) => {
     if (sleepTimerRef.current) {
@@ -6259,7 +6561,19 @@ function App() {
     setRoomJoinCode(code);
     setNotifPanelOpen(false);
     handleNav('rooms');
-    showToast(code);
+    const tid = notif?.meta?.trackId;
+    const title = notif?.meta?.trackTitle;
+    if (tid || title) {
+      showToast((title || tid) + (notif?.meta?.seekSec ? ' · ' + notif.meta.seekSec + 's' : ''));
+      // stash for room join context
+      try {
+        sessionStorage.setItem('aoiInviteTrack', JSON.stringify({
+          id: tid, title, artist: notif?.meta?.trackArtist || '', seekSec: notif?.meta?.seekSec || 0,
+        }));
+      } catch {}
+    } else {
+      showToast(code);
+    }
   };
 
   const handlePresenceOpenProfile = (peer) => {
@@ -6271,6 +6585,7 @@ function App() {
   const handlePresenceInvite = async (peer) => {
     if (roomRef.current?.code && roomRef.current?.role === 'host') {
       const p = roomProfileOf(scAuthRef.current);
+      const tr = scPlayingTrackRef.current || tracksRef.current[trackIdxRef.current];
       try {
         await window.AoiRooms?.presenceInvite?.({
           toToken: peer?.token || '',
@@ -6278,6 +6593,10 @@ function App() {
           roomCode: roomRef.current.code,
           fromName: p.name,
           fromAvatar: p.avatar,
+          trackId: tr?.id != null ? String(tr.id) : '',
+          trackTitle: tr?.title || '',
+          trackArtist: tr?.artist || '',
+          seekSec: Math.floor((progressRef.current || 0) * (tr?.duration || 0)),
         });
         await navigator.clipboard.writeText(roomRef.current.code);
         showToast(t('presence_invite_ok'));
@@ -6286,6 +6605,24 @@ function App() {
       showToast(t('presence_invite_need'));
       handleNav('rooms');
     }
+  };
+
+  const handlePresenceToggleFriend = (peer) => {
+    setSettings(s => ({ ...s, friends: window.AoiNight.toggleFriend(s.friends || [], peer) }));
+  };
+
+  window.__aoiAddCrate = (peer) => {
+    const tr = scPlayingTrackRef.current || tracksRef.current[trackIdxRef.current];
+    if (!tr) return;
+    setSettings(s => {
+      const item = {
+        id: tr.id, title: tr.title || '', artist: tr.artist || '',
+        coverUrl: tr.coverUrl || null, streamUrl: tr.streamUrl || null, hlsUrl: tr.hlsUrl || null,
+        path: tr.path || null, from: peer?.name || '',
+      };
+      const rest = (s.friendCrate || []).filter(x => String(x.id) !== String(item.id));
+      return { ...s, friendCrate: [item, ...rest].slice(0, 40) };
+    });
   };
 
   const handlePresenceBlock = (peer) => {
@@ -6528,20 +6865,20 @@ function App() {
     wait = Math.min(wait, 4);
     setTimeout(done, wait * 1000);
   }
-  function playDusty(item) {
-    if (!item) return;
-    setSettings(s => ({ ...s, dusty: (s.dusty || []).filter(x => String(x.id) !== String(item.id)) }));
-    if (item.path) {
-      const li = tracks.findIndex(x => x.path === item.path || String(x.id) === String(item.id));
-      if (li >= 0) { setScPlayingTrack(null); setTrackIdx(li); setIsPlaying(true); return; }
-    }
-    handleScTrackClick(item, scTracks.findIndex(x => String(x.id) === String(item.id)), false);
-  }
-
   function handleNext(src) {
     if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
     if (finishingBarRef.current) return;
     if (peekingRef.current) stopNeedle();
+    // E12 sleep by tracks
+    if ((settingsRef.current?.sleepTracksLeft || 0) > 0 && (src === 'ended' || src === 'aftertaste' || src === 'user')) {
+      const left = (settingsRef.current.sleepTracksLeft || 0) - 1;
+      setSettings(s => ({ ...s, sleepTracksLeft: Math.max(0, left) }));
+      if (left <= 0) {
+        setIsPlaying(false);
+        try { audioRef.current?.pause(); } catch {}
+        return;
+      }
+    }
     if (aftertasteRef.current) {
       if (src === 'ended') return;
       cancelAftertaste();
@@ -7082,7 +7419,16 @@ function App() {
   const handleScLogin = useCallback((auth) => {
     const startEl  = scAvatarRef.current;
     const targetEl = sidebarProfileRef.current;
-    setSettings(s => ({ ...s, soundcloudAuth: auth, sourceMode: 'sc' }));
+    setSettings(s => {
+      const accounts = Array.isArray(s.scAccounts) ? s.scAccounts.slice() : [];
+      const key = String(auth.userId || auth.username || '');
+      const filtered = accounts.filter(a => String(a.userId || a.username || '') !== key);
+      filtered.unshift({
+        token: auth.token, clientId: auth.clientId, username: auth.username,
+        userId: auth.userId, avatarUrl: auth.avatarUrl, permalink_url: auth.permalink_url,
+      });
+      return { ...s, soundcloudAuth: auth, sourceMode: 'sc', scAccounts: filtered.slice(0, 5) };
+    });
     if (startEl && targetEl && auth.avatarUrl) {
       const startRect  = startEl.getBoundingClientRect();
       const targetRect = targetEl.getBoundingClientRect();
@@ -7092,6 +7438,16 @@ function App() {
       setTimeout(() => { setAvatarFly(null); setAvatarFlyExiting(false); }, 560);
     }
   }, []);
+  const handleScAddAccount = useCallback(async () => {
+    try {
+      const creds = await window.electronAPI.scLogin();
+      if (creds && creds.token) handleScLogin(creds);
+    } catch {}
+  }, [handleScLogin]);
+  const handleScSwitchAccount = useCallback((acc) => {
+    if (!acc?.token) return;
+    handleScLogin(acc);
+  }, [handleScLogin]);
   const handleScLogout = useCallback(() => {
     scCacheRef.current = [];
     scCacheMapRef.current = new Map();
@@ -7181,9 +7537,10 @@ function App() {
     }, 2200);
   }
 
-  function startFadeIn(audio) {
+  function startFadeIn(audio, prevTrack, nextTrack) {
     cancelAnimationFrame(crossfadeRafRef.current);
-    const cf = settingsRef.current?.crossfade || 0;
+    const base = settingsRef.current?.crossfade || 0;
+    const cf = window.AoiNight?.crossfadeSeconds?.(base, prevTrack, nextTrack) ?? base;
     if (cf <= 0 || fadingRef.current) { audio.volume = volumeRef.current; return; }
     fadingRef.current = true;
     audio.volume = 0;
@@ -7379,10 +7736,18 @@ function App() {
     }, { once: true });
 
     if (isHls && typeof Hls !== 'undefined' && Hls.isSupported()) {
-      const hls = new Hls();
+      const q = settingsRef.current?.hlsQuality || 'auto';
+      const hls = new Hls({
+        startLevel: q === 'sq' ? 0 : -1,
+        capLevelToPlayerSize: q !== 'hq',
+      });
       hlsRef.current = hls;
       hls.loadSource(resolvedUrl);
       hls.attachMedia(audio);
+      const shellBuf = document.getElementById('app-shell');
+      audio.addEventListener('waiting', () => shellBuf?.classList.add('buffering'));
+      audio.addEventListener('playing', () => shellBuf?.classList.remove('buffering'));
+      audio.addEventListener('canplay', () => shellBuf?.classList.remove('buffering'));
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (gen !== scClickGenRef.current) return;
         if (shouldPlay) {
@@ -7511,13 +7876,13 @@ function App() {
   }, []);
 
   const handleLike = useCallback(async (track) => {
-    if (likingRef.current || !track?.id) return;
+    if (!track?.id) return;
     const auth = await ensureScUserId();
     if (!auth) return;
     const already = scTracksRef.current.some(t => String(t.id) === String(track.id));
     const tid = String(track.id);
     const uid = String(auth.userId);
-    likingRef.current = true;
+    // optimistic UI once; queue network quietly (L60)
     if (already) {
       setScTracks(prev => prev.filter(x => String(x.id) !== tid));
       scCacheRef.current = scCacheRef.current.filter(x => String(x.id) !== tid);
@@ -7528,37 +7893,52 @@ function App() {
       scCacheRef.current = [track, ...scCacheRef.current.filter(x => String(x.id) !== tid)];
       scCacheMapRef.current.set(track.id, track);
     }
-    const tryLike = async (url, method) => {
-      try {
-        return await window.electronAPI.scFetch(url, auth.token, auth.clientId, method);
-      } catch (e) {
-        return { error: String(e) };
-      }
-    };
-    try {
-      const res = await tryLike(
-        `https://api-v2.soundcloud.com/users/${uid}/track_likes/${tid}`,
-        already ? 'DELETE' : 'PUT'
-      );
-      if (scFailed(res)) {
-        if (already) {
-          setScTracks(prev => [track, ...prev.filter(x => String(x.id) !== tid)]);
-          scCacheRef.current = [track, ...scCacheRef.current.filter(x => String(x.id) !== tid)];
-          scCacheMapRef.current.set(track.id, track);
-          showToast(t('unlike_err'));
+    const snap = { already, tid, track };
+    window.AoiNight?.enqueueLikeJob?.({
+      run: async () => {
+        try {
+          const res = await window.electronAPI.scFetch(
+            `https://api-v2.soundcloud.com/users/${uid}/track_likes/${tid}`,
+            auth.token, auth.clientId, snap.already ? 'DELETE' : 'PUT'
+          );
+          return !scFailed(res);
+        } catch { return false; }
+      },
+      done: (ok) => {
+        if (!ok) {
+          // rollback
+          if (snap.already) {
+            setScTracks(prev => [snap.track, ...prev.filter(x => String(x.id) !== snap.tid)]);
+            scCacheRef.current = [snap.track, ...scCacheRef.current.filter(x => String(x.id) !== snap.tid)];
+            scCacheMapRef.current.set(snap.track.id, snap.track);
+          } else {
+            setScTracks(prev => prev.filter(x => String(x.id) !== snap.tid));
+            scCacheRef.current = scCacheRef.current.filter(x => String(x.id) !== snap.tid);
+            scCacheMapRef.current.delete(snap.track.id);
+            scCacheMapRef.current.delete(snap.tid);
+          }
         } else {
-          setScTracks(prev => prev.filter(x => String(x.id) !== tid));
-          scCacheRef.current = scCacheRef.current.filter(x => String(x.id) !== tid);
-          scCacheMapRef.current.delete(track.id);
-          scCacheMapRef.current.delete(tid);
-          showToast(t('like_err'));
+          window.electronAPI.scSaveLikesCache(scCacheRef.current);
         }
-        return;
-      }
-      window.electronAPI.scSaveLikesCache(scCacheRef.current);
-    } finally {
-      likingRef.current = false;
-    }
+        const title = ok
+          ? (snap.already ? t('notif_unlike_ok') : t('notif_like_ok'))
+          : (snap.already ? t('notif_unlike_fail') : t('notif_like_fail'));
+        setSettings(s => {
+          const notifications = Array.isArray(s.notifications) ? s.notifications.slice() : [];
+          const n = {
+            id: 'like:' + snap.tid + ':' + Date.now(),
+            type: 'like',
+            title,
+            body: snap.track.title || '',
+            at: Date.now(),
+            read: false,
+            meta: {},
+          };
+          window.AoiNight?.onNotificationEvent?.(s);
+          return { ...s, notifications: [n, ...notifications].slice(0, 40) };
+        });
+      },
+    });
   }, [ensureScUserId, t]);
 
   const handleFollow = useCallback(async (userId, currentlyFollowing) => {
@@ -8025,25 +8405,6 @@ function App() {
               </div>
             ) : (
               <>
-                {(settings.dusty || []).length > 0 && (
-                  <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:16, overflowX:'auto', minHeight:40}}>
-                    <div style={{fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', flexShrink:0}}>{t('dusty_shelf')}</div>
-                    {(settings.dusty || []).map(item => (
-                      <div key={item.id} onClick={() => playDusty(item)} title={(item.title || '') + (item.artist ? ' · ' + item.artist : '')}
-                        style={{
-                          width:36, height:36, borderRadius:8, overflow:'hidden', cursor:'pointer', flexShrink:0,
-                          background:'#111116', opacity:0.78, position:'relative',
-                          boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.06)',
-                        }}>
-                        {item.coverUrl
-                          ? <img src={item.coverUrl} alt="" style={{width:'100%', height:'100%', objectFit:'cover', filter:'saturate(0.4) sepia(0.25)'}}/>
-                          : <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                              <img src="./assets/note.png" style={{width:12, height:12, filter:'brightness(0) invert(1)', opacity:0.2}}/>
-                            </div>}
-                      </div>
-                    ))}
-                  </div>
-                )}
                 {sourceMode === 'sc' && activeList.length === 0 ? (
               <div style={{
                 display:'flex', alignItems:'center', justifyContent:'center',
@@ -8429,12 +8790,15 @@ function App() {
           </div>
         )}
 
-        <SettingsView settings={settings} onSettings={setSettings} visible={view==='settings'} onScanTracks={handleScanTracks} onClearFolder={handleClearFolder} onClearCoversCache={handleClearCoversCache} onClearLikesCache={handleClearLikesCache} appAccent={appAccent} onOpenMini={goMini}/>
+        <SettingsView settings={settings} onSettings={setSettings} visible={view==='settings'} onScanTracks={handleScanTracks} onClearFolder={handleClearFolder} onClearCoversCache={handleClearCoversCache} onClearLikesCache={handleClearLikesCache} appAccent={appAccent} onOpenMini={goMini} appVersion={appVersion}/>
         <SoundCloudView
           visible={view==='soundcloud'}
           scAuth={settings.soundcloudAuth||null}
           onLogin={handleScLogin}
           onLogout={handleScLogout}
+          scAccounts={settings.scAccounts || []}
+          onAddAccount={handleScAddAccount}
+          onSwitchAccount={handleScSwitchAccount}
           avatarRef={scAvatarRef}
           presenceConnected={presenceConnected && settings.presenceEnabled !== false}
           presenceCount={(presencePeers || []).filter(p => !isPresenceBlocked(p, settings.blockedPresence || [])).length}
@@ -8551,6 +8915,16 @@ function App() {
           peers={presencePeers}
           selfToken={presenceTokenRef.current}
           blocked={settings.blockedPresence || []}
+          friends={settings.friends || []}
+          friendCrate={settings.friendCrate || []}
+          onPlayCrate={(item) => {
+            if (!item) return;
+            if (item.path) {
+              const li = tracks.findIndex(x => x.path === item.path || String(x.id) === String(item.id));
+              if (li >= 0) { setScPlayingTrack(null); setTrackIdx(li); setIsPlaying(true); return; }
+            }
+            handleScTrackClick(item, scTracks.findIndex(x => String(x.id) === String(item.id)), false);
+          }}
           presenceEnabled={settings.presenceEnabled !== false}
           onToggleVisible={v => setSettings(s => ({ ...s, presenceEnabled: !!v }))}
           onUserMenu={(peer, x, y) => setPresenceUserMenu({ peer, x, y })}
@@ -8571,6 +8945,8 @@ function App() {
             onOpenProfile={handlePresenceOpenProfile}
             onInvite={handlePresenceInvite}
             onBlock={handlePresenceBlock}
+            onToggleFriend={handlePresenceToggleFriend}
+            isFriend={window.AoiNight?.isFriend?.(settings.friends || [], presenceUserMenu.peer)}
           />
         )}
 
