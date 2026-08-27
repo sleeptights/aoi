@@ -3949,21 +3949,6 @@ function SoundCloudView({
     </div>
   );
 }
-        <button onClick={handleLogin} disabled={loading} style={{
-          background: loading ? 'rgba(255,85,0,0.06)' : 'rgba(255,85,0,0.1)',
-          border:'none', borderRadius:10, padding:'9px 24px',
-          fontSize:13, fontWeight:500,
-          color: loading ? 'rgba(255,130,60,0.4)' : 'rgba(255,130,60,0.85)',
-          cursor: loading ? 'default' : 'pointer', fontFamily:'inherit',
-          transition:'background 0.15s, color 0.15s',
-        }}
-          onMouseEnter={e=>{ if(!loading){ e.currentTarget.style.background='rgba(255,85,0,0.17)'; }}}
-          onMouseLeave={e=>{ e.currentTarget.style.background=loading?'rgba(255,85,0,0.06)':'rgba(255,85,0,0.1)'; }}
-        >{loading ? t('opening_browser') : t('login_browser')}</button>
-      </div>
-    </div>
-  );
-}
 
 /* ── SearchTrackRow ──────────────────────────────────────────────────────── */
 function SearchTrackRow({ track, isLiked, onLike, onClick, onCoverClick, isLoading, isError, hideDividers, onContextMenu }) {
