@@ -828,6 +828,7 @@ const STRINGS = {
     backup_settings:'бэкап настроек', backup_ok:'бэкап сохранён', backup_err:'не удалось сохранить бэкап',
     friends_section:'друзья', online_section:'онлайн', add_friend:'в друзья', remove_friend:'из друзей',
     crate_title:'общий ящик', crate_add:'в ящик', crate_empty:'ящик пуст',
+    crate_remove:'убрать', crate_clear:'очистить',
     accounts_title:'аккаунты SoundCloud', accounts_add:'добавить аккаунт', accounts_switch:'переключить',
     accounts_active:'активный', sleep_tracks:'сон по трекам', sleep_tracks_sub:'сколько треков до паузы (0 = выкл)',
     deep_work:'глубокая работа', deep_work_sub:'заглушить presence на часы',
@@ -1003,6 +1004,7 @@ const STRINGS = {
     backup_settings:'backup settings', backup_ok:'backup saved', backup_err:'backup failed',
     friends_section:'friends', online_section:'online', add_friend:'add friend', remove_friend:'remove friend',
     crate_title:'shared crate', crate_add:'to crate', crate_empty:'crate is empty',
+    crate_remove:'remove', crate_clear:'clear',
     accounts_title:'SoundCloud accounts', accounts_add:'add account', accounts_switch:'switch',
     accounts_active:'active', sleep_tracks:'sleep by tracks', sleep_tracks_sub:'tracks until pause (0 = off)',
     deep_work:'deep work', deep_work_sub:'mute presence for hours',
@@ -1820,75 +1822,99 @@ function AmbientGlow({ accent, visible, isPlaying }) {
   );
 }
 
-/* ── CircularVisualizer — симулированные кольца (без Web Audio / CORS) ───── */
-function CircularVisualizer({ isPlaying, accentRGB }) {
-  const canvasRef = useRef(null);
-  const rafRef = useRef(null);
-  const wrapRef = useRef(null);
+/* ── InkWashBloom — A07: пятно за обложкой, пульс как динамик (bass analyser) ─ */
+function InkWashBloom({ isPlaying, accent, audioRef, eqAnalyserRef }) {
+  const layerRef = useRef(null);
   const playingRef = useRef(isPlaying);
   playingRef.current = isPlaying;
+  const smoothRef = useRef(0);
+  const kickRef = useRef(0);
+  const avgRef = useRef(0.12);
+  const freqBufRef = useRef(null);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const wrap = wrapRef.current;
-    if (!canvas || !wrap) return;
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const resize = () => {
-      const s = wrap.clientWidth || 320;
-      canvas.width = s * dpr;
-      canvas.height = s * dpr;
-      canvas.style.width = s + 'px';
-      canvas.style.height = s + 'px';
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(wrap);
-    const bars = 56;
-    const phases = Array.from({ length: bars }, () => Math.random() * Math.PI * 2);
-    const speeds = Array.from({ length: bars }, () => 1.2 + Math.random() * 2.4);
-    const draw = (t) => {
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0, 0, W, H);
-      if (!playingRef.current) {
-        rafRef.current = requestAnimationFrame(draw);
-        return;
+    const layer = layerRef.current;
+    if (!layer) return;
+    let raf = 0;
+    layer.style.opacity = '0';
+    const tick = (t) => {
+      const playing = playingRef.current;
+      let raw = 0;
+      if (playing) {
+        try {
+          const el = audioRef?.current;
+          const key = el && el._aoiEqKey;
+          const an = key && eqAnalyserRef?.current?.[key];
+          if (an) {
+            const n = an.frequencyBinCount;
+            if (!freqBufRef.current || freqBufRef.current.length !== n) {
+              freqBufRef.current = new Uint8Array(n);
+            }
+            const data = freqBufRef.current;
+            an.getByteFrequencyData(data);
+            let sum = 0, wsum = 0;
+            const lim = Math.max(4, Math.floor(n * 0.12));
+            for (let i = 0; i < lim; i++) {
+              const w = 1 + (lim - i) * 0.18;
+              sum += data[i] * w;
+              wsum += w;
+            }
+            raw = sum / (wsum * 255);
+            let mid = 0;
+            const mid1 = Math.min(n, lim + 8);
+            for (let i = lim; i < mid1; i++) mid += data[i];
+            mid = mid / (Math.max(1, mid1 - lim) * 255);
+            raw = Math.min(1, raw * 0.82 + mid * 0.18);
+          } else {
+            const sec = t * 0.001;
+            raw = 0.2 + 0.16 * (0.5 + 0.5 * Math.sin(sec * 4.1))
+              + 0.1 * (0.5 + 0.5 * Math.sin(sec * 2.05 + 1.2));
+          }
+        } catch { raw = 0; }
       }
-      const cx = W / 2, cy = H / 2;
-      const radius = W * 0.475;
-      const sec = t * 0.001;
-      for (let i = 0; i < bars; i++) {
-        const wave = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(sec * speeds[i] + phases[i]));
-        const val = wave * (0.55 + 0.45 * Math.sin(sec * 1.7 + i * 0.22));
-        const angle = (i / bars) * Math.PI * 2 - Math.PI / 2 + sec * 0.15;
-        const len = (4 + val * 22) * dpr;
-        const x1 = cx + Math.cos(angle) * radius;
-        const y1 = cy + Math.sin(angle) * radius;
-        const x2 = cx + Math.cos(angle) * (radius + len);
-        const y2 = cy + Math.sin(angle) * (radius + len);
-        ctx.strokeStyle = `rgba(${accentRGB},${0.22 + val * 0.55})`;
-        ctx.lineWidth = 2 * dpr;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
+      avgRef.current = avgRef.current * 0.96 + raw * 0.04;
+      if (raw > avgRef.current * 1.32 && raw > 0.16) {
+        kickRef.current = Math.min(1, kickRef.current + (raw - avgRef.current) * 2.6);
       }
-      rafRef.current = requestAnimationFrame(draw);
+      kickRef.current *= 0.84;
+      const target = playing ? Math.min(1, raw * 0.7 + kickRef.current * 0.58) : 0;
+      const e = (smoothRef.current = smoothRef.current * 0.7 + target * 0.3);
+      /* cone: сильнее по вертикали — как мембрана динамика */
+      const pump = 0.88 + e * 0.48;
+      const sx = pump * (0.96 + e * 0.1);
+      const sy = pump * (0.94 + e * 0.28);
+      const op = playing ? (0.22 + e * 0.48) : 0;
+      const wx = Math.sin(t * 0.00105) * (3 + e * 9);
+      const wy = Math.cos(t * 0.00088) * (2.5 + e * 7);
+      layer.style.opacity = String(op);
+      layer.style.transform = `translate(${wx}%, ${wy}%) scale(${sx}, ${sy})`;
+      raf = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(draw);
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      ro.disconnect();
-    };
-  }, [accentRGB]);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [audioRef, eqAnalyserRef]);
+  const { r, g, b } = accent;
   return (
-    <div ref={wrapRef} style={{
-      position:'absolute', inset:'-10%', zIndex:0, pointerEvents:'none',
-      opacity: isPlaying ? 0.62 : 0,
-      transition:'opacity 0.45s ease',
+    <div style={{
+      position:'absolute', inset:'-44%', zIndex:0, pointerEvents:'none',
+      display:'flex', alignItems:'center', justifyContent:'center',
     }}>
-      <canvas ref={canvasRef} style={{ display:'block', width:'100%', height:'100%' }}/>
+      <div ref={layerRef} style={{
+        position:'relative', width:'100%', height:'100%',
+        willChange:'transform, opacity',
+      }}>
+        <div style={{
+          position:'absolute', inset:'10%', borderRadius:'50%',
+          background:`radial-gradient(ellipse at 42% 44%, rgba(${r},${g},${b},0.58) 0%, rgba(${r},${g},${b},0.24) 36%, rgba(${r},${g},${b},0.07) 58%, transparent 76%)`,
+          filter:'blur(52px)',
+          transition:'background 0.65s ease',
+        }}/>
+        <div style={{
+          position:'absolute', inset:'2% 10% 14% 6%', borderRadius:'50%',
+          background:`radial-gradient(ellipse at 62% 58%, rgba(${r},${g},${b},0.32) 0%, rgba(${r},${g},${b},0.1) 42%, transparent 72%)`,
+          filter:'blur(64px)',
+          transition:'background 0.65s ease',
+        }}/>
+      </div>
     </div>
   );
 }
@@ -2938,7 +2964,7 @@ function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onT
   );
 }
 
-function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, friendCrate, onPlayCrate }) {
+function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, friendCrate, onPlayCrate, onRemoveCrate, onClearCrate }) {
   const t = useLang();
   useEffect(() => {
     if (!open) return;
@@ -2968,8 +2994,8 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
               <div style={{ fontSize:16, fontWeight:600, letterSpacing:'-0.02em', color:'rgba(255,255,255,0.9)' }}>{t('presence_list_title')}</div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,0.32)', marginTop:4 }}>{t('presence_list_sub')}</div>
             </div>
-            <div onClick={onClose} style={{
-              width:28, height:28, borderRadius:8, cursor:'pointer',
+            <div onClick={onClose} title={t('close') || '×'} style={{
+              width:28, height:28, borderRadius:8, cursor:'pointer', flexShrink:0,
               display:'flex', alignItems:'center', justifyContent:'center',
               color:'rgba(255,255,255,0.35)', fontSize:18, lineHeight:1,
             }}>×</div>
@@ -2978,7 +3004,16 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
         <div className="scroll-thin" style={{ flex:1, overflowY:'auto', padding:'10px 12px 16px' }}>
           {(friendCrate || []).length > 0 && (
             <div style={{ marginBottom:14 }}>
-              <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>{t('crate_title')}</div>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, margin:'4px 8px 8px' }}>
+                <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)' }}>{t('crate_title')}</div>
+                <div onClick={(e) => { e.stopPropagation(); onClearCrate?.(); }}
+                  title={t('crate_clear')}
+                  style={{ fontSize:10, letterSpacing:'0.04em', color:'rgba(255,255,255,0.28)', cursor:'pointer', padding:'2px 4px', userSelect:'none' }}
+                  onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.55)'}
+                  onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.28)'}>
+                  {t('crate_clear')}
+                </div>
+              </div>
               {(friendCrate || []).slice(0, 12).map((item, i) => (
                 <div key={(item.id || i) + '-crate'} onClick={() => onPlayCrate?.(item)}
                   style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, marginBottom:3, cursor:'pointer' }}
@@ -2988,6 +3023,18 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
                     <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.85)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.title || 'track'}</div>
                     <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:2 }}>{item.artist || ''}</div>
                   </div>
+                  <div
+                    role="button"
+                    title={t('crate_remove')}
+                    onClick={(e) => { e.stopPropagation(); onRemoveCrate?.(item); }}
+                    style={{
+                      width:24, height:24, borderRadius:7, flexShrink:0, cursor:'pointer',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      color:'rgba(255,255,255,0.28)', fontSize:16, lineHeight:1,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color='rgba(255,255,255,0.7)'; e.currentTarget.style.background='rgba(255,255,255,0.06)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.28)'; e.currentTarget.style.background='transparent'; }}
+                  >×</div>
                 </div>
               ))}
             </div>
@@ -5310,6 +5357,7 @@ function App() {
   const trackIdxRef       = useRef(0);
   const eqCtxRef          = useRef(null);
   const eqFiltersRef      = useRef({ a: [], b: [] });
+  const eqAnalyserRef     = useRef({ a: null, b: null });
   const eqGainsRef        = useRef(EQ_ZERO);
   const eqAttachedRef     = useRef(false);
   const playSrcCacheRef   = useRef({});
@@ -6722,8 +6770,13 @@ function App() {
         node = f;
         return f;
       });
-      node.connect(ctx.destination);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.78;
+      node.connect(analyser);
+      analyser.connect(ctx.destination);
       eqFiltersRef.current[key] = filters;
+      eqAnalyserRef.current[key] = analyser;
       el._aoiEqKey = key;
     } catch {}
   }
@@ -8652,9 +8705,11 @@ function App() {
               }}>
                 {/* ambient glow blob — uses app accent (cover-derived or preset) */}
                 <AmbientGlow accent={appAccent} isPlaying={isPlaying} visible={!((hero && !heroExiting) || reverseHero)}/>
-                <CircularVisualizer
+                <InkWashBloom
                   isPlaying={isPlaying}
-                  accentRGB={`${appAccent.r},${appAccent.g},${appAccent.b}`}
+                  accent={appAccent}
+                  audioRef={audioRef}
+                  eqAnalyserRef={eqAnalyserRef}
                 />
                 <div id="player-album-art" ref={playerArtRef}
                   style={{opacity: ((hero && !heroExiting) || reverseHero) ? 0 : 1, position:'relative', zIndex:1, overflow:'visible'}}>
@@ -8925,6 +8980,14 @@ function App() {
             }
             handleScTrackClick(item, scTracks.findIndex(x => String(x.id) === String(item.id)), false);
           }}
+          onRemoveCrate={(item) => {
+            if (!item) return;
+            setSettings(s => ({
+              ...s,
+              friendCrate: (s.friendCrate || []).filter(x => String(x.id) !== String(item.id)),
+            }));
+          }}
+          onClearCrate={() => setSettings(s => ({ ...s, friendCrate: [] }))}
           presenceEnabled={settings.presenceEnabled !== false}
           onToggleVisible={v => setSettings(s => ({ ...s, presenceEnabled: !!v }))}
           onUserMenu={(peer, x, y) => setPresenceUserMenu({ peer, x, y })}
