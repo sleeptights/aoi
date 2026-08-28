@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "aoi",
-  "version": "1.1.2-a",
+  "version": "1.2.2-j",
   "identifier": "aoi.player",
   "build": {
     "frontendDist": "../ui",

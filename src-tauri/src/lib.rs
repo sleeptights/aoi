@@ -48,6 +48,7 @@ pub fn run() {
             settings::restore_settings_backup,
             settings::set_login_item,
             music::select_music_folder,
+            music::select_player_bg_image,
             music::scan_music_folder,
             music::get_cover_art,
             soundcloud::sc_login,

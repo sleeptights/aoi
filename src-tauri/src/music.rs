@@ -3,6 +3,8 @@ use lofty::file::{AudioFile, TaggedFileExt};
 use lofty::probe::Probe;
 use lofty::tag::Accessor;
 use serde::Serialize;
+use crate::settings;
+use std::fs;
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 use tauri_plugin_dialog::DialogExt;
@@ -179,4 +181,46 @@ pub async fn get_cover_art(file_path: String) -> Result<Option<String>, String> 
         .unwrap_or("image/jpeg");
     let b64 = STANDARD.encode(picture.data());
     Ok(Some(format!("data:{mime};base64,{b64}")))
+}
+
+const IMAGE_EXTS: &[&str] = &[".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"];
+
+fn is_image(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|e| IMAGE_EXTS.contains(&format!(".{}", e.to_lowercase()).as_str()))
+        .unwrap_or(false)
+}
+
+#[tauri::command]
+pub async fn select_player_bg_image(app: AppHandle) -> Result<Option<String>, String> {
+    let picked = app
+        .dialog()
+        .file()
+        .set_title("Выбрать фон плеера")
+        .add_filter("Изображения", &["png", "jpg", "jpeg", "webp", "gif", "bmp"])
+        .blocking_pick_file();
+    let Some(file) = picked else {
+        return Ok(None);
+    };
+    let src = file.into_path().map_err(|e| e.to_string())?;
+    if !src.is_file() || !is_image(&src) {
+        return Err("not an image".into());
+    }
+    let ext = src
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("jpg")
+        .to_lowercase();
+    let dest_dir = settings::app_data_dir(&app).join("player_bg");
+    fs::create_dir_all(&dest_dir).map_err(|e| e.to_string())?;
+    for old in ["bg.jpg", "bg.jpeg", "bg.png", "bg.webp", "bg.gif", "bg.bmp"] {
+        let p = dest_dir.join(old);
+        if p.exists() {
+            let _ = fs::remove_file(p);
+        }
+    }
+    let dest = dest_dir.join(format!("bg.{ext}"));
+    fs::copy(&src, &dest).map_err(|e| e.to_string())?;
+    Ok(Some(dest.to_string_lossy().into_owned()))
 }

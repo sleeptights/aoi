@@ -21,7 +21,8 @@ fn allowed_download_host(host: &str) -> bool {
 
 fn parse_semver(v: &str) -> Option<(u64, u64, u64)> {
     let clean = v.trim().trim_start_matches('v');
-    let mut parts = clean.split('.');
+    let base = clean.split(|c| c == '-' || c == '+').next().unwrap_or(clean);
+    let mut parts = base.split('.');
     let major = parts.next()?.parse().ok()?;
     let minor = parts.next()?.parse().ok()?;
     let patch = parts.next()?.parse().ok()?;

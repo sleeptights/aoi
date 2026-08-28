@@ -38,6 +38,7 @@
     quit: function () { return invoke('win_quit'); },
     batteryPct: function () { return invoke('battery_pct'); },
     selectMusicFolder: function () { return invoke('select_music_folder'); },
+    selectPlayerBgImage: function () { return invoke('select_player_bg_image'); },
     fileSrc: function (path) { return toAssetUrl(path); },
     scanMusicFolder: function (folder, minDuration) {
       return invoke('scan_music_folder', { folderPath: folder, minDuration: minDuration });

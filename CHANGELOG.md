@@ -2,11 +2,11 @@
 
 <br/>
 
-# aoi 1.1.2a
+# aoi 1.2.0
 
 <br/>
 
-*cover glow, not a blob.*
+*rooms, proxy, themes — your layout.*
 
 <br/>
 
@@ -16,19 +16,39 @@
 
 <br/>
 
-tightened the cover halo. bass still pumps it — quietly.
+big customization drop: dock the nav anywhere, resize the queue, hide what you listen to, SC playlists + moods, shared crate sync, faster invites, built-in proxy.
 
 <br/>
 
 ## changelog
 
-- **cover glow pulse** — removed the huge ink blot; AmbientGlow stays a small halo behind the art and breathes with bass
+- **faster invites** — presence beat every ~1s (was ~30s path on old builds)
+- **shared crate sync** — friend crates push to worker and show in online panel
+- **aoi proxy** — optional SoundCloud proxy through worker (no VPN toggle in settings)
+- **hide listening** — privacy flag in online list
+- **nav dock** — sidebar left / right / top / bottom
+- **queue panel** — resizable width, pin in settings
+- **player bg** — custom background on player tab only
+- **ui toggles** — show/hide nav items, glow, progress, volume, EQ, shuffle, repeat
+- **playlists** — local + SoundCloud search + mood discover
+- **themes** — export/import AOI1- code (foundation for full custom themes)
 
 <details>
-<summary>1.1.2</summary>
+<summary>1.2.0b</summary>
 
-- crate remove / clear
-- ink wash bloom (superseded by 1.1.2a)
+- fix `openPlaylistId` crash on playlists tab
+- fix guest toast when playing from playlist (shadowed `t`)
+- settings copy: capitalized labels, clearer subtitles
+- playlists: separate discover results, SC login hint
+- deep work auto-resume, proxy cache clear on toggle
+- duplicate playlist toast, theme export feedback
+
+</details>
+
+<details>
+<summary>1.2.0</summary>
+
+- cover glow pulse — small halo, not ink blot
 
 </details>
 

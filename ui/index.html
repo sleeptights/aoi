@@ -18,6 +18,7 @@
 <script src="./tauri-api.js"></script>
 <script src="./rooms-client.js"></script>
 <script src="./aoi-night.js"></script>
+<script src="./aoi-custom.js"></script>
 <script src="./vendor/react.production.min.js"></script>
 <script src="./vendor/react-dom.production.min.js"></script>
 <script src="./vendor/babel.min.js"></script>
@@ -71,6 +72,16 @@ window.addEventListener('keydown', function (e) {
     background:
       radial-gradient(ellipse 115% 80% at 50% -8%, rgba(var(--accent-rgb), 0.07) 0%, transparent 52%),
       radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.5) 100%);
+  }
+  #app-shell.nav-dock-top #titlebar {
+    display: none !important;
+  }
+  #app-shell:not(.nav-dock-top) #titlebar {
+    animation: titlebarSlideUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes titlebarSlideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
   }
   #titlebar {
     flex-shrink:0; height:var(--titlebar-h);
@@ -170,10 +181,11 @@ window.addEventListener('keydown', function (e) {
     100% { transform:translateX(100%); }
   }
   @keyframes trackMetaIn {
-    from { opacity:0; transform:translateY(3px); }
-    to   { opacity:1; transform:translateY(0); }
+    from { opacity:0; transform:translateY(5px); filter:blur(5px); }
+    65% { filter:blur(1.5px); }
+    to   { opacity:1; transform:translateY(0); filter:blur(0); }
   }
-  .track-meta-in { animation:trackMetaIn 0.14s ease both; }
+  .track-meta-in { animation:trackMetaIn 0.48s ease both; }
   .home-card { transform:scale(1); transition:transform 0.28s ease; }
   .home-card:hover { transform:scale(1.015); }
   .home-card-overlay { opacity:0; transition:opacity 0.2s ease; }
@@ -220,8 +232,36 @@ window.addEventListener('keydown', function (e) {
   /* aoi-night-css */
   :root { --black-lift: 0; }
   #app-shell { filter: brightness(calc(1 + var(--black-lift) * 0.35)); }
-  #app-shell.chrome-quiet #titlebar,
-  #app-shell.chrome-quiet .sidebar-chrome { opacity:0; pointer-events:none; transition:opacity 0.55s ease; }
+  #app-shell.chrome-quiet .nav-sidebar {
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(-6px);
+    transition:opacity 0.45s ease, transform 0.45s ease;
+  }
+  #app-shell.player-window-bg #titlebar {
+    background:transparent !important;
+    border-bottom-color:transparent;
+  }
+  #app-shell.player-window-bg::after { opacity:0.35; }
+  .nav-dock-bar {
+    flex-shrink:0;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    position:relative;
+    overflow:hidden;
+  }
+  #nav-dock-progress {
+    position:absolute; bottom:0; left:0; height:2px;
+    background:linear-gradient(90deg, rgba(var(--accent-rgb),0.45), rgb(var(--accent-rgb)));
+    opacity:0.38;
+    transition:background 0.6s ease, opacity 0.45s ease;
+    pointer-events:none;
+    z-index:3;
+    width:0;
+  }
+  #app-shell.is-playing #nav-dock-progress { opacity:1; }
+  #app-shell.nav-dock-top .scroll-home::-webkit-scrollbar-track { margin-top:54px; }
+  .top-nav-bar { transition:opacity 0.32s ease, transform 0.32s ease; }
+  .nav-sidebar { transition:opacity 0.32s ease, transform 0.32s ease; }
   #app-shell.lib-desat .home-grid, #app-shell.lib-desat .track-list-wrap { filter:grayscale(1) saturate(0); transition:filter 0.7s ease; }
   #app-shell.has-played .home-grid, #app-shell.has-played .track-list-wrap { filter:none; }
   #app-shell.buffering { box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb),0.35), inset 0 0 40px rgba(var(--accent-rgb),0.08); }
@@ -233,6 +273,92 @@ window.addEventListener('keydown', function (e) {
   }
   @keyframes aoiRain { to { background-position: 0 180px; } }
   @keyframes aoiBreathe { 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.018);} }
+  /* ── aoi motion pack (minimal, non-overlapping) ── */
+  @keyframes vinylRim {
+    0%,100% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 0 0 rgba(var(--accent-rgb),0); }
+    50% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.11), 0 0 0 1px rgba(var(--accent-rgb),0.14), 0 0 22px rgba(var(--accent-rgb),0.07); }
+  }
+  @keyframes irisOpen {
+    from { clip-path: circle(0% at 50% 50%); }
+    to { clip-path: circle(72% at 50% 50%); }
+  }
+  @keyframes viewFogIn {
+    0% { opacity: 0; }
+    35% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes cornerLeakPulse {
+    0%,100% { opacity: 0.28; }
+    50% { opacity: 0.52; }
+  }
+  @keyframes likeRipple {
+    from { transform: scale(0.55); opacity: 0.65; }
+    to { transform: scale(2.4); opacity: 0; }
+  }
+  @keyframes seekBlink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.38; }
+  }
+  @keyframes logoBreathe {
+    0%,100% { opacity: 0.72; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.045); }
+  }
+  @keyframes shadowTypeDrift {
+    0%,100% { transform: translate(-50%, -48%); }
+    50% { transform: translate(-50%, -52%); }
+  }
+  .album-art-frame.is-playing { animation: vinylRim 3.4s ease-in-out infinite; }
+  .album-art-frame.iris-in { animation: irisOpen 0.62s cubic-bezier(0.22,1,0.36,1) forwards; }
+  .cover-progress-ring { opacity: 0.55; transition: opacity 0.4s ease; }
+  .aoi-cover-shadow-type {
+    position: absolute; left: 50%; top: 42%; z-index: 0; pointer-events: none;
+    max-width: 92%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-size: clamp(48px, 9vw, 96px); font-weight: 700; letter-spacing: -0.04em;
+    color: rgba(255,255,255,0.028); text-transform: uppercase;
+    animation: shadowTypeDrift 9s ease-in-out infinite;
+  }
+  .aoi-corner-leak {
+    position: absolute; top: -8%; right: -6%; width: 42%; height: 38%;
+    pointer-events: none; z-index: 0; border-radius: 50%;
+    background: radial-gradient(ellipse at 70% 30%, rgba(var(--accent-rgb),0.14) 0%, transparent 68%);
+    animation: cornerLeakPulse 5.5s ease-in-out infinite;
+  }
+  .aoi-view-fog {
+    position: fixed; inset: 0; z-index: 8000; pointer-events: none;
+    background: radial-gradient(ellipse 80% 65% at 50% 45%, rgba(7,7,10,0.42) 0%, transparent 72%);
+    opacity: 0;
+  }
+  .aoi-view-fog.active { animation: viewFogIn 0.52s ease-out forwards; }
+  .track-title-letterpress { text-shadow: 0 1px 0 rgba(255,255,255,0.05), 0 -1px 0 rgba(0,0,0,0.32); }
+  .like-ripple {
+    position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px;
+    border-radius: 50%; border: 1px solid rgba(var(--accent-rgb),0.55);
+    animation: likeRipple 0.52s ease-out forwards; pointer-events: none;
+  }
+  .progress-thumb.is-seeking { animation: seekBlink 0.85s step-end infinite; }
+  .aoi-toast { position: relative; overflow: hidden; }
+  .aoi-toast::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .aoi-focus-hand:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.32), 0 0 0 3px rgba(7,7,10,0.95);
+  }
+  .aoi-logo-breathe { animation: logoBreathe 4.2s ease-in-out infinite; transform-origin: center; }
+  #app-shell.chrome-quiet .top-nav-bar,
+  #app-shell.chrome-quiet .nav-dock-bar {
+    opacity: 0; pointer-events: none; transform: translateY(-6px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  #app-shell.player-view.player-paused::after { opacity: 0.62; transition: opacity 0.8s ease; }
+  #app-shell.player-view.is-playing::after { opacity: 0.38; transition: opacity 0.8s ease; }
+  html.aoi-cinema .album-art-frame.is-playing,
+  html.aoi-cinema .album-art-frame.iris-in,
+  html.aoi-cinema .aoi-corner-leak,
+  html.aoi-cinema .aoi-cover-shadow-type,
+  html.aoi-cinema .aoi-logo-breathe,
+  html.aoi-cinema .aoi-view-fog.active { animation: none !important; }
   .aoi-breathe { animation: aoiBreathe 1.6s ease-in-out infinite; transform-origin:center; }
   .aoi-dual-tone { position:relative; overflow:hidden; }
   .aoi-dual-tone::after {
@@ -387,7 +513,7 @@ window.addEventListener('keydown', function (e) {
 </div>
 <script type="text/babel">
 if (window.appInfo?.name) document.title = window.appInfo.name;
-const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
+const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, useContext } = React;
 const { motion, AnimatePresence, LayoutGroup } = Motion;
 
 /* ── accent presets ──────────────────────────────────────────────────────── */
@@ -427,11 +553,11 @@ function resumeEqCtx(ref) {
 }
 
 /* ── aoi mark (SVG — micro grid at ≤22px, full bars when large) ──────────── */
-function AoiMark({ size = 14, radius, style }) {
+function AoiMark({ size = 14, radius, style, className }) {
   const r = radius ?? Math.max(3, Math.round(size * 0.22));
   const micro = size <= 22;
   return (
-    <svg className="aoi-mark" width={size} height={size}
+    <svg className={'aoi-mark' + (className ? ' ' + className : '')} width={size} height={size}
       viewBox={micro ? '0 0 14 14' : '0 0 256 256'} fill="none"
       shapeRendering="geometricPrecision"
       style={{ display:'block', flexShrink:0, borderRadius:r, overflow:'hidden', ...style }} aria-hidden="true">
@@ -633,6 +759,37 @@ function mapScTrack(t, noTitle) {
   };
 }
 
+async function fetchScPlaylistTracks(pl, auth, noTitle) {
+  if (!pl?.id || !auth?.token || !window.electronAPI?.scFetch) return [];
+  const id = pl.id;
+  const base = `https://api-v2.soundcloud.com/playlists/${id}`;
+  let rawTracks = [];
+
+  const main = await window.electronAPI.scFetch(base, auth.token, auth.clientId);
+  if (!scFailed(main) && main.data) {
+    const embedded = main.data.tracks;
+    if (Array.isArray(embedded) && embedded.length) rawTracks = embedded.filter(Boolean);
+  }
+
+  if (!rawTracks.length) {
+    let url = `${base}/tracks?limit=50&linked_partitioning=1`;
+    let pages = 0;
+    while (url && pages < 8) {
+      pages++;
+      const res = await window.electronAPI.scFetch(url, auth.token, auth.clientId);
+      if (scFailed(res) || !res.data) break;
+      const data = res.data;
+      const chunk = Array.isArray(data) ? data : (data.collection || []);
+      rawTracks.push(...chunk.filter(Boolean));
+      url = (!Array.isArray(data) && data.next_href) ? data.next_href : null;
+    }
+  }
+
+  return rawTracks
+    .map(tr => mapScTrack(tr, noTitle))
+    .filter(tr => tr && tr.id);
+}
+
 function splitArtists(str) {
   if (!str) return [{ name: '', sep: null }];
   const re = /(\s*[&×,.]\s*|\s+(?:ft\.?|feat\.?|with|vs\.?)\s+)/gi;
@@ -672,6 +829,209 @@ function pickDiscordCover(track, extra) {
     .replace('-t50x50.', '-t500x500.');
 }
 
+function clampNum(n, lo, hi) {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+function migratePlayerBgSettings(s) {
+  if (!s) return s;
+  const next = { ...s };
+  if (!next.playerBgType) {
+    const bg = String(next.playerBg || '').trim();
+    if (!bg) next.playerBgType = 'none';
+    else if (/^#|^rgb/i.test(bg)) next.playerBgType = 'none';
+    else next.playerBgType = 'image';
+  }
+  if (next.playerBgType === 'color') {
+    next.playerBgType = next.playerBgImage ? 'image' : 'none';
+  }
+  if (next.playerBgScope == null) next.playerBgScope = 'window';
+  if (next.playerBgLibAlpha == null) next.playerBgLibAlpha = 35;
+  if (next.playerBgLibDim == null) next.playerBgLibDim = 15;
+  if (next.navDockAlpha == null) next.navDockAlpha = 100;
+  if (next.navDockDim == null) next.navDockDim = 0;
+  if (next.navDock === 'bottom') next.navDock = 'top';
+  return next;
+}
+
+function playerPanelStyle(alpha) {
+  const a = clampNum(Number(alpha) ?? 35, 0, 100) / 100;
+  return { backgroundColor: `rgba(7, 7, 10, ${a * 0.78})` };
+}
+
+function PlayerBgDimOverlay({ dim }) {
+  const d = clampNum(Number(dim) || 0, 0, 100);
+  if (d <= 0) return null;
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+      background: `rgba(0,0,0,${d / 100})`,
+    }} />
+  );
+}
+
+function PlayerBackground({ settings, fullTab }) {
+  const type = settings?.playerBgType || 'none';
+  const scope = settings?.playerBgScope || 'window';
+  const blur = clampNum(Number(settings?.playerBgBlur) || 0, 0, 100);
+  const dim = clampNum(Number(settings?.playerBgDim) || 0, 0, 100);
+  const blurPx = blur * 0.45;
+  const isWindow = scope === 'window';
+
+  if (type !== 'image' || !settings?.playerBgImage) return null;
+  if (fullTab ? !isWindow : isWindow) return null;
+
+  const src = window.electronAPI?.fileSrc?.(settings.playerBgImage) || '';
+  if (!src) return null;
+  return (
+    <>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        <div style={{
+          position: 'absolute', inset: '-10%',
+          backgroundImage: `url("${src}")`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: blurPx > 0 ? `blur(${blurPx}px)` : 'none',
+          transform: 'scale(1.08)',
+        }} />
+      </div>
+      {dim > 0 && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          background: `rgba(0,0,0,${dim / 100})`,
+          pointerEvents: 'none',
+        }} />
+      )}
+    </>
+  );
+}
+
+function PlayerBgPanel({ settings, onPatch, t }) {
+  const type = settings.playerBgType || 'none';
+  const scope = settings.playerBgScope || 'window';
+  const blur = clampNum(Number(settings.playerBgBlur) || 24, 0, 100);
+  const dim = clampNum(Number(settings.playerBgDim) || 45, 0, 100);
+  const imgSrc = settings.playerBgImage
+    ? (window.electronAPI?.fileSrc?.(settings.playerBgImage) || '')
+    : '';
+
+  const modeBtn = (id, label) => {
+    const active = type === id;
+    return (
+      <div onClick={() => onPatch({ playerBgType: id })} style={{
+        fontSize: 11, padding: '5px 12px', borderRadius: 8, cursor: 'pointer', userSelect: 'none',
+        background: active ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.04)',
+        color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+        border: active ? '1px solid rgba(255,255,255,0.14)' : '1px solid transparent',
+      }}>{label}</div>
+    );
+  };
+
+  const scopeBtn = (id, label) => {
+    const active = scope === id;
+    return (
+      <div onClick={() => onPatch({ playerBgScope: id })} style={{
+        fontSize: 11, padding: '5px 12px', borderRadius: 8, cursor: 'pointer', userSelect: 'none',
+        background: active ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.04)',
+        color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+        border: active ? '1px solid rgba(255,255,255,0.14)' : '1px solid transparent',
+      }}>{label}</div>
+    );
+  };
+
+  const sliderRow = (label, value, onChange) => (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{label}</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{value}%</span>
+      </div>
+      <input type="range" min="0" max="100" value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        style={{ width: '100%', accentColor: 'rgb(var(--accent-rgb))' }} />
+    </div>
+  );
+
+  const panelSection = (title, alphaKey, dimKey, defaults) => (
+    <div style={{
+      marginTop: 12, padding: 12, borderRadius: 12,
+      border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)',
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.62)', marginBottom: 2 }}>{title}</div>
+      {sliderRow(t('player_bg_panel_alpha'), clampNum(Number(settings[alphaKey]) ?? defaults[0], 0, 100), v => onPatch({ [alphaKey]: v }))}
+      {sliderRow(t('player_bg_panel_dim'), clampNum(Number(settings[dimKey]) ?? defaults[1], 0, 100), v => onPatch({ [dimKey]: v }))}
+    </div>
+  );
+
+  return (
+    <div style={{ padding: 0 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+        {modeBtn('none', t('player_bg_none'))}
+        {modeBtn('image', t('player_bg_image'))}
+      </div>
+
+      {type === 'image' && (
+        <div style={{
+          background: 'rgba(255,255,255,0.03)', borderRadius: 12,
+          border: '1px solid rgba(255,255,255,0.06)', padding: 12,
+        }}>
+          {imgSrc ? (
+            <div style={{
+              height: 100, borderRadius: 10, overflow: 'hidden', marginBottom: 10,
+              position: 'relative', background: '#000',
+            }}>
+              <div style={{
+                position: 'absolute', inset: '-8%',
+                backgroundImage: `url("${imgSrc}")`,
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                filter: blur > 0 ? `blur(${blur * 0.45}px)` : 'none',
+              }} />
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: `rgba(0,0,0,${dim / 100})`,
+              }} />
+            </div>
+          ) : (
+            <div style={{
+              height: 80, borderRadius: 10, marginBottom: 10,
+              background: 'rgba(255,255,255,0.04)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, color: 'rgba(255,255,255,0.3)',
+            }}>{t('player_bg_image_empty')}</div>
+          )}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div onClick={async () => {
+              try {
+                const path = await window.electronAPI?.selectPlayerBgImage?.();
+                if (path) onPatch({ playerBgType: 'image', playerBgImage: path });
+              } catch {}
+            }} style={{
+              fontSize: 12, color: 'rgba(255,255,255,0.7)', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '6px 12px',
+            }}>{t('player_bg_pick')}</div>
+            {settings.playerBgImage && (
+              <div onClick={() => onPatch({ playerBgImage: '', playerBgType: 'none' })} style={{
+                fontSize: 12, color: 'rgba(255,80,80,0.75)', cursor: 'pointer',
+                background: 'rgba(255,80,80,0.08)', borderRadius: 8, padding: '6px 12px',
+              }}>{t('remove')}</div>
+            )}
+          </div>
+          {sliderRow(t('player_bg_blur'), blur, v => onPatch({ playerBgBlur: v }))}
+          {sliderRow(t('player_bg_dim'), dim, v => onPatch({ playerBgDim: v }))}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>{t('player_bg_scope')}</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {scopeBtn('window', t('player_bg_scope_window'))}
+              {scopeBtn('player', t('player_bg_scope_player'))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {panelSection(t('player_bg_panel_lib'), 'playerBgLibAlpha', 'playerBgLibDim', [35, 15])}
+    </div>
+  );
+}
+
 
 /* ── i18n ────────────────────────────────────────────────────────────────── */
 const STRINGS = {
@@ -681,50 +1041,50 @@ const STRINGS = {
     nav_rooms:'Комнаты', nav_local:'Локальная библиотека', nav_settings:'Настройки',
     room_title:'Комнаты',
     room_sub:'Слушай треки вместе с друзьями',
-    room_create:'создать комнату',
-    room_join:'войти',
-    room_code:'код комнаты',
+    room_create:'Создать комнату',
+    room_join:'Войти',
+    room_code:'Код комнаты',
     room_code_ph:'ABC123',
-    room_copy:'скопировать код',
-    room_copied:'код скопирован',
-    room_wait:'подожди немного',
-    room_leave:'выйти',
-    room_host:'ведущий',
-    room_guest:'слушаешь вместе',
-    room_members:'в комнате',
-    room_waiting:'ничего не играет — включи трек',
-    room_now:'сейчас',
-    room_host_left:'хост вышел',
-    room_host_controls:'музыкой управляет хост',
-    room_need_sc:'чтобы слышать комнату, войди в soundcloud',
-    room_local_only:'хост играет локальный файл — гости слышат только soundcloud',
-    room_err:'не удалось подключиться к комнате',
-    room_full:'комната заполнена',
-    room_none:'комнаты нет',
-    room_reconnecting:'переподключение...',
-    room_you:'ты',
-    room_tab_setup:'настройки',
-    room_tab_join:'войти',
-    room_setup_hint:'закрой слоты чтобы ограничить комнату',
-    room_slot:'слот',
-    room_slot_open:'открыт',
-    room_slot_locked:'закрыт',
-    room_kick:'выгнать',
-    room_ban:'заблокировать',
-    room_transfer:'передать права',
-    room_kicked:'тебя выгнали из комнаты',
-    room_banned:'тебя заблокировали в этой комнате',
-    room_suggest:'предложить',
-    room_suggested:'трек предложен',
-    room_suggests:'предложения',
-    room_suggests_empty:'пока никто ничего не предложил',
-    room_transferred:'теперь комнату ведёт {name}',
-    room_got_host:'тебе передали комнату',
-    playlist_new:'новый плейлист', playlist_empty:'пока пусто',
-    playlist_create:'создать плейлист', playlist_add:'в плейлист',
-    playlist_added:'добавлено в плейлист', playlist_exists:'уже в плейлисте',
-    playlist_delete:'удалить плейлист', playlist_rename:'переименовать',
-    playlist_hint:'правый клик по треку → в плейлист',
+    room_copy:'Скопировать код',
+    room_copied:'Код скопирован',
+    room_wait:'Подождите немного',
+    room_leave:'Выйти',
+    room_host:'Ведущий',
+    room_guest:'Слушаете вместе',
+    room_members:'В комнате',
+    room_waiting:'Ничего не играет — включите трек',
+    room_now:'Сейчас',
+    room_host_left:'Ведущий вышел',
+    room_host_controls:'Музыкой управляет ведущий',
+    room_need_sc:'Войдите в SoundCloud, чтобы слышать комнату',
+    room_local_only:'Ведущий играет локальный файл — гости слышат только SoundCloud',
+    room_err:'Не удалось подключиться к комнате',
+    room_full:'Комната заполнена',
+    room_none:'Комната не найдена',
+    room_reconnecting:'Переподключение…',
+    room_you:'Вы',
+    room_tab_setup:'Настройки',
+    room_tab_join:'Войти',
+    room_setup_hint:'Закройте слоты, чтобы ограничить комнату',
+    room_slot:'Слот',
+    room_slot_open:'Открыт',
+    room_slot_locked:'Закрыт',
+    room_kick:'Выгнать',
+    room_ban:'Заблокировать',
+    room_transfer:'Передать права',
+    room_kicked:'Вас выгнали из комнаты',
+    room_banned:'Вас заблокировали в этой комнате',
+    room_suggest:'Предложить',
+    room_suggested:'Трек предложен',
+    room_suggests:'Предложения',
+    room_suggests_empty:'Пока никто ничего не предложил',
+    room_transferred:'Теперь комнату ведёт {name}',
+    room_got_host:'Вам передали комнату',
+    playlist_new:'Новый плейлист', playlist_empty:'Пока пусто',
+    playlist_create:'Создать плейлист', playlist_add:'В плейлист',
+    playlist_added:'Добавлено в плейлист', playlist_exists:'Уже в плейлисте',
+    playlist_delete:'Удалить плейлист', playlist_rename:'Переименовать',
+    playlist_hint:'Правый клик по треку → в плейлист',
     unavailable:'недоступен',
     off:'выкл', sec:'с',
     cancel:'отмена',
@@ -752,7 +1112,7 @@ const STRINGS = {
     discord_waiting:'ждём Discord',
     discord_active:'подключено',
     discord_auto_sub:'Подключается само, пока Discord запущен',
-    card_language:'Язык интерфейса', language_label:'Язык', language_sub:'Язык элементов управления',
+    card_language:'Язык интерфейса', card_network:'Сеть', language_label:'Язык', language_sub:'Язык элементов управления',
     card_startup:'Запуск',
     start_windows:'Запускать при старте Windows', minimize_tray:'Сворачивать в трей',
     card_local:'Локальная музыка', music_folder:'Папка с музыкой', no_folder:'Не выбрана',
@@ -763,10 +1123,10 @@ const STRINGS = {
     profile_error:'не удалось получить данные профиля',
     conn_error:'ошибка подключения',
     unknown:'неизвестно', logout:'выйти',
-    sc_not_connected:'soundcloud не подключён',
-    sc_hint:'войди чтобы видеть лайки,\nартистов и подписки',
-    opening_browser:'открываем SoundCloud...', login_browser:'войти в SoundCloud',
-    search_ph:'поиск',
+    sc_not_connected:'SoundCloud не подключён',
+    sc_hint:'Войдите, чтобы видеть лайки,\nартистов и подписки',
+    opening_browser:'Открываем SoundCloud…', login_browser:'Войти в SoundCloud',
+    search_ph:'Поиск',
     artists:'Исполнители', followers:'подписчиков', tracks_label:'Треки',
     loading:'загрузка...',
     likes:'Лайки', all_tracks:'Все треки',
@@ -803,53 +1163,96 @@ const STRINGS = {
     eq_save:'сохранить', eq_save_ph:'имя пресета', eq_saved:'пресет сохранён',
     someone_else:'кто-то ещё слушает это сейчас',
     needle_fwd:'удержи: игла вперёд',
-    presence_online:'онлайн',
-    presence_offline:'оффлайн',
-    presence_in_net:'в сети',
-    presence_list_title:'в сети',
-    presence_list_sub:'пользователи aoi сейчас',
-    presence_empty:'никого нет — ты первый',
-    presence_you:'ты',
-    presence_listening:'слушает {track}',
-    presence_idle:'idle',
+    presence_online:'Онлайн',
+    presence_offline:'Оффлайн',
+    presence_in_net:'В сети',
+    presence_list_title:'В сети',
+    presence_list_sub:'Пользователи AOI сейчас',
+    presence_empty:'Никого нет — вы первый',
+    presence_you:'Вы',
+    presence_listening:'Слушает {track}',
+    presence_idle:'В сети',
     presence_afk:'AFK',
-    presence_open_profile:'открыть профиль',
-    presence_invite:'пригласить в комнату',
-    presence_block:'заблокировать',
-    presence_blocked:'скрыт из списка',
-    presence_invite_ok:'код комнаты скопирован',
-    presence_invite_need:'сначала создай комнату',
-    presence_show_me:'показывать меня в сети',
-    presence_show_me_sub:'другие увидят тебя в списке онлайн',
-    notif_title:'уведомления',
+    presence_open_profile:'Открыть профиль',
+    presence_invite:'Пригласить в комнату',
+    presence_block:'Заблокировать',
+    presence_blocked:'Скрыт из списка',
+    presence_invite_ok:'Код комнаты скопирован',
+    presence_invite_need:'Сначала создайте комнату',
+    presence_show_me:'Показывать меня в сети',
+    presence_show_me_sub:'Другие увидят вас в списке онлайн',
+    notif_title:'Уведомления',
     notif_sound:'звук уведомлений', notif_sound_sub:'тихий сигнал и приглушение музыки',
     notif_like_ok:'лайк сохранён', notif_like_fail:'не удалось сохранить лайк',
     notif_unlike_ok:'лайк убран', notif_unlike_fail:'не удалось убрать лайк',
     backup_settings:'бэкап настроек', backup_ok:'бэкап сохранён', backup_err:'не удалось сохранить бэкап',
-    friends_section:'друзья', online_section:'онлайн', add_friend:'в друзья', remove_friend:'из друзей',
-    crate_title:'общий ящик', crate_add:'в ящик', crate_empty:'ящик пуст',
-    crate_remove:'убрать', crate_clear:'очистить',
-    accounts_title:'аккаунты SoundCloud', accounts_add:'добавить аккаунт', accounts_switch:'переключить',
-    accounts_active:'активный', sleep_tracks:'сон по трекам', sleep_tracks_sub:'сколько треков до паузы (0 = выкл)',
-    deep_work:'глубокая работа', deep_work_sub:'заглушить presence на часы',
-    quiet_hours:'тихие часы', quiet_hours_sub:'меньше опроса presence ночью',
-    black_lift:'подъём чёрного', black_lift_sub:'OLED: чуть поднять тени',
-    hls_quality:'качество потока', hls_auto:'авто',
-    moment_copy:'код момента скопирован', moment_bad:'неверный код момента',
-    veto_btn:'veto', veto_sent:'предложение отклонено',
-    dawn_queue:'утренняя очередь', dawn_queue_sub:'час автостарта (0–23, −1 выкл)',
-    candle_timer:'свеча (яркость к нулю)', chapter_add:'метка',
-    notif_empty:'пока тихо',
-    notif_update:'доступно обновление',
-    notif_update_btn:'обновить',
-    notif_updating:'скачиваем...',
-    notif_invite:'приглашение в комнату',
+    friends_section:'Друзья', online_section:'Онлайн', add_friend:'В друзья', remove_friend:'Из друзей',
+    crate_title:'Общий ящик', crate_add:'В ящик', crate_empty:'Ящик пуст',
+    crate_remove:'Убрать', crate_clear:'Очистить',
+    crate_from:'Ящик · {name}',
+    hide_listening:'Скрыть прослушивание',
+    hide_listening_sub:'Не показывать текущий трек в списке онлайн',
+    use_aoi_proxy:'Прокси AOI',
+    use_aoi_proxy_sub:'Маршрутизировать SoundCloud через сервер AOI (без VPN)',
+    nav_dock:'Панель навигации',
+    nav_dock_sub:'Расположение боковой панели',
+    nav_dock_left:'Слева', nav_dock_right:'Справа', nav_dock_top:'Сверху', nav_dock_bottom:'Снизу',
+    player_bg:'Фон плеера',
+    player_bg_sub:'Только на вкладке с обложкой',
+    player_bg_none:'Нет', player_bg_image:'Картинка',
+    player_bg_pick:'Выбрать файл', player_bg_image_empty:'Картинка не выбрана',
+    player_bg_blur:'Размытие', player_bg_dim:'Затемнение',
+    player_bg_scope:'Область картинки',
+    player_bg_scope_window:'Всё окно', player_bg_scope_player:'Только плеер',
+    player_bg_panel_lib:'Панель треков', player_bg_panel_vol:'Панель громкости',
+    player_bg_panel_alpha:'Прозрачность', player_bg_panel_dim:'Затемнение',
+    nav_dock_panel:'Верхняя панель', nav_dock_panel_sub:'Когда панель навигации сверху',
+    lib_width:'Ширина очереди',
+    lib_width_sub:'Перетащите разделитель между очередью и плеером',
+    lib_pin:'Закрепить очередь',
+    lib_pin_sub:'Панель очереди всегда открыта на вкладке плеера',
+    queue_panel:'Панель очереди',
+    theme_title:'Темы',
+    theme_export:'Экспорт кода',
+    theme_export_ok:'Код темы скопирован',
+    theme_import:'Импорт кода',
+    theme_code_ph:'Вставьте код темы AOI1-…',
+    theme_import_ok:'Тема применена',
+    theme_import_bad:'Неверный код темы',
+    ui_elements_title:'Элементы интерфейса',
+    playlist_local:'Локальные',
+    playlist_sc:'SoundCloud',
+    playlist_discover:'Подборки',
+    playlist_sc_search:'Поиск плейлистов SoundCloud',
+    playlist_sc_empty:'Нет сохранённых плейлистов',
+    playlist_sc_login:'Войдите в SoundCloud для поиска плейлистов',
+    sc_error:'Не удалось загрузить',
+    error_retry:'Ошибка загрузки',
+    ui_nav_home:'Треки', ui_nav_playlists:'Плейлисты', ui_nav_search:'Поиск', ui_nav_player:'Плеер',
+    ui_nav_rooms:'Комнаты', ui_nav_local:'Локальная библиотека', ui_nav_settings:'Настройки',
+    ui_sidebar_avatar:'Аватар', ui_player_glow:'Свечение обложки', ui_player_progress:'Прогресс',
+    ui_player_volume:'Громкость', ui_player_eq:'Эквалайзер', ui_player_shuffle:'Перемешивание', ui_player_repeat:'Повтор',
+    accounts_title:'Аккаунты SoundCloud', accounts_add:'Добавить аккаунт', accounts_switch:'Переключить',
+    accounts_active:'Активный', sleep_tracks:'Сон по трекам', sleep_tracks_sub:'Треков до паузы (0 — выкл)',
+    deep_work:'Глубокая работа', deep_work_sub:'Отключить присутствие на 3 часа',
+    quiet_hours:'Тихие часы', quiet_hours_sub:'Реже обновлять список онлайн ночью',
+    black_lift:'Подъём чёрного', black_lift_sub:'OLED: слегка поднять тени',
+    hls_quality:'Качество потока', hls_auto:'Авто',
+    moment_copy:'Код момента скопирован', moment_bad:'Неверный код момента',
+    veto_btn:'Отклонить', veto_sent:'Предложение отклонено',
+    dawn_queue:'Утренняя очередь', dawn_queue_sub:'Час автозапуска (0–23, −1 — выкл)',
+    candle_timer:'Свеча (затемнение)', chapter_add:'Метка',
+    notif_empty:'Нет уведомлений',
+    notif_update:'Доступно обновление',
+    notif_update_btn:'Обновить',
+    notif_updating:'Скачивание…',
+    notif_invite:'Приглашение в комнату',
     notif_invite_from:'{name} зовёт в комнату {code}',
-    notif_invite_join:'войти',
-    notif_mark_read:'прочитано',
-    notif_clear:'очистить',
-    update_err:'не удалось обновить',
-    update_ready:'обновление готово',
+    notif_invite_join:'Войти',
+    notif_mark_read:'Прочитано',
+    notif_clear:'Очистить',
+    update_err:'Не удалось обновить',
+    update_ready:'Обновление готово',
   },
   en: {
     minimize:'Minimize', maximize:'Maximize', close:'Close',
@@ -928,7 +1331,7 @@ const STRINGS = {
     discord_waiting:'waiting for Discord',
     discord_active:'connected',
     discord_auto_sub:'Connects on its own while Discord is running',
-    card_language:'Interface language', language_label:'Language', language_sub:'Language of UI elements',
+    card_language:'Interface language', card_network:'Network', language_label:'Language', language_sub:'Language of UI elements',
     card_startup:'Startup',
     start_windows:'Launch at Windows startup', minimize_tray:'Minimize to tray',
     card_local:'Local music', music_folder:'Music folder', no_folder:'Not selected',
@@ -987,7 +1390,7 @@ const STRINGS = {
     presence_empty:'no one here yet',
     presence_you:'you',
     presence_listening:'listening to {track}',
-    presence_idle:'idle',
+    presence_idle:'Online',
     presence_afk:'AFK',
     presence_open_profile:'open profile',
     presence_invite:'invite to room',
@@ -1005,12 +1408,55 @@ const STRINGS = {
     friends_section:'friends', online_section:'online', add_friend:'add friend', remove_friend:'remove friend',
     crate_title:'shared crate', crate_add:'to crate', crate_empty:'crate is empty',
     crate_remove:'remove', crate_clear:'clear',
-    accounts_title:'SoundCloud accounts', accounts_add:'add account', accounts_switch:'switch',
-    accounts_active:'active', sleep_tracks:'sleep by tracks', sleep_tracks_sub:'tracks until pause (0 = off)',
-    deep_work:'deep work', deep_work_sub:'mute presence for hours',
-    quiet_hours:'quiet hours', quiet_hours_sub:'slower presence polling at night',
-    black_lift:'black lift', black_lift_sub:'OLED: lift crushed blacks',
-    hls_quality:'stream quality', hls_auto:'auto',
+    crate_from:'{name}\'s crate',
+    hide_listening:'Hide Listening',
+    hide_listening_sub:'Do not show the current track in the online list',
+    use_aoi_proxy:'AOI Proxy',
+    use_aoi_proxy_sub:'Route SoundCloud through the AOI server (no VPN)',
+    nav_dock:'Navigation Panel',
+    nav_dock_sub:'Sidebar position in the app',
+    nav_dock_left:'Left', nav_dock_right:'Right', nav_dock_top:'Top', nav_dock_bottom:'Bottom',
+    player_bg:'Player Background',
+    player_bg_sub:'Player tab only',
+    player_bg_none:'None', player_bg_image:'Image',
+    player_bg_pick:'Choose File', player_bg_image_empty:'No image selected',
+    player_bg_blur:'Blur', player_bg_dim:'Dimming',
+    player_bg_scope:'Image area',
+    player_bg_scope_window:'Full window', player_bg_scope_player:'Player only',
+    player_bg_panel_lib:'Track panel', player_bg_panel_vol:'Volume panel',
+    player_bg_panel_alpha:'Opacity', player_bg_panel_dim:'Dimming',
+    nav_dock_panel:'Top bar', nav_dock_panel_sub:'When navigation is at the top',
+    lib_width:'Queue Width',
+    lib_width_sub:'Drag the divider between queue and player',
+    lib_pin:'Pin Queue Panel',
+    lib_pin_sub:'Keep the queue panel open on the player tab',
+    queue_panel:'Queue Panel',
+    theme_title:'Themes',
+    theme_export:'Export Code',
+    theme_export_ok:'Theme code copied',
+    theme_import:'Import Code',
+    theme_code_ph:'Paste AOI1-… theme code',
+    theme_import_ok:'Theme applied',
+    theme_import_bad:'Invalid theme code',
+    ui_elements_title:'Interface Elements',
+    playlist_local:'Local',
+    playlist_sc:'SoundCloud',
+    playlist_discover:'Discover',
+    playlist_sc_search:'Search SoundCloud playlists',
+    playlist_sc_empty:'No saved playlists',
+    playlist_sc_login:'Sign in to SoundCloud to search playlists',
+    sc_error:'Failed to load',
+    error_retry:'Load error',
+    ui_nav_home:'Tracks', ui_nav_playlists:'Playlists', ui_nav_search:'Search', ui_nav_player:'Player',
+    ui_nav_rooms:'Rooms', ui_nav_local:'Local Library', ui_nav_settings:'Settings',
+    ui_sidebar_avatar:'Avatar', ui_player_glow:'Cover Glow', ui_player_progress:'Progress',
+    ui_player_volume:'Volume', ui_player_eq:'Equalizer', ui_player_shuffle:'Shuffle', ui_player_repeat:'Repeat',
+    accounts_title:'SoundCloud Accounts', accounts_add:'Add Account', accounts_switch:'Switch',
+    accounts_active:'Active', sleep_tracks:'Sleep by Tracks', sleep_tracks_sub:'Tracks until pause (0 = off)',
+    deep_work:'Deep Work', deep_work_sub:'Disable presence for 3 hours',
+    quiet_hours:'Quiet Hours', quiet_hours_sub:'Slower online list updates at night',
+    black_lift:'Black Lift', black_lift_sub:'OLED: lift crushed blacks',
+    hls_quality:'Stream Quality', hls_auto:'Auto',
     moment_copy:'moment code copied', moment_bad:'bad moment code',
     veto_btn:'veto', veto_sent:'suggestion vetoed',
     dawn_queue:'dawn queue', dawn_queue_sub:'auto-start hour (0–23, −1 off)',
@@ -1203,12 +1649,104 @@ function isPresenceBlocked(peer, blocked) {
 
 function presenceActivityLabel(peer, t) {
   if (!peer) return '';
+  if (peer.hideListening) return t('presence_idle');
   if (peer.status === 'listening' && peer.trackTitle) {
     const track = peer.trackArtist ? peer.trackArtist + ' — ' + peer.trackTitle : peer.trackTitle;
     return t('presence_listening').replace('{track}', track);
   }
   if (peer.status === 'afk') return t('presence_afk');
   return t('presence_idle');
+}
+
+function proxyMediaUrl(url, useProxy, attempt) {
+  if (!url || !useProxy) return url;
+  try { return window.AoiRooms?.proxyScUrl?.(url, attempt) || url; } catch { return url; }
+}
+
+function resolveFriendUids(friends, peers) {
+  const byKey = new Map();
+  (peers || []).forEach(p => {
+    const k = window.AoiNight?.peerKey?.(p) || '';
+    if (k) byKey.set(k, p);
+  });
+  const uids = new Set();
+  (friends || []).forEach(f => {
+    if (f?.uid) uids.add(String(f.uid));
+    else {
+      const live = byKey.get(window.AoiNight?.peerKey?.(f) || '');
+      if (live?.uid) uids.add(String(live.uid));
+    }
+  });
+  return [...uids].slice(0, 32);
+}
+
+function parseAoiSemver(v) {
+  const clean = String(v || '').trim().replace(/^v/i, '').split(/[-+]/)[0];
+  const parts = clean.split('.');
+  const major = parseInt(parts[0], 10);
+  const minor = parseInt(parts[1], 10);
+  const patch = parseInt(parts[2], 10);
+  if (!Number.isFinite(major) || !Number.isFinite(minor) || !Number.isFinite(patch)) return null;
+  return [major, minor, patch];
+}
+
+function isAoiVersionNewer(remote, local) {
+  const r = parseAoiSemver(remote);
+  const l = parseAoiSemver(local);
+  if (!r || !l) return false;
+  if (r[0] !== l[0]) return r[0] > l[0];
+  if (r[1] !== l[1]) return r[1] > l[1];
+  return r[2] > l[2];
+}
+
+function applyUpdateNotif(info, localVer, t, seenIds, onChanged) {
+  if (!info || !info.version || !info.url) return null;
+  if (!isAoiVersionNewer(info.version, localVer)) return null;
+  const ver = String(info.version);
+  const id = 'upd:' + ver;
+  if (seenIds && seenIds.has(id)) return null;
+  if (seenIds) seenIds.add(id);
+  const lines = Array.isArray(info.changelog) ? info.changelog.filter(Boolean) : [];
+  const body = lines.length ? lines.map(l => '· ' + l).join('\n') : (info.notes || '');
+  if (typeof onChanged === 'function') onChanged();
+  return [{
+    id,
+    type: 'update',
+    title: t('notif_update') + ' · ' + ver,
+    body,
+    at: Date.now(),
+    read: false,
+    meta: { version: ver, url: info.url, sha256: info.sha256 || '' },
+  }];
+}
+
+function applyPresenceInvites(invites, seenSet, t, onChanged) {
+  if (!invites || !invites.length) return null;
+  const out = [];
+  let changed = false;
+  for (const inv of invites) {
+    if (!inv || !inv.id || seenSet.has(inv.id)) continue;
+    seenSet.add(inv.id);
+    out.push({
+      id: 'inv:' + inv.id,
+      type: 'invite',
+      title: t('notif_invite'),
+      body: t('notif_invite_from')
+        .replace('{name}', inv.fromName || 'friend')
+        .replace('{code}', inv.roomCode || ''),
+      at: inv.at || Date.now(),
+      read: false,
+      meta: {
+        roomCode: inv.roomCode, fromName: inv.fromName, fromAvatar: inv.fromAvatar,
+        trackId: inv.trackId || '', trackTitle: inv.trackTitle || '', trackArtist: inv.trackArtist || '',
+        seekSec: inv.seekSec || 0,
+      },
+    });
+    changed = true;
+  }
+  if (!changed) return null;
+  if (typeof onChanged === 'function') onChanged();
+  return out;
 }
 
 function computePresenceStatus({ isPlaying, hasTrack, hidden, idleMs }) {
@@ -1247,7 +1785,7 @@ function buildScShuffle(list, currentId) {
 }
 
 /* ── MarqueeText ─────────────────────────────────────────────────────────── */
-function MarqueeText({ text, style, onClick, maxWidth }) {
+function MarqueeText({ text, style, onClick, maxWidth, className }) {
   const outerRef = useRef(null);
   const [clipped, setClipped] = useState(false);
   const [showTip, setShowTip] = useState(false);
@@ -1278,6 +1816,7 @@ function MarqueeText({ text, style, onClick, maxWidth }) {
       <div ref={outerRef} onClick={onClick}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
+        className={className || undefined}
         style={{
           overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
           textAlign:'center',
@@ -1306,25 +1845,62 @@ function MarqueeText({ text, style, onClick, maxWidth }) {
   );
 }
 
+/* ── Cover progress ring (moon arc) ──────────────────────────────────────── */
+function CoverProgressRing({ progressRef, isPlaying, visible }) {
+  const circleRef = useRef(null);
+  const r = 48.5;
+  const circ = 2 * Math.PI * r;
+  useEffect(() => {
+    let raf;
+    const tick = () => {
+      const p = Math.max(0, Math.min(1, progressRef.current || 0));
+      const el = circleRef.current;
+      if (el) {
+        el.setAttribute('stroke-dasharray', String(circ));
+        el.setAttribute('stroke-dashoffset', String(circ * (1 - p)));
+      }
+      if (visible && isPlaying) raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, [isPlaying, visible, progressRef, circ]);
+  if (!visible || !isPlaying) return null;
+  return (
+    <svg className="cover-progress-ring" viewBox="0 0 100 100" aria-hidden
+      style={{ position:'absolute', inset:-4, width:'calc(100% + 8px)', height:'calc(100% + 8px)', pointerEvents:'none', zIndex:2 }}>
+      <circle ref={circleRef} cx="50" cy="50" r={r} fill="none"
+        stroke="rgba(var(--accent-rgb),0.5)" strokeWidth="0.55" strokeLinecap="round"
+        transform="rotate(-90 50 50)" />
+    </svg>
+  );
+}
+
 /* ── PlayerLikeBtn ───────────────────────────────────────────────────────── */
 function PlayerLikeBtn({ liked, onLike, style: extraStyle }) {
   const [hov, setHov] = useState(false);
   const [tap, setTap] = useState(false);
+  const [ripples, setRipples] = useState([]);
+  const bumpRipple = () => {
+    const id = Date.now();
+    setRipples(r => [...r.slice(-2), id]);
+    setTimeout(() => setRipples(r => r.filter(x => x !== id)), 520);
+  };
   return (
     <div
-      onClick={onLike}
+      onClick={() => { bumpRipple(); onLike(); }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => { setHov(false); setTap(false); }}
       onMouseDown={() => setTap(true)}
       onMouseUp={() => setTap(false)}
       style={{
-        flexShrink:0, cursor:'pointer', padding:4, lineHeight:0,
+        position:'relative', flexShrink:0, cursor:'pointer', padding:4, lineHeight:0,
         transform: tap ? 'scale(0.94)' : (hov ? 'scale(1.1)' : 'scale(1)'),
         transition:'opacity 0.18s ease, transform 0.14s ease',
         opacity: liked ? (hov ? 1 : 0.85) : (hov ? 0.55 : 0.25),
         ...extraStyle,
       }}
     >
+      {ripples.map(id => <span key={id} className="like-ripple" />)}
       <span style={{display:'block',width:19,height:19,background:'var(--accent)',WebkitMaskImage:`url('${liked ? './assets/heart1.png' : './assets/heart0.png'}')`,WebkitMaskSize:'contain',WebkitMaskRepeat:'no-repeat',WebkitMaskPosition:'center'}}/>
     </div>
   );
@@ -1489,7 +2065,7 @@ function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB
             transition: 'box-shadow 0.3s ease, height 0.22s cubic-bezier(0.34,1.56,0.64,1)',
           }}/>
           {/* thumb — outside track so it isn't clipped */}
-          <div ref={thumbRef} style={{
+          <div ref={thumbRef} className={'progress-thumb' + (active ? ' is-seeking' : '')} style={{
             position:'absolute', top:'50%',
             left: (progressRef.current * 100).toFixed(3) + '%',
             translate: '-50% -50%',
@@ -1728,7 +2304,7 @@ function EqPopover({ gains, eqId, custom, onGains, onPreset, onSave, onDelete, o
 }
 
 /* ── Album Art ───────────────────────────────────────────────────────────── */
-function AlbumArt({ track, isPlaying, sleepy, someoneElse }) {
+function AlbumArt({ track, isPlaying, sleepy, someoneElse, iris }) {
   const imgRef = useRef(null);
   const retryRef = useRef(0);
   const url = track.coverUrl || null;
@@ -1757,7 +2333,7 @@ function AlbumArt({ track, isPlaying, sleepy, someoneElse }) {
   }, [url]);
 
   return (
-    <div className={'album-art-frame' + (sleepy ? ' sleepy' : '')} style={{
+    <div className={'album-art-frame' + (sleepy ? ' sleepy' : '') + (isPlaying ? ' is-playing' : ' is-paused') + (iris ? ' iris-in' : '')} style={{
       position:'relative', width:'100%', aspectRatio:'1', borderRadius:16, overflow:'hidden',
       background:'#111116',
       display:'flex', alignItems:'center', justifyContent:'center',
@@ -1995,18 +2571,20 @@ function PlayBtn({ isPlaying, onToggle, locked=false }) {
 /* ── NavIcon ─────────────────────────────────────────────────────────────── */
 function NavIcon({ icon, label, active, onClick, size=38, noActiveBg=false, locked=false }) {
   const [hov, setHov] = useState(false);
+  const round = size >= 36 ? 11 : 10;
   return (
     <button onClick={locked ? undefined : onClick} title={locked ? '' : label}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        width:size, height:size, borderRadius:11, border:'none',
-        background: (active && !noActiveBg && !locked) ? 'rgba(178,178,178,0.11)' : (hov && !locked && !active ? 'rgba(255,255,255,0.04)' : 'none'),
+        width:size, height:size, borderRadius:round, border:'none',
+        background: (active && !noActiveBg && !locked) ? 'rgba(178,178,178,0.11)' : (hov && !locked && !active ? 'rgba(255,255,255,0.05)' : 'none'),
         display:'flex', alignItems:'center', justifyContent:'center',
         cursor: locked ? 'default' : 'pointer', flexShrink:0, color:'#ededf4',
-        opacity: locked ? 0.22 : (active ? 1 : (hov ? 0.72 : 0.5)),
+        opacity: locked ? 0.22 : (active ? 1 : (hov ? 0.78 : 0.52)),
         pointerEvents: locked ? 'none' : 'auto',
-        transition:'opacity 0.18s ease, background 0.18s ease',
+        transition:'opacity 0.18s ease, background 0.18s ease, transform 0.16s ease',
+        transform: hov && !locked ? 'scale(1.04)' : 'scale(1)',
       }}>
       {icon}
     </button>
@@ -2447,11 +3025,26 @@ function HeroClone({ hero, exiting, reverse = false }) {
   );
 }
 
-function PlaylistView({ visible, playlists, openId, onOpen, onBack, onCreate, onRename, onDelete, onRemoveItem, onPlayTrack, activeId, loadingTrackId, errorTrackId, hideDividers, onContextMenu, accentRGB }) {
+function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen, onBack, onCreate, onRename, onDelete, onRemoveItem, onPlayTrack, onPlayScPlaylist, onSaveScPlaylists, activeId, loadingTrackId, errorTrackId, hideDividers, onContextMenu, likedIds, onLike, accentRGB }) {
   const t = useLang();
+  const lang = useContext(LangContext);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState('');
+  const [tab, setTab] = useState('local');
+  const [scQ, setScQ] = useState('');
+  const [scResults, setScResults] = useState([]);
+  const [scLoading, setScLoading] = useState(false);
+  const [discoverQ, setDiscoverQ] = useState('');
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [discoverResults, setDiscoverResults] = useState([]);
+  const [scNeedLogin, setScNeedLogin] = useState(false);
+  const [openSc, setOpenSc] = useState(null);
   const open = (playlists || []).find(p => p.id === openId) || null;
+  const moods = window.AoiCustom?.SC_MOODS || [];
+
+  useEffect(() => {
+    if (!visible) setOpenSc(null);
+  }, [visible]);
 
   const transStyle = {
     position:'absolute', inset:0,
@@ -2461,6 +3054,154 @@ function PlaylistView({ visible, playlists, openId, onOpen, onBack, onCreate, on
     display:'flex', flexDirection:'column',
     padding:'28px 36px 24px 36px',
   };
+
+  const openScPlaylist = async (pl) => {
+    if (!scAuth?.token || !window.electronAPI?.scFetch) {
+      setScNeedLogin(true);
+      return;
+    }
+    setScNeedLogin(false);
+    setOpenSc({ pl, items: [], loading: true });
+    const items = await fetchScPlaylistTracks(pl, scAuth, t('no_title'));
+    setOpenSc({ pl, items, loading: false });
+  };
+
+  const searchScPlaylists = async (q, mode = 'sc') => {
+    const query = String(q || '').trim();
+    if (!query) return [];
+    if (!scAuth?.token || !window.electronAPI?.scFetch) {
+      if (mode === 'sc') setScNeedLogin(true);
+      return [];
+    }
+    setScNeedLogin(false);
+    const setLoading = mode === 'discover' ? setDiscoverLoading : setScLoading;
+    const setResults = mode === 'discover' ? setDiscoverResults : setScResults;
+    setLoading(true);
+    try {
+      const res = await window.electronAPI.scFetch(
+        `https://api-v2.soundcloud.com/search/playlists?q=${encodeURIComponent(query)}&limit=24`,
+        scAuth.token, scAuth.clientId
+      );
+      const mapped = (res.data?.collection || []).map(p => ({
+        id: p.id,
+        title: p.title || '',
+        user: p.user?.username || '',
+        artwork: p.artwork_url ? p.artwork_url.replace('-large', '-t500x500') : (p.user?.avatar_url || null),
+        trackCount: p.track_count || 0,
+        uri: p.uri || `https://api-v2.soundcloud.com/playlists/${p.id}`,
+      }));
+      setResults(mapped);
+      setLoading(false);
+      return mapped;
+    } catch {
+      setResults([]);
+      setLoading(false);
+      return [];
+    }
+  };
+
+  const saveScPlaylist = (pl) => {
+    const list = scPlaylists || [];
+    if (list.some(x => String(x.id) === String(pl.id))) return;
+    onSaveScPlaylists?.([{
+      id: pl.id, title: pl.title, user: pl.user, artwork: pl.artwork,
+      trackCount: pl.trackCount, uri: pl.uri,
+    }, ...list].slice(0, 40));
+  };
+
+  const tabBtn = (id, label) => {
+    const active = tab === id;
+    return (
+      <div onClick={() => { setTab(id); if (id === 'sc') setScResults([]); }} style={{
+        fontSize:12, fontWeight:500, letterSpacing:'0.03em', cursor:'pointer', userSelect:'none',
+        padding:'6px 12px', borderRadius:8,
+        background: active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+        color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+        border: active ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+      }}>{label}</div>
+    );
+  };
+
+  const renderScRow = (pl, opts) => {
+    const saved = (scPlaylists || []).some(x => String(x.id) === String(pl.id));
+    return (
+      <div key={pl.id} style={{
+        display:'flex', alignItems:'center', gap:12,
+        padding:'10px 12px', borderRadius:12, cursor:'pointer',
+        background:'rgba(255,255,255,0.034)',
+      }}>
+        <div onClick={() => openScPlaylist(pl)} style={{display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0}}>
+          {pl.artwork
+            ? <img src={pl.artwork} style={{width:44, height:44, borderRadius:8, objectFit:'cover', flexShrink:0}}/>
+            : <div style={{width:44, height:44, borderRadius:8, background:'rgba(255,255,255,0.06)', flexShrink:0}}/>}
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:13, color:'rgba(255,255,255,0.82)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{pl.title}</div>
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.28)', marginTop:2}}>{pl.user || 'SoundCloud'} · {pl.trackCount || 0}</div>
+          </div>
+        </div>
+        {opts?.canSave && !saved && (
+          <div onClick={() => saveScPlaylist(pl)} title="+" style={{
+            fontSize:18, color:'rgba(255,255,255,0.35)', cursor:'pointer', padding:'0 6px',
+          }}>+</div>
+        )}
+      </div>
+    );
+  };
+
+  if (openSc) {
+    const { pl, items, loading } = openSc;
+    return (
+      <div style={transStyle}>
+        <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:18}}>
+          <div onClick={() => setOpenSc(null)} title={t('back')} style={{
+            width:32, height:32, borderRadius:9, cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.7)',
+          }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          </div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:16, fontWeight:700, color:'rgba(255,255,255,0.88)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+              {pl.title || 'SoundCloud'}
+            </div>
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.35)', marginTop:2}}>
+              {pl.user || 'SoundCloud'} · {items.length || pl.trackCount || 0}
+            </div>
+          </div>
+          {items.length > 0 && (
+            <div onClick={() => onPlayScPlaylist?.({ ...pl, _cachedItems: items })} style={{
+              fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer',
+              background:'rgba(255,255,255,0.06)', borderRadius:8, padding:'6px 12px',
+            }}>{t('nav_player')}</div>
+          )}
+        </div>
+        {loading ? (
+          <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'40px 0', textAlign:'center'}}>{t('loading')}</div>
+        ) : items.length === 0 ? (
+          <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'40px 0', textAlign:'center'}}>
+            {t('playlist_empty')}
+          </div>
+        ) : (
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto'}}>
+            {items.map((tr, i) => (
+              <SearchTrackRow
+                key={tr.id || i}
+                track={tr}
+                isLiked={likedIds?.has(tr.id) || likedIds?.has(String(tr.id))}
+                onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
+                onClick={() => onPlayTrack(tr, items)}
+                onCoverClick={() => onPlayTrack(tr, items)}
+                isLoading={loadingTrackId === tr.id}
+                isError={errorTrackId === tr.id}
+                hideDividers={hideDividers}
+                onContextMenu={onContextMenu}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (open) {
     const items = open.items || [];
@@ -2506,13 +3247,14 @@ function PlaylistView({ visible, playlists, openId, onOpen, onBack, onCreate, on
                 <div style={{flex:1, minWidth:0}}>
                   <SearchTrackRow
                     track={tr}
-                    isLiked={false}
+                    isLiked={likedIds?.has(tr.id) || likedIds?.has(String(tr.id))}
+                    onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
                     onClick={() => onPlayTrack(tr, items)}
                     onCoverClick={() => onPlayTrack(tr, items)}
                     isLoading={loadingTrackId === tr.id}
                     isError={errorTrackId === tr.id}
                     hideDividers={hideDividers}
-                    onContextMenu={e => { e.preventDefault(); onContextMenu?.(tr, e.clientX, e.clientY); }}
+                    onContextMenu={onContextMenu}
                   />
                 </div>
                 <div onClick={() => onRemoveItem(open.id, i)}
@@ -2527,39 +3269,106 @@ function PlaylistView({ visible, playlists, openId, onOpen, onBack, onCreate, on
 
   return (
     <div style={transStyle}>
-      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18}}>
-        <div style={{fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.22)', letterSpacing:'0.06em', textTransform:'uppercase'}}>
-          {t('nav_playlists')}
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, gap:10, flexWrap:'wrap'}}>
+        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+          {tabBtn('local', t('playlist_local'))}
+          {tabBtn('sc', t('playlist_sc'))}
+          {tabBtn('discover', t('playlist_discover'))}
         </div>
-        <div onClick={onCreate} style={{
-          fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer',
-          background:'rgba(255,255,255,0.06)', borderRadius:8, padding:'6px 12px',
-        }}>{t('playlist_create')}</div>
+        {tab === 'local' && (
+          <div onClick={onCreate} style={{
+            fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer',
+            background:'rgba(255,255,255,0.06)', borderRadius:8, padding:'6px 12px',
+          }}>{t('playlist_create')}</div>
+        )}
       </div>
-      {!(playlists || []).length ? (
-        <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'48px 0', textAlign:'center', lineHeight:1.6}}>
-          {t('playlist_empty')}<br/>
-          <span style={{fontSize:12, opacity:0.7}}>{t('playlist_hint')}</span>
-        </div>
-      ) : (
-        <div className="scroll-thin" style={{flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:6}}>
-          {playlists.map(p => (
-            <div key={p.id} onClick={() => onOpen(p.id)}
-              style={{
-                display:'flex', alignItems:'center', gap:12,
-                padding:'12px 14px', borderRadius:12, cursor:'pointer',
-                background:'rgba(255,255,255,0.034)',
-              }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2">
-                <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-              </svg>
-              <div style={{flex:1, minWidth:0}}>
-                <div style={{fontSize:13, color:'rgba(255,255,255,0.82)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.name}</div>
-                <div style={{fontSize:11, color:'rgba(255,255,255,0.28)', marginTop:2}}>{(p.items || []).length}</div>
+
+      {tab === 'local' && (
+        !(playlists || []).length ? (
+          <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'48px 0', textAlign:'center', lineHeight:1.6}}>
+            {t('playlist_empty')}<br/>
+            <span style={{fontSize:12, opacity:0.7}}>{t('playlist_hint')}</span>
+          </div>
+        ) : (
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:6}}>
+            {playlists.map(p => (
+              <div key={p.id} onClick={() => onOpen(p.id)}
+                style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  padding:'12px 14px', borderRadius:12, cursor:'pointer',
+                  background:'rgba(255,255,255,0.034)',
+                }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2">
+                  <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                </svg>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, color:'rgba(255,255,255,0.82)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.name}</div>
+                  <div style={{fontSize:11, color:'rgba(255,255,255,0.28)', marginTop:2}}>{(p.items || []).length}</div>
+                </div>
               </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {tab === 'sc' && (
+        <>
+          <div style={{display:'flex', gap:8, marginBottom:12}}>
+            <input value={scQ} onChange={e => setScQ(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') searchScPlaylists(scQ); }}
+              placeholder={t('playlist_sc_search')}
+              style={{flex:1, background:'rgba(255,255,255,0.06)', border:'none', outline:'none',
+                color:'#ededf4', fontSize:13, fontFamily:'inherit', borderRadius:8, padding:'8px 12px'}}/>
+            <div onClick={() => searchScPlaylists(scQ)} style={{
+              fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer',
+              background:'rgba(255,255,255,0.06)', borderRadius:8, padding:'8px 14px',
+            }}>{t('nav_search')}</div>
+          </div>
+          {scLoading ? (
+            <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'32px 0', textAlign:'center'}}>…</div>
+          ) : (
+            <div className="scroll-thin" style={{flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:6}}>
+              {(scResults.length ? scResults : (scPlaylists || [])).map(pl => renderScRow(pl, { canSave: scResults.length > 0 }))}
+              {!scResults.length && !(scPlaylists || []).length && (
+                <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'32px 0', textAlign:'center'}}>
+                  {scNeedLogin ? t('playlist_sc_login') : t('playlist_sc_empty')}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          )}
+        </>
+      )}
+
+      {tab === 'discover' && (
+        <>
+          <div style={{display:'flex', flexWrap:'wrap', gap:8, marginBottom:14}}>
+            {moods.map(m => (
+              <div key={m.id} onClick={async () => {
+                setDiscoverQ(m.q);
+                await searchScPlaylists(m.q, 'discover');
+              }} style={{
+                fontSize:12, padding:'6px 12px', borderRadius:20, cursor:'pointer',
+                background: discoverQ === m.q ? 'rgba(var(--accent-rgb),0.18)' : 'rgba(255,255,255,0.06)',
+                color: discoverQ === m.q ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)',
+                border: discoverQ === m.q ? '1px solid rgba(var(--accent-rgb),0.35)' : '1px solid transparent',
+              }}>
+                {lang === 'ru' ? m.labelRu : m.labelEn}
+              </div>
+            ))}
+          </div>
+          {discoverLoading ? (
+            <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'32px 0', textAlign:'center'}}>…</div>
+          ) : (
+            <div className="scroll-thin" style={{flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:6}}>
+              {discoverResults.map(pl => renderScRow(pl, { canSave: true }))}
+              {!discoverResults.length && (
+                <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'32px 0', textAlign:'center', lineHeight:1.6}}>
+                  {scNeedLogin ? t('playlist_sc_login') : t('playlist_discover')}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -2925,7 +3734,7 @@ function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onT
   );
 }
 
-function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, friendCrate, onPlayCrate, onRemoveCrate, onClearCrate }) {
+function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, friendCrate, remoteCrates, onPlayCrate, onRemoveCrate, onClearCrate }) {
   const t = useLang();
   useEffect(() => {
     if (!open) return;
@@ -2966,7 +3775,7 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
           {(friendCrate || []).length > 0 && (
             <div style={{ marginBottom:14 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, margin:'4px 8px 8px' }}>
-                <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)' }}>{t('crate_title')}</div>
+                <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)' }}>{t('crate_title')} · {t('presence_you')}</div>
                 <div onClick={(e) => { e.stopPropagation(); onClearCrate?.(); }}
                   title={t('crate_clear')}
                   style={{ fontSize:10, letterSpacing:'0.04em', color:'rgba(255,255,255,0.28)', cursor:'pointer', padding:'2px 4px', userSelect:'none' }}
@@ -3000,6 +3809,24 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
               ))}
             </div>
           )}
+          {(remoteCrates || []).map((box) => (
+            <div key={'rc-' + (box.uid || box.name)} style={{ marginBottom:14 }}>
+              <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>
+                {t('crate_from').replace('{name}', box.name || 'friend')}
+              </div>
+              {(box.items || []).slice(0, 12).map((item, i) => (
+                <div key={(item.id || i) + '-rcrate'} onClick={() => onPlayCrate?.(item)}
+                  style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, marginBottom:3, cursor:'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                  <div style={{ minWidth:0, flex:1 }}>
+                    <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.85)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.title || 'track'}</div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:2 }}>{item.artist || ''}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
           {visible.length === 0 ? (
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.28)', textAlign:'center', padding:'48px 16px', lineHeight:1.5 }}>
               {t('presence_empty')}
@@ -3219,107 +4046,107 @@ function PresenceBar({ profile, connected, count, onAvatarClick, onCountClick, c
   );
 }
 
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
-function Sidebar({ navActive, onNav, libCollapsed, onToggleLib, inPlayer, scAuth, profileRef, sourceMode, onToggleSource, avatarFlying, roomLive }) {
+/* ── Window controls (top dock) ─────────────────────────────────────────── */
+function WinButtons() {
   const t = useLang();
+  return (
+    <div style={{display:'flex', alignItems:'center', gap:2, marginLeft:4}}>
+      <NavIcon size={34} label={t('minimize')} onClick={() => window.electronAPI.minimize()}
+        icon={<LineIcon size={16}><line x1="5" y1="12" x2="19" y2="12"/></LineIcon>} />
+      <NavIcon size={34} label={t('maximize')} onClick={() => window.electronAPI.maximize()}
+        icon={<LineIcon size={16}><rect x="5" y="5" width="14" height="14" rx="2"/></LineIcon>} />
+      <NavIcon size={34} label={t('close')} onClick={() => window.electronAPI.close()}
+        icon={<LineIcon size={16} stroke={1.6}><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></LineIcon>} />
+    </div>
+  );
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+function Sidebar({ navActive, onNav, libCollapsed, onToggleLib, inPlayer, scAuth, profileRef, sourceMode, onToggleSource, avatarFlying, roomLive, dock, uiShow, libPinned }) {
+  const t = useLang();
+  const show = (k) => uiShow?.[k] !== false;
   const NAV = [
-    { id:"home",      label:t('nav_tracks'),    icon: <LineIcon><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></LineIcon> },
-    { id:"playlists", label:t('nav_playlists'), icon: <CdIcon size={16}/> },
-    { id:"search",    label:t('nav_search'),    icon: <LineIcon><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></LineIcon> },
-    { id:"library",   label:t('nav_player'),    icon: <LineIcon><path d="M7 4.5v15l13-7.5z"/></LineIcon> },
-  ];
+    show('navHome') && { id:"home",      label:t('nav_tracks'),    icon: <LineIcon><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></LineIcon> },
+    show('navPlaylists') && { id:"playlists", label:t('nav_playlists'), icon: <CdIcon size={16}/> },
+    show('navSearch') && { id:"search",    label:t('nav_search'),    icon: <LineIcon><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></LineIcon> },
+    show('navPlayer') && { id:"library",   label:t('nav_player'),    icon: <LineIcon><path d="M7 4.5v15l13-7.5z"/></LineIcon> },
+  ].filter(Boolean);
   const folderIcon = <LineIcon><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></LineIcon>;
 
   const navRefs = useRef({});
-  const [pillRect, setPillRect] = useState({ top: 0, height: 38, visible: false });
+  const [pillRect, setPillRect] = useState({ top: 0, left: 0, width: 38, height: 38, visible: false });
+  const horizontal = dock === 'top';
 
   useLayoutEffect(() => {
     const el = navRefs.current[navActive];
-    if (!el || (navActive !== 'home' && navActive !== 'search' && navActive !== 'library' && navActive !== 'playlists')) {
+    if (!el || !['home', 'search', 'library', 'playlists'].includes(navActive)) {
       setPillRect(p => ({ ...p, visible: false }));
       return;
     }
-    setPillRect({ top: el.offsetTop, height: el.offsetHeight, visible: true });
-  }, [navActive, inPlayer, scAuth]);
+    if (horizontal) {
+      setPillRect({ top: 0, left: el.offsetLeft, width: el.offsetWidth, height: el.offsetHeight, visible: true });
+    } else {
+      setPillRect({ top: el.offsetTop, left: 0, width: el.offsetWidth, height: el.offsetHeight, visible: true });
+    }
+  }, [navActive, inPlayer, scAuth, horizontal, NAV.length]);
 
   const scActive = navActive === 'soundcloud';
 
-  return (
+  const queueToggleBtn = show('queuePanel') && !libPinned && (
     <div style={{
-      width:58, height:'100%', flexShrink:0,
-      display:'flex', flexDirection:'column', alignItems:'center',
-      paddingTop:8, paddingBottom:18,
-      background:'transparent', zIndex:10,
+      display:'flex', flexDirection: horizontal ? 'row' : 'column', alignItems:'center',
+      overflow:'hidden',
+      maxHeight: horizontal ? 38 : (inPlayer ? 48 : 0),
+      maxWidth: horizontal ? (inPlayer ? 44 : 0) : 38,
+      opacity: inPlayer ? 1 : 0,
+      transform: inPlayer ? 'translate(0,0)' : (horizontal ? 'translateX(-4px)' : 'translateY(-4px)'),
+      pointerEvents: inPlayer ? 'auto' : 'none',
+      transition:'max-height 0.22s cubic-bezier(0.4,0,0.2,1), max-width 0.22s ease, opacity 0.18s ease, transform 0.2s ease',
     }}>
-      {/* верхняя группа: аватар-кнопка + nav + collapse */}
-      <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:6}}>
-        <div ref={profileRef}
-          onClick={() => onNav('soundcloud')}
-          title={scAuth?.username ? `SoundCloud: ${scAuth.username}` : 'SoundCloud'}
-          style={{
-            width:38, height:38, borderRadius:11,
-            background:'rgba(178,178,178,0.06)',
-            border:'1px solid ' + (scActive ? 'rgba(178,178,178,0.55)' : 'rgba(178,178,178,0.12)'),
-            display:'flex', alignItems:'center', justifyContent:'center',
-            cursor:'pointer', color:'var(--accent)', marginBottom:8, flexShrink:0,
-            overflow:'hidden',
-            transition:'border-color 0.2s ease, background 0.18s ease',
-          }}>
-          {scAuth?.avatarUrl
-            ? <img src={scAuth.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover', opacity: avatarFlying ? 0 : 1, transition:'opacity 0.1s ease'}}/>
-            : <SoundCloudIcon size={22} fill="rgba(255,100,20,0.8)"/>
-          }
-        </div>
-
-        {/* nav-группа с анимирующимся пиллом */}
-        <div style={{position:'relative', display:'flex', flexDirection:'column', alignItems:'center', gap:6}}>
-          <div style={{
-            position:'absolute', left:'50%',
-            top: 0, height: pillRect.height || 38, width: 38,
-            transform:`translate(-50%, ${pillRect.top}px)`,
-            background:'rgba(178,178,178,0.11)', borderRadius:11,
-            opacity: pillRect.visible ? 1 : 0,
-            transition:'transform 0.34s cubic-bezier(0.45,0,0.55,1), opacity 0.18s ease',
-            willChange:'transform',
-            pointerEvents:'none', zIndex:0,
-          }}/>
-          {NAV.map(n => (
-            <div key={n.id} ref={el => navRefs.current[n.id] = el} style={{position:'relative', zIndex:1}}>
-              <NavIcon icon={n.icon} label={n.label} active={navActive===n.id} onClick={()=>onNav(n.id)} noActiveBg={true} locked={n.id==='search' && !scAuth}/>
-            </div>
-          ))}
-        </div>
-        <div style={{
-          display:'flex', flexDirection:'column', alignItems:'center',
-          overflow:'hidden',
-          maxHeight: inPlayer ? 48 : 0,
-          opacity: inPlayer ? 1 : 0,
-          transform: inPlayer ? 'translateY(0)' : 'translateY(-4px)',
-          pointerEvents: inPlayer ? 'auto' : 'none',
-          transition:'max-height 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease, transform 0.2s ease',
-        }}>
-          <div style={{width:28, height:1, background:'rgba(255,255,255,0.07)', margin:'6px 0 4px'}}/>
-          <div style={{
-            width:32, height:32, flexShrink:0, cursor:'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            color:'rgba(255,255,255,0.3)',
-            transition:'color 0.18s ease',
-          }} onClick={onToggleLib}
-            onMouseEnter={e=>e.currentTarget.style.color='rgba(255,255,255,0.6)'}
-            onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.3)'}
-          >
-            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
-              style={{transition:'transform 0.26s cubic-bezier(0.4,0,0.2,1)', transform: libCollapsed ? 'rotate(180deg)' : 'rotate(0deg)'}}>
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </div>
-        </div>
+      {!horizontal && <div style={{width:28, height:1, background:'rgba(255,255,255,0.07)', margin:'6px 0 4px'}}/>}
+      <div style={{
+        width:32, height:32, flexShrink:0, cursor:'pointer',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        color:'rgba(255,255,255,0.3)', transition:'color 0.18s ease',
+      }} onClick={onToggleLib}
+        onMouseEnter={e=>e.currentTarget.style.color='rgba(255,255,255,0.6)'}
+        onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.3)'}
+      >
+        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+          style={{transition:'transform 0.26s cubic-bezier(0.4,0,0.2,1)', transform: libCollapsed ? 'rotate(180deg)' : 'rotate(0deg)'}}>
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
       </div>
+    </div>
+  );
 
-      <div style={{flex:1}}/>
+  const navCluster = (
+    <div style={{position:'relative', display:'flex', flexDirection: horizontal ? 'row' : 'column', alignItems:'center', gap: horizontal ? 2 : 6}}>
+      <div style={{
+        position:'absolute',
+        left: horizontal ? 0 : '50%',
+        top: horizontal ? '50%' : 0,
+        width: pillRect.width || 38,
+        height: pillRect.height || 38,
+        transform: horizontal
+          ? `translate(${pillRect.left}px, -50%)`
+          : `translate(-50%, ${pillRect.top}px)`,
+        background:'rgba(178,178,178,0.11)', borderRadius:11,
+        opacity: pillRect.visible ? 1 : 0,
+        transition:'transform 0.34s cubic-bezier(0.45,0,0.55,1), opacity 0.18s ease, width 0.2s ease',
+        willChange:'transform', pointerEvents:'none', zIndex:0,
+      }}/>
+      {NAV.map(n => (
+        <div key={n.id} ref={el => { navRefs.current[n.id] = el; }} style={{position:'relative', zIndex:1}}>
+          <NavIcon icon={n.icon} label={n.label} active={navActive===n.id} onClick={()=>onNav(n.id)} noActiveBg={true} locked={n.id==='search' && !scAuth}/>
+        </div>
+      ))}
+    </div>
+  );
 
-      {/* нижняя группа: комнаты, скачанные треки, настройки */}
-      <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:6}}>
+  const utilIcons = (
+    <div style={{display:'flex', flexDirection: horizontal ? 'row' : 'column', alignItems:'center', gap: horizontal ? 2 : 6}}>
+      {show('navRooms') && (
         <div style={{position:'relative'}}>
           <NavIcon label={t('nav_rooms')} active={navActive==='rooms'} onClick={()=>onNav('rooms')}
             icon={(
@@ -3335,18 +4162,92 @@ function Sidebar({ navActive, onNav, libCollapsed, onToggleLib, inPlayer, scAuth
             background:'var(--accent)', boxShadow:'0 0 0 2px #07070a',
           }}/>}
         </div>
+      )}
+      {show('navLocal') && (
         <div style={{
           maxHeight: scAuth ? 44 : 0,
+          maxWidth: horizontal ? (scAuth ? 44 : 0) : undefined,
           opacity: scAuth ? 1 : 0,
           overflow:'hidden',
-          transition:'max-height 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease',
+          transition:'max-height 0.22s cubic-bezier(0.4,0,0.2,1), max-width 0.22s ease, opacity 0.18s ease',
         }}>
           <NavIcon label={t('nav_local')} active={sourceMode==='local'}
             onClick={onToggleSource} icon={folderIcon}/>
         </div>
+      )}
+      {show('navSettings') && (
         <NavIcon label={t('nav_settings')} active={navActive==='settings'} onClick={()=>onNav('settings')}
           icon={<LineIcon><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.3.6.9 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></LineIcon>}/>
+      )}
+    </div>
+  );
+
+  if (dock === 'top') {
+    return (
+      <div className="top-nav-bar" style={{
+        width:'100%', height:44,
+        display:'grid', gridTemplateColumns:'1fr auto 1fr',
+        alignItems:'center', padding:'0 8px',
+        background:'transparent',
+      }}>
+        <div style={{display:'flex', alignItems:'center', gap:6, justifySelf:'start'}} data-tauri-drag-region>
+          {show('sidebarAvatar') && (
+            <div ref={profileRef} onClick={() => onNav('soundcloud')}
+              title={scAuth?.username ? `SoundCloud: ${scAuth.username}` : 'SoundCloud'}
+              style={{
+                width:34, height:34, borderRadius:10, flexShrink:0,
+                background:'rgba(178,178,178,0.06)',
+                border:'1px solid ' + (scActive ? 'rgba(178,178,178,0.55)' : 'rgba(178,178,178,0.12)'),
+                display:'flex', alignItems:'center', justifyContent:'center',
+                cursor:'pointer', overflow:'hidden',
+              }}>
+              {scAuth?.avatarUrl
+                ? <img src={scAuth.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover', opacity: avatarFlying ? 0 : 1}}/>
+                : <SoundCloudIcon size={20} fill="rgba(255,100,20,0.8)"/>}
+            </div>
+          )}
+          {queueToggleBtn}
+        </div>
+        <div style={{display:'flex', justifyContent:'center'}}>
+          {navCluster}
+        </div>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, justifySelf:'end'}}>
+          {utilIcons}
+          <WinButtons/>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="nav-sidebar" style={{
+      width:58, height:'100%', flexShrink:0,
+      display:'flex', flexDirection:'column', alignItems:'center',
+      paddingTop:8, paddingBottom:18,
+      background:'transparent', zIndex:10,
+    }}>
+      <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:6}}>
+        {show('sidebarAvatar') && (
+          <div ref={profileRef} onClick={() => onNav('soundcloud')}
+            title={scAuth?.username ? `SoundCloud: ${scAuth.username}` : 'SoundCloud'}
+            style={{
+              width:38, height:38, borderRadius:11,
+              background:'rgba(178,178,178,0.06)',
+              border:'1px solid ' + (scActive ? 'rgba(178,178,178,0.55)' : 'rgba(178,178,178,0.12)'),
+              display:'flex', alignItems:'center', justifyContent:'center',
+              cursor:'pointer', color:'var(--accent)', marginBottom:8, flexShrink:0,
+              overflow:'hidden', transition:'border-color 0.2s ease, background 0.18s ease',
+            }}>
+            {scAuth?.avatarUrl
+              ? <img src={scAuth.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover', opacity: avatarFlying ? 0 : 1, transition:'opacity 0.1s ease'}}/>
+              : <SoundCloudIcon size={22} fill="rgba(255,100,20,0.8)"/>}
+          </div>
+        )}
+        {navCluster}
+        {queueToggleBtn}
+      </div>
+      <div style={{flex:1}}/>
+      {utilIcons}
     </div>
   );
 }
@@ -3476,6 +4377,7 @@ function ClearCacheCard({ Card, Row, onClearCoversCache, onClearLikesCache }) {
 /* ── SettingsView ─────────────────────────────────────────────────────────── */
 function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFolder, onClearCoversCache, onClearLikesCache, appAccent, onOpenMini, appVersion }) {
   const t = useLang();
+  const [themeCopied, setThemeCopied] = useState(false);
   const set = (k, v) => onSettings({ ...settings, [k]: v });
   const [sec, setSec] = useState('playback');
   const secRefs  = useRef({});
@@ -3491,13 +4393,22 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
   }, [sec]);
 
   const Toggle = ({ k }) => {
-    const on = !!settings[k];
+    const uiKey = k.startsWith('ui:') ? k.slice(3) : null;
+    const on = uiKey
+      ? (window.AoiCustom?.mergeUiShow?.(settings.uiShow)?.[uiKey] !== false)
+      : !!settings[k];
     return (
       <div style={{
         width:38, height:22, borderRadius:11, cursor:'pointer', flexShrink:0,
         background: on ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.1)',
         position:'relative', transition:'background 0.22s ease',
-      }} onClick={()=>set(k, !on)}>
+      }} onClick={() => {
+        if (uiKey) {
+          const uiShow = window.AoiCustom?.mergeUiShow?.(settings.uiShow) || {};
+          uiShow[uiKey] = !on;
+          set('uiShow', uiShow);
+        } else set(k, !on);
+      }}>
         <div style={{
           position:'absolute', top:4, width:14, height:14, borderRadius:'50%',
           background:'#fff', boxShadow:'0 1px 4px rgba(0,0,0,0.4)',
@@ -3674,7 +4585,123 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
         </div>
       </Card>
       <Card title={t('card_interface')}>
-        <Row label={t('hide_dividers')} sub={t('hide_dividers_sub')} last><Toggle k="hideDividers"/></Row>
+        <Row label={t('hide_dividers')} sub={t('hide_dividers_sub')}><Toggle k="hideDividers"/></Row>
+        <Row label={t('hide_listening')} sub={t('hide_listening_sub')}><Toggle k="hideListening"/></Row>
+        <Row label={t('nav_dock')} sub={t('nav_dock_sub')}>
+          <div style={{display:'flex', gap:4, flexWrap:'wrap', justifyContent:'flex-end'}}>
+            {[
+              ['left', t('nav_dock_left')],
+              ['right', t('nav_dock_right')],
+              ['top', t('nav_dock_top')],
+            ].map(([v, l]) => {
+              const active = (settings.navDock || 'left') === v;
+              return (
+                <div key={v} onClick={() => set('navDock', v)} style={{
+                  fontSize:11, padding:'4px 10px', borderRadius:7, cursor:'pointer',
+                  background: active ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.04)',
+                  color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
+                }}>{l}</div>
+              );
+            })}
+          </div>
+        </Row>
+        <Row label={t('lib_width')} sub={t('lib_width_sub')}>
+          <input type="range" min="180" max="520" value={settings.libWidth || 260}
+            onChange={e => set('libWidth', Number(e.target.value))}
+            style={{ width:120, accentColor:'rgb(var(--accent-rgb))' }}/>
+        </Row>
+        <Row label={t('lib_pin')} sub={t('lib_pin_sub')}><Toggle k="libPinned"/></Row>
+        {(settings.navDock || 'left') === 'top' && (
+          <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.045)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.62)', marginBottom: 2 }}>{t('nav_dock_panel')}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', marginBottom: 10 }}>{t('nav_dock_panel_sub')}</div>
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{t('player_bg_panel_alpha')}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{settings.navDockAlpha ?? 100}%</span>
+              </div>
+              <input type="range" min="0" max="100" value={settings.navDockAlpha ?? 100}
+                onChange={e => set('navDockAlpha', Number(e.target.value))}
+                style={{ width: '100%', accentColor: 'rgb(var(--accent-rgb))' }} />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{t('player_bg_panel_dim')}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{settings.navDockDim ?? 0}%</span>
+              </div>
+              <input type="range" min="0" max="100" value={settings.navDockDim ?? 0}
+                onChange={e => set('navDockDim', Number(e.target.value))}
+                style={{ width: '100%', accentColor: 'rgb(var(--accent-rgb))' }} />
+            </div>
+          </div>
+        )}
+      </Card>
+      <Card title={t('player_bg')}>
+        <div style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 14, lineHeight: 1.45 }}>
+            {t('player_bg_sub')}
+          </div>
+          <PlayerBgPanel settings={settings} t={t}
+            onPatch={(patch) => onSettings({ ...settings, ...patch })} />
+        </div>
+      </Card>
+      <Card title={t('theme_title')}>
+        <Row label={t('theme_export')}>
+          <div onClick={() => {
+            const code = window.AoiCustom?.exportThemeCode?.(settings) || '';
+            if (!code) return;
+            navigator.clipboard?.writeText?.(code)?.then?.(() => {
+              setThemeCopied(true);
+              setTimeout(() => setThemeCopied(false), 2000);
+            });
+          }} style={{ fontSize:12, color:'rgba(255,255,255,0.55)', cursor:'pointer', background:'rgba(255,255,255,0.055)', borderRadius:7, padding:'5px 12px' }}>
+            {themeCopied ? t('theme_export_ok') : t('theme_export')}
+          </div>
+        </Row>
+        <Row label={t('theme_import')} last>
+          <input placeholder={t('theme_code_ph')} onKeyDown={e => {
+            if (e.key !== 'Enter') return;
+            const parsed = window.AoiCustom?.importThemeCode?.(e.currentTarget.value);
+            e.currentTarget.value = '';
+            if (!parsed) { alert(t('theme_import_bad')); return; }
+            onSettings({
+              ...settings,
+              navDock: parsed.navDock,
+              libWidth: parsed.libWidth,
+              libPinned: parsed.libPinned,
+              playerBg: parsed.playerBg,
+              playerBgType: parsed.playerBgType,
+              playerBgImage: parsed.playerBgImage,
+              playerBgBlur: parsed.playerBgBlur,
+              playerBgDim: parsed.playerBgDim,
+              playerBgScope: parsed.playerBgScope,
+              playerBgLibAlpha: parsed.playerBgLibAlpha,
+              playerBgLibDim: parsed.playerBgLibDim,
+              navDockAlpha: parsed.navDockAlpha,
+              navDockDim: parsed.navDockDim,
+              accentMode: parsed.accentMode,
+              uiShow: parsed.uiShow,
+            });
+            alert(t('theme_import_ok'));
+          }}
+            style={{ width:180, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, color:'rgba(255,255,255,0.75)', padding:'5px 8px', fontSize:12 }}/>
+        </Row>
+      </Card>
+      <Card title={t('ui_elements_title')}>
+        {Object.keys(window.AoiCustom?.DEFAULT_UI_SHOW || {}).map((k, i, arr) => {
+          const uiLabels = {
+            navHome: t('ui_nav_home'), navPlaylists: t('ui_nav_playlists'), navSearch: t('ui_nav_search'),
+            navPlayer: t('ui_nav_player'), navRooms: t('ui_nav_rooms'), navLocal: t('ui_nav_local'),
+            navSettings: t('ui_nav_settings'), sidebarAvatar: t('ui_sidebar_avatar'), queuePanel: t('queue_panel'),
+            playerGlow: t('ui_player_glow'), playerProgress: t('ui_player_progress'), playerVolume: t('ui_player_volume'),
+            playerEq: t('ui_player_eq'), playerShuffle: t('ui_player_shuffle'), playerRepeat: t('ui_player_repeat'),
+          };
+          return (
+          <Row key={k} label={uiLabels[k] || k} last={i === arr.length - 1}>
+            <Toggle k={'ui:' + k}/>
+          </Row>
+          );
+        })}
       </Card>
     </>),
     discord: (<>
@@ -3768,6 +4795,9 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
       )}
     </>),
     system: (<>
+      <Card title={t('card_network')}>
+        <Row label={t('use_aoi_proxy')} sub={t('use_aoi_proxy_sub')} last><Toggle k="useAoiProxy"/></Row>
+      </Card>
       <Card title={t('card_language')}>
         <Row label={t('language_label')} sub={t('language_sub')} last>
           <div style={{display:'flex', gap:6, flexShrink:0}}>
@@ -3913,7 +4943,7 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
     about: (
       <Card>
         <div style={{display:'flex', alignItems:'center', gap:12, padding:'14px 16px 10px'}}>
-          <AoiMark size={40} radius={10}/>
+          <AoiMark size={40} radius={10} className="aoi-logo-breathe"/>
           <div>
             <div style={{fontSize:14, fontWeight:650, color:'rgba(255,255,255,0.86)'}}>{window.appInfo?.name || 'aoi'}</div>
             <div style={{fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:2}}>{appVersion || window.appInfo?.version || '—'}</div>
@@ -5154,6 +6184,7 @@ function App() {
   const [avatarFlying,       setAvatarFlying]       = useState(false);
   const [artistView,         setArtistView]         = useState(null);
   const [libCollapsed,  setLibCollapsed]  = useState(false);
+  const [openPlaylistId, setOpenPlaylistId] = useState(null);
   const [settings,      setSettings]      = useState({
     autoplay:false, crossfade:0, defaultRepeat:false,
     startWithWindows:false, minimizeToTray:false, musicFolder:'',
@@ -5183,6 +6214,24 @@ function App() {
     errorQuarantine: [],
     candleSleep: false,
     hasPlayedOnce: false,
+    navDock: 'left',
+    libWidth: 260,
+    libPinned: true,
+    playerBg: '',
+    playerBgType: 'none',
+    playerBgImage: '',
+    playerBgBlur: 24,
+    playerBgDim: 45,
+    playerBgScope: 'window',
+    playerBgLibAlpha: 35,
+    playerBgLibDim: 15,
+    navDockAlpha: 100,
+    navDockDim: 0,
+    uiShow: null,
+    useAoiProxy: false,
+    hideListening: false,
+    scPlaylists: [],
+    remoteCrates: [],
   });
   const [settingsHydrated, setSettingsHydrated] = useState(false);
   const [sort,         setSort]         = useState('added');
@@ -5211,9 +6260,11 @@ function App() {
   const lastActivityRef = useRef(Date.now());
   const presenceTokenRef = useRef('');
   const seenInviteRef = useRef(new Set());
+  const presencePeersRef = useRef([]);
+  const appVersionRef = useRef('0.0.0');
   const updateCheckedRef = useRef(false);
   const [accentRGB,     setAccentRGB]     = useState(null);
-  const [openPlaylistId, setOpenPlaylistId] = useState(null);
+  const [remoteCrates, setRemoteCrates] = useState([]);
   const [room, setRoom] = useState({ role: null, code: '', members: [], status: 'idle', error: null, hostLeft: false, track: null, slots: emptyRoomSlots(), suggestions: [], you: null, locks: null });
   const [roomDraftLocks, setRoomDraftLocks] = useState(() => Array.from({ length: 8 }, () => false));
   const [roomJoinCode, setRoomJoinCode] = useState('');
@@ -5227,7 +6278,14 @@ function App() {
   const [libScrollTrigger,  setLibScrollTrigger]  = useState(0);
   const [libScrollTargetId, setLibScrollTargetId] = useState(null);
   const [searchFocused,    setSearchFocused]    = useState(false);
+  const [viewFogKey,       setViewFogKey]       = useState(0);
+  const [irisPulse,        setIrisPulse]        = useState(false);
+  const wasPlayingRef     = useRef(false);
   const editCancelRef  = useRef(false);
+
+  const pulseViewFog = useCallback(() => {
+    setViewFogKey(k => k + 1);
+  }, []);
 
   const lang = (settings.language || 'RU').toLowerCase();
   const langRef = useRef(lang);
@@ -5235,7 +6293,7 @@ function App() {
   const t = key => STRINGS[lang]?.[key] ?? STRINGS.ru[key] ?? key;
 
   useEffect(() => {
-    const btns = document.querySelectorAll('#titlebar .win-btn');
+    const btns = document.querySelectorAll('.win-btn');
     const titles = [t('minimize'), t('maximize'), t('close')];
     btns.forEach((b, i) => { if (titles[i]) b.title = titles[i]; });
   }, [lang]);
@@ -5344,6 +6402,7 @@ function App() {
   eqGainsRef.current   = settings.eqGains || EQ_ZERO;
   scPlayingTrackRef.current = scPlayingTrack;
   settingsRef.current  = settings;
+
   repeatRef.current    = repeat;
   const roomRef = useRef(room);
   roomRef.current = room;
@@ -5442,57 +6501,55 @@ function App() {
       const idleMs = Date.now() - lastActivityRef.current;
       const activeTrack = scPlayingTrackRef.current || tracksRef.current[trackIdxRef.current];
       const hasTrack = !!(activeTrack && activeTrack.title);
-      const listening = isPlayingRef.current && hasTrack;
-      const status = computePresenceStatus({ isPlaying: listening, hasTrack, hidden, idleMs });
+      const listening = isPlayingRef.current && hasTrack && !settingsRef.current?.hideListening;
+      const status = settingsRef.current?.hideListening ? 'idle' : computePresenceStatus({ isPlaying: listening, hasTrack, hidden, idleMs });
       const p = roomProfileOf(settings.soundcloudAuth);
+      const friendUids = resolveFriendUids(settingsRef.current?.friends, presencePeersRef.current);
       const res = await api.presenceBeat({
         name: p.name,
         avatar: p.avatar,
         uid: p.uid,
         profile: scProfileUrl(settings.soundcloudAuth),
         status,
-        trackTitle: listening && activeTrack ? (activeTrack.title || '') : '',
-        trackArtist: listening && activeTrack ? (activeTrack.artist || '') : '',
+        hideListening: !!settingsRef.current?.hideListening,
+        trackTitle: listening && activeTrack && !settingsRef.current?.hideListening ? (activeTrack.title || '') : '',
+        trackArtist: listening && activeTrack && !settingsRef.current?.hideListening ? (activeTrack.artist || '') : '',
+        friendUids,
       });
       if (!stop) {
         setPresenceConnected(!!(res && res.ok));
+        if (res && Array.isArray(res.friendCrates)) {
+          setRemoteCrates(res.friendCrates.filter(b => b && b.items && b.items.length));
+        }
         if (res && Array.isArray(res.invites) && res.invites.length) {
-          setSettings(s => {
-            let notifications = Array.isArray(s.notifications) ? s.notifications.slice() : [];
-            let changed = false;
-            for (const inv of res.invites) {
-              if (!inv || !inv.id || seenInviteRef.current.has(inv.id)) continue;
-              seenInviteRef.current.add(inv.id);
-              if (notifications.some(n => n.id === 'inv:' + inv.id)) continue;
-              const title = t('notif_invite');
-              const body = t('notif_invite_from')
-                .replace('{name}', inv.fromName || 'friend')
-                .replace('{code}', inv.roomCode || '');
-              notifications = [{
-                id: 'inv:' + inv.id,
-                type: 'invite',
-                title,
-                body,
-                at: inv.at || Date.now(),
-                read: false,
-                meta: {
-                  roomCode: inv.roomCode, fromName: inv.fromName, fromAvatar: inv.fromAvatar,
-                  trackId: inv.trackId || '', trackTitle: inv.trackTitle || '', trackArtist: inv.trackArtist || '',
-                  seekSec: inv.seekSec || 0,
-                },
-              }, ...notifications].slice(0, 40);
-              changed = true;
-            }
-            if (changed) {
-              try { window.AoiNight?.onNotificationEvent?.(s); } catch {}
-            }
-            return changed ? { ...s, notifications } : s;
+          const added = applyPresenceInvites(res.invites, seenInviteRef.current, t, () => {
+            try { window.AoiNight?.onNotificationEvent?.(settingsRef.current); } catch {}
           });
+          if (added) {
+            setSettings(s => ({
+              ...s,
+              notifications: [...added, ...(Array.isArray(s.notifications) ? s.notifications : [])].slice(0, 40),
+            }));
+          }
+        }
+        if (res && res.update) {
+          const added = applyUpdateNotif(res.update, appVersionRef.current, t, null, () => {
+            try { window.AoiNight?.onNotificationEvent?.(settingsRef.current); } catch {}
+          });
+          if (added) {
+            setSettings(s => {
+              const notifications = Array.isArray(s.notifications) ? s.notifications : [];
+              if (notifications.some(n => n.id === added[0].id)) return s;
+              return { ...s, notifications: [...added, ...notifications].slice(0, 40) };
+            });
+          }
         }
       }
     };
     beat();
-    const id = setInterval(beat, 30000);
+    const night = settingsRef.current?.quietHours !== false && (new Date().getHours() < 7 || new Date().getHours() >= 23);
+    const beatMs = night ? 5000 : 1000;
+    const id = setInterval(beat, beatMs);
     const onVis = () => { if (document.visibilityState === 'visible') beat(); };
     document.addEventListener('visibilitychange', onVis);
     const onUnload = () => { try { api.presenceLeave?.(); } catch {} };
@@ -5503,7 +6560,70 @@ function App() {
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('beforeunload', onUnload);
     };
-  }, [settingsHydrated, settings.presenceEnabled, settings.deepWorkUntil, settings.soundcloudAuth?.username, settings.soundcloudAuth?.avatarUrl, settings.soundcloudAuth?.userId, isPlaying, track?.id, scPlayingTrack?.id]);
+  }, [settingsHydrated, settings.presenceEnabled, settings.deepWorkUntil, settings.hideListening, settings.soundcloudAuth?.username, settings.soundcloudAuth?.avatarUrl, settings.soundcloudAuth?.userId, settings.friends, isPlaying, track?.id, scPlayingTrack?.id]);
+
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    if (settings.presenceEnabled === false || (Number(settings.deepWorkUntil) || 0) > Date.now()) {
+      try { window.AoiRooms?.presenceSocket?.disconnect?.(); } catch {}
+      return;
+    }
+    const sock = window.AoiRooms?.presenceSocket;
+    if (!sock) return;
+    sock.connect();
+    const off = sock.on((msg) => {
+      if (!msg) return;
+      if (msg.type === 'invite' && msg.invite) {
+        const added = applyPresenceInvites([msg.invite], seenInviteRef.current, t, () => {
+          try { window.AoiNight?.onNotificationEvent?.(settingsRef.current); } catch {}
+        });
+        if (added) {
+          setSettings(s => ({
+            ...s,
+            notifications: [...added, ...(Array.isArray(s.notifications) ? s.notifications : [])].slice(0, 40),
+          }));
+        }
+      }
+      if (msg.type === 'crate' && msg.crate && msg.crate.items?.length) {
+        setRemoteCrates(prev => {
+          const box = msg.crate;
+          const rest = (prev || []).filter(b => String(b.uid) !== String(box.uid));
+          return [box, ...rest];
+        });
+      }
+      if (msg.type === 'update' && msg.update) {
+        const added = applyUpdateNotif(msg.update, appVersionRef.current, t, null, () => {
+          try { window.AoiNight?.onNotificationEvent?.(settingsRef.current); } catch {}
+        });
+        if (added) {
+          setSettings(s => {
+            const notifications = Array.isArray(s.notifications) ? s.notifications : [];
+            if (notifications.some(n => n.id === added[0].id)) return s;
+            return { ...s, notifications: [...added, ...notifications].slice(0, 40) };
+          });
+        }
+      }
+    });
+    return () => { try { off(); sock.disconnect(); } catch {} };
+  }, [settingsHydrated, settings.presenceEnabled, settings.deepWorkUntil]);
+
+  useEffect(() => {
+    const sock = window.AoiRooms?.presenceSocket;
+    if (!sock || !settingsHydrated) return;
+    sock.setFriends(resolveFriendUids(settings.friends, presencePeers));
+  }, [settingsHydrated, settings.friends, presencePeers]);
+
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    const uid = settings.soundcloudAuth?.userId;
+    if (!uid) return;
+    const items = settings.friendCrate || [];
+    const p = roomProfileOf(settings.soundcloudAuth);
+    const id = setTimeout(() => {
+      try { window.AoiRooms?.cratePush?.({ uid, name: p.name, items }); } catch {}
+    }, 500);
+    return () => clearTimeout(id);
+  }, [settingsHydrated, settings.friendCrate, settings.soundcloudAuth?.userId]);
 
   useEffect(() => {
     if (!settingsHydrated) return;
@@ -5515,7 +6635,9 @@ function App() {
       if (!homeVisible && !onlinePanelOpen && view !== 'soundcloud' && !notifPanelOpen) return;
       const res = await api.presenceList();
       if (stop || !res) return;
-      setPresencePeers(Array.isArray(res.peers) ? res.peers : []);
+      const peers = Array.isArray(res.peers) ? res.peers : [];
+      presencePeersRef.current = peers;
+      setPresencePeers(peers);
       setPresenceCount(Number(res.n) || 0);
     };
     pull();
@@ -5531,27 +6653,14 @@ function App() {
       try {
         const info = await window.electronAPI?.checkForUpdate?.();
         if (stop || !info || !info.available) return;
-        const ver = String(info.version || '');
-        if (!ver) return;
-        const id = 'upd:' + ver;
+        const added = applyUpdateNotif(info, appVersionRef.current, t, null, () => {
+          try { window.AoiNight?.onNotificationEvent?.(settingsRef.current); } catch {}
+        });
+        if (!added) return;
         setSettings(s => {
           const notifications = Array.isArray(s.notifications) ? s.notifications : [];
-          if (notifications.some(n => n.id === id)) return s;
-          const lines = Array.isArray(info.changelog) ? info.changelog.filter(Boolean) : [];
-          const body = lines.length ? lines.map(l => '· ' + l).join('\n') : (info.notes || '');
-          try { window.AoiNight?.onNotificationEvent?.(s); } catch {}
-          return {
-            ...s,
-            notifications: [{
-              id,
-              type: 'update',
-              title: t('notif_update') + ' · ' + ver,
-              body,
-              at: Date.now(),
-              read: false,
-              meta: { version: ver, url: info.url, sha256: info.sha256 || '' },
-            }, ...notifications].slice(0, 40),
-          };
+          if (notifications.some(n => n.id === added[0].id)) return s;
+          return { ...s, notifications: [...added, ...notifications].slice(0, 40) };
         });
       } catch {}
     };
@@ -5614,16 +6723,31 @@ function App() {
     return () => cancelAnimationFrame(raf);
   }, [appAccent]);
 
-  // titlebar accent glow — only in player view
+  // titlebar accent glow — only in player view (transparent when window bg image)
   useEffect(() => {
     const tb = document.getElementById('titlebar');
+    const shell = document.getElementById('app-shell');
     if (!tb) return;
-    if (view === 'player') {
+    const windowBg = view === 'player'
+      && settings.playerBgType === 'image'
+      && settings.playerBgImage
+      && (settings.playerBgScope || 'window') === 'window';
+    shell?.classList.toggle('player-window-bg', windowBg);
+    if (windowBg) {
+      tb.style.background = 'transparent';
+    } else if (view === 'player') {
       tb.style.background = 'linear-gradient(90deg, var(--bg) 0%, rgba(var(--accent-rgb), 0.09) 50%, var(--bg) 100%)';
     } else {
       tb.style.background = '';
     }
-  }, [view]);
+  }, [view, settings.playerBgType, settings.playerBgImage, settings.playerBgScope]);
+
+  useEffect(() => {
+    const shell = document.getElementById('app-shell');
+    if (!shell) return;
+    shell.classList.remove('nav-dock-top', 'nav-dock-bottom', 'nav-dock-left', 'nav-dock-right');
+    shell.classList.add('nav-dock-' + (settings.navDock || 'left'));
+  }, [settings.navDock]);
 
   /* загружаем настройки и треки при старте */
   useEffect(() => {
@@ -5631,10 +6755,11 @@ function App() {
       try {
         const saved = await window.electronAPI.loadSettings();
         if (saved && Object.keys(saved).length) {
-          if (!saved.musicFolder && saved.soundcloudAuth) saved.sourceMode = 'sc';
-          setSettings(s => ({ ...s, ...saved }));
-          if (saved.musicFolder) {
-            const local = await window.electronAPI.scanMusicFolder(saved.musicFolder);
+          const migrated = migratePlayerBgSettings(saved);
+          if (!migrated.musicFolder && migrated.soundcloudAuth) migrated.sourceMode = 'sc';
+          setSettings(s => ({ ...s, ...migrated }));
+          if (migrated.musicFolder) {
+            const local = await window.electronAPI.scanMusicFolder(migrated.musicFolder);
             if (local.length > 0) {
               const ct = saved.customTitles || {};
               const withCustom = local.map(t => ct[t.path] ? { ...t, title: ct[t.path] } : t);
@@ -5646,6 +6771,10 @@ function App() {
       } catch {}
       setSettingsHydrated(true);
     })();
+  }, []);
+
+  useEffect(() => {
+    window.electronAPI?.appVersion?.().then(v => { if (v) appVersionRef.current = String(v); }).catch(() => {});
   }, []);
 
   /* сохраняем настройки при изменении */
@@ -5806,11 +6935,13 @@ function App() {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
-  /* titlebar progress indicator */
+  /* titlebar / nav-dock progress indicator */
   useEffect(() => {
     let rafId = null;
     const updateProgress = () => {
-      const el = document.getElementById('titlebar-progress');
+      const el = document.getElementById(
+        (settings.navDock || 'left') === 'top' ? 'nav-dock-progress' : 'titlebar-progress'
+      );
       if (el && progressRef.current != null) {
         el.style.width = `${progressRef.current * 100}%`;
       }
@@ -5818,12 +6949,27 @@ function App() {
     };
     if (isPlaying) rafId = requestAnimationFrame(updateProgress);
     return () => cancelAnimationFrame(rafId);
-  }, [isPlaying]);
+  }, [isPlaying, settings.navDock]);
 
   useEffect(() => {
     const shell = document.getElementById('app-shell');
     if (shell) shell.classList.toggle('is-playing', !!isPlaying);
+    if (shell) {
+      shell.classList.toggle('player-view', view === 'player');
+      shell.classList.toggle('player-paused', view === 'player' && !isPlaying);
+    }
+  }, [isPlaying, view]);
+
+  useEffect(() => {
+    if (isPlaying && !wasPlayingRef.current) setIrisPulse(true);
+    wasPlayingRef.current = isPlaying;
   }, [isPlaying]);
+
+  useEffect(() => {
+    if (!irisPulse) return;
+    const id = setTimeout(() => setIrisPulse(false), 680);
+    return () => clearTimeout(id);
+  }, [irisPulse]);
 
   // V20 quiet chrome, V49 desat library, V28 rain on pause, V50 buffer glow, V33 cinema, V56 black lift
   useEffect(() => {
@@ -5859,31 +7005,21 @@ function App() {
     document.documentElement.classList.toggle('aoi-cinema', !!(window.AoiNight?.prefersReducedMotion?.()));
   }, [isPlaying, settings.blackLift, settings.hasPlayedOnce, settingsHydrated, scPlayingTrack, trackIdx, tracks]);
 
-  // R45 deep work / R50 quiet hours → slow presence
+  // R45 deep work — auto-resume presence when timer expires
   useEffect(() => {
     if (!settingsHydrated) return;
-    const deep = Number(settings.deepWorkUntil) || 0;
-    if (deep && Date.now() < deep) {
-      // presence effect also checks this via settings
-    }
+    const until = Number(settings.deepWorkUntil) || 0;
+    if (until <= Date.now()) return;
+    const id = setTimeout(() => {
+      setSettings(s => ({ ...s, deepWorkUntil: 0 }));
+    }, until - Date.now());
+    return () => clearTimeout(id);
   }, [settings.deepWorkUntil, settingsHydrated]);
 
-  // L09 queue persistence
   useEffect(() => {
     if (!settingsHydrated) return;
-    const q = {
-      scPlayingId: scPlayingTrack?.id || null,
-      trackIdx,
-      isPlaying: !!isPlaying,
-      progress: progressRef.current || 0,
-      at: Date.now(),
-    };
-    setSettings(s => {
-      const prev = s.playbackQueue || {};
-      if (prev.scPlayingId === q.scPlayingId && prev.trackIdx === q.trackIdx && Math.abs((prev.progress||0) - q.progress) < 0.05) return s;
-      return { ...s, playbackQueue: q };
-    });
-  }, [scPlayingTrack?.id, trackIdx, isPlaying, settingsHydrated]);
+    playSrcCacheRef.current = {};
+  }, [settings.useAoiProxy, settingsHydrated]);
 
   // R01 dawn queue
   useEffect(() => {
@@ -6630,7 +7766,15 @@ function App() {
         path: tr.path || null, from: peer?.name || '',
       };
       const rest = (s.friendCrate || []).filter(x => String(x.id) !== String(item.id));
-      return { ...s, friendCrate: [item, ...rest].slice(0, 40) };
+      const friendCrate = [item, ...rest].slice(0, 40);
+      const uid = s.soundcloudAuth?.userId;
+      const p = roomProfileOf(s.soundcloudAuth);
+      if (uid) {
+        try {
+          window.AoiRooms?.cratePush?.({ uid, name: p.name, items: friendCrate });
+        } catch {}
+      }
+      return { ...s, friendCrate };
     });
   };
 
@@ -6703,15 +7847,16 @@ function App() {
     handleScTrackClick(tr, -1, false);
   };
 
-  function playPlaylistItem(t) {
+  function playPlaylistItem(tr) {
     if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
-    if (t?.path) {
-      const li = tracks.findIndex(x => x.path === t.path || String(x.id) === String(t.id));
+    if (tr?.path) {
+      const li = tracks.findIndex(x => x.path === tr.path || String(x.id) === String(tr.id));
       setScPlayingTrack(null);
       if (li >= 0) { setTrackIdx(li); setIsPlaying(true); }
+      else showToast(t('track_unavailable'));
       return;
     }
-    handleScTrackClick(t, -1, true);
+    handleScTrackClick(tr, -1, true);
   }
 
   function attachEq(el, key) {
@@ -6846,9 +7991,10 @@ function App() {
     if (fadingRef.current || outgoingRef.current || peekingRef.current || aftertasteRef.current || finishingBarRef.current) return;
     const next = peekNextTrack();
     if (!next) return;
-    const src = next.path
+    const rawSrc = next.path
       ? (window.electronAPI.fileSrc ? window.electronAPI.fileSrc(next.path) : null)
       : (playSrcCacheRef.current[String(next.id)] || next.resolvedUrl || null);
+    const src = next.path ? rawSrc : proxyMediaUrl(rawSrc, settingsRef.current?.useAoiProxy);
     if (!src) return;
     const cur = audioRef.current;
     const other = otherAudio(cur);
@@ -7732,8 +8878,12 @@ function App() {
     }
 
     if (gen !== scClickGenRef.current) return;
-    const resolved = { ...scTrack, resolvedUrl };
-    playSrcCacheRef.current[String(scTrack.id)] = resolvedUrl;
+    let proxyAttempt = 0;
+    const useProxy = settingsRef.current?.useAoiProxy;
+    const pickProxyUrl = () => proxyMediaUrl(resolvedUrl, useProxy, proxyAttempt);
+    let proxiedUrl = pickProxyUrl();
+    const resolved = { ...scTrack, resolvedUrl: proxiedUrl };
+    playSrcCacheRef.current[String(scTrack.id)] = proxiedUrl;
     setScPlayingTrack(resolved);
 
     const swap = beginTrackChange();
@@ -7741,6 +8891,14 @@ function App() {
     if (!audio) { setLoadingTrackId(null); return; }
     const shouldPlay = applyingRoomRef.current ? !!roomApplyWantPlayRef.current : true;
     try { audio.crossOrigin = 'anonymous'; } catch {}
+
+    const retryProxy = () => {
+      if (gen !== scClickGenRef.current) return;
+      proxyAttempt++;
+      proxiedUrl = pickProxyUrl();
+      playSrcCacheRef.current[String(scTrack.id)] = proxiedUrl;
+      setScPlayingTrack(prev => prev ? { ...prev, resolvedUrl: proxiedUrl } : prev);
+    };
 
     audio.addEventListener('playing', () => {
       if (gen !== scClickGenRef.current) return;
@@ -7751,34 +8909,58 @@ function App() {
 
     if (isHls && typeof Hls !== 'undefined' && Hls.isSupported()) {
       const q = settingsRef.current?.hlsQuality || 'auto';
-      const hls = new Hls({
-        startLevel: q === 'sq' ? 0 : -1,
-        capLevelToPlayerSize: q !== 'hq',
-      });
-      hlsRef.current = hls;
-      hls.loadSource(resolvedUrl);
-      hls.attachMedia(audio);
-      const shellBuf = document.getElementById('app-shell');
-      audio.addEventListener('waiting', () => shellBuf?.classList.add('buffering'));
-      audio.addEventListener('playing', () => shellBuf?.classList.remove('buffering'));
-      audio.addEventListener('canplay', () => shellBuf?.classList.remove('buffering'));
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      const mountHls = (srcUrl) => {
         if (gen !== scClickGenRef.current) return;
-        if (shouldPlay) {
-          playAudio(audio).then(() => setLoadingTrackId(null)).catch(() => { setLoadingTrackId(null); setIsPlaying(false); });
-          setIsPlaying(true);
-        } else {
-          setLoadingTrackId(null);
-          setIsPlaying(false);
-        }
-      });
-      hls.on(Hls.Events.LEVEL_LOADED, (_, data) => {
-        if (gen !== scClickGenRef.current) return;
-        const dur = Math.floor(data.details.totalduration || 0);
-        if (dur) setScPlayingTrack(prev => prev ? { ...prev, duration: dur } : prev);
-      });
+        if (hlsRef.current) { try { hlsRef.current.destroy(); } catch {} hlsRef.current = null; }
+        const hls = new Hls({
+          startLevel: q === 'sq' ? 0 : -1,
+          capLevelToPlayerSize: q !== 'hq',
+        });
+        hlsRef.current = hls;
+        hls.loadSource(srcUrl);
+        hls.attachMedia(audio);
+        const shellBuf = document.getElementById('app-shell');
+        audio.addEventListener('waiting', () => shellBuf?.classList.add('buffering'));
+        audio.addEventListener('playing', () => shellBuf?.classList.remove('buffering'));
+        audio.addEventListener('canplay', () => shellBuf?.classList.remove('buffering'));
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (gen !== scClickGenRef.current) return;
+          if (!data.fatal) return;
+          retryProxy();
+          setTimeout(() => {
+            if (gen !== scClickGenRef.current) return;
+            mountHls(pickProxyUrl());
+          }, 320);
+        });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (gen !== scClickGenRef.current) return;
+          if (shouldPlay) {
+            playAudio(audio).then(() => setLoadingTrackId(null)).catch(() => { setLoadingTrackId(null); setIsPlaying(false); });
+            setIsPlaying(true);
+          } else {
+            setLoadingTrackId(null);
+            setIsPlaying(false);
+          }
+        });
+        hls.on(Hls.Events.LEVEL_LOADED, (_, data) => {
+          if (gen !== scClickGenRef.current) return;
+          const dur = Math.floor(data.details.totalduration || 0);
+          if (dur) setScPlayingTrack(prev => prev ? { ...prev, duration: dur } : prev);
+        });
+      };
+      mountHls(proxiedUrl);
     } else {
-      audio.src = resolvedUrl;
+      const onAudioErr = () => {
+        if (gen !== scClickGenRef.current) return;
+        retryProxy();
+        audio.removeEventListener('error', onAudioErr);
+        audio.src = pickProxyUrl();
+        audio.load();
+        audio.addEventListener('error', onAudioErr);
+        if (shouldPlay) playAudio(audio).catch(() => {});
+      };
+      audio.addEventListener('error', onAudioErr);
+      audio.src = proxiedUrl;
       audio.load();
       audio.addEventListener('loadedmetadata', () => {
         if (gen !== scClickGenRef.current) return;
@@ -7796,7 +8978,7 @@ function App() {
   }
 
 
-  async function selectTrack(t) {
+  async function selectTrack(tr) {
     if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
     const startPlayLocal = (idx) => {
       setScPlayingTrack(null);
@@ -7808,10 +8990,10 @@ function App() {
       playlistQueueRef.current = null;
       searchQueueRef.current = null;
       if (sourceMode === 'sc') {
-        const scIdx = scTracks.indexOf(t);
-        if (scIdx >= 0) handleScTrackClick(t, scIdx);
+        const scIdx = scTracks.indexOf(tr);
+        if (scIdx >= 0) handleScTrackClick(tr, scIdx);
       } else {
-        const li = tracks.indexOf(t);
+        const li = tracks.indexOf(tr);
         if (li >= 0) startPlayLocal(li);
       }
     };
@@ -7822,7 +9004,7 @@ function App() {
     }
 
     // scroll target card into view if needed (mirrors handleNav home→player)
-    const initialEl = artRefs.current[t.id];
+    const initialEl = artRefs.current[tr.id];
     const scrollEl = homeScrollRef.current;
     if (initialEl && scrollEl) {
       const box = scrollEl.getBoundingClientRect();
@@ -7834,19 +9016,19 @@ function App() {
       }
     }
 
-    const artEl = artRefs.current[t.id];
+    const artEl = artRefs.current[tr.id];
     const par = playerArtRef.current?.getBoundingClientRect();
 
     if (artEl && par) {
       const startRect = artEl.getBoundingClientRect();
       const targetRect = { left: par.left, top: par.top, size: par.width };
       startPlay();
-      setHero({ track: t, startRect, targetRect });
+      setHero({ track: tr, startRect, targetRect });
       setHomeVisible(false);
       setPlayerVisible(true);
       setView('player');
       setNavActive('library');
-      setLibScrollTargetId(t.id);
+      setLibScrollTargetId(tr.id);
       setLibScrollTrigger(v => v + 1);
       setTimeout(() => setHeroExiting(true), HERO_DUR_MS - 80);
       setTimeout(() => { setHero(null); setHeroExiting(false); }, HERO_DUR_MS - 80 + HERO_FADE_MS + 20);
@@ -7857,7 +9039,7 @@ function App() {
       setPlayerVisible(true);
       setView('player');
       setNavActive('library');
-      setLibScrollTargetId(t.id);
+      setLibScrollTargetId(tr.id);
       setLibScrollTrigger(v => v + 1);
     }
   }
@@ -8127,18 +9309,22 @@ function App() {
   const handleAddToPlaylist = (tr, playlistId) => {
     if (!tr) return;
     const snap = snapshotTrack(tr);
+    const lists = settings.playlists || [];
+    if (playlistId) {
+      const pl = lists.find(p => p.id === playlistId);
+      const exists = pl && (pl.items || []).some(x => String(x.id) === String(snap.id) || (snap.path && x.path === snap.path));
+      if (exists) { showToast(t('playlist_exists')); return; }
+    }
     setSettings(s => {
-      const lists = [...(s.playlists || [])];
+      const next = [...(s.playlists || [])];
       if (!playlistId) {
-        lists.push({ id: 'pl_' + Date.now(), name: (STRINGS[lang]?.playlist_new || 'playlist') + ' ' + (lists.length + 1), items: [snap] });
-        return { ...s, playlists: lists };
+        next.push({ id: 'pl_' + Date.now(), name: (STRINGS[lang]?.playlist_new || 'Playlist') + ' ' + (next.length + 1), items: [snap] });
+        return { ...s, playlists: next };
       }
       return {
         ...s,
-        playlists: lists.map(p => {
+        playlists: next.map(p => {
           if (p.id !== playlistId) return p;
-          const exists = (p.items || []).some(x => String(x.id) === String(snap.id) || (snap.path && x.path === snap.path));
-          if (exists) return p;
           return { ...p, items: [...(p.items || []), snap] };
         }),
       };
@@ -8176,8 +9362,33 @@ function App() {
     }));
   };
 
+  const handlePlayScPlaylist = async (pl) => {
+    const auth = settings.soundcloudAuth;
+    if (!auth?.token || !pl?.id || !window.electronAPI?.scFetch) {
+      showToast(t('sc_not_connected'));
+      return;
+    }
+    try {
+      const items = Array.isArray(pl._cachedItems) && pl._cachedItems.length
+        ? pl._cachedItems
+        : await fetchScPlaylistTracks(pl, auth, STRINGS[lang]?.no_title || '—');
+      if (!items.length) { showToast(t('playlist_empty')); return; }
+      playlistQueueRef.current = items;
+      searchQueueRef.current = null;
+      stationQueueRef.current = null;
+      handleScTrackClick(items[0], -1, false);
+      setPlayerVisible(true);
+      setView('player');
+      setNavActive('library');
+    } catch {
+      showToast(t('sc_error') || 'error');
+    }
+  };
+
   const handleNav = async (id) => {
     if (!settings.soundcloudAuth && id === 'search') return;
+    const fogViews = ['home', 'search', 'playlists', 'rooms', 'settings', 'soundcloud', 'library'];
+    if (fogViews.includes(id) && id !== navActive) pulseViewFog();
     setNavActive(id);
     if (id === 'home') {
       if (view === 'player') {
@@ -8277,20 +9488,49 @@ function App() {
 
   if (!track) return null;
 
+  const themeCfg = window.AoiCustom?.themeFromSettings?.(settings) || {};
+  const navDock = settings.navDock === 'bottom' ? 'top' : (settings.navDock || 'left');
+  const uiShow = themeCfg.uiShow || {};
+  const libPanelWidth = Math.max(180, Math.min(520, Number(settings.libWidth) || 260));
+  const queueOpen = uiShow.queuePanel !== false && (settings.libPinned ? true : !libCollapsed);
+  const playerWindowBg = view === 'player'
+    && settings.playerBgType === 'image'
+    && settings.playerBgImage
+    && (settings.playerBgScope || 'window') === 'window';
+  const sidebarEl = (
+    <Sidebar navActive={navActive} onNav={handleNav}
+      libCollapsed={libCollapsed} onToggleLib={() => setLibCollapsed(v => !v)}
+      inPlayer={view === 'player'} scAuth={settings.soundcloudAuth || null} profileRef={sidebarProfileRef}
+      roomLive={!!(room.role)}
+      sourceMode={sourceMode} onToggleSource={handleToggleSource} avatarFlying={avatarFlying}
+      dock={navDock} uiShow={uiShow} libPinned={!!settings.libPinned}/>
+  );
+
   return (
     <LangContext.Provider value={lang}>
     <BreathingBorder isPlaying={isPlaying}/>
-    <div style={{display:'flex', width:'100%', height:'100%', overflow:'hidden'}}>
+    {viewFogKey > 0 && <div key={viewFogKey} className="aoi-view-fog active" aria-hidden/>}
+    {playerWindowBg && (
+      <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }}>
+        <PlayerBackground settings={settings} fullTab />
+      </div>
+    )}
+    <div style={{display:'flex', flexDirection:'row', width:'100%', height:'100%', overflow:'hidden', position:'relative'}}>
       {hero && hero.targetRect && <HeroClone hero={hero} exiting={heroExiting}/>}
       {reverseHero && reverseHero.targetRect && <HeroClone hero={reverseHero} exiting={reverseHeroExiting} reverse={true}/>}
       {avatarFly && <AvatarFlyClone fly={avatarFly} exiting={avatarFlyExiting}/>}
-      <Sidebar navActive={navActive} onNav={handleNav}
-        libCollapsed={libCollapsed} onToggleLib={()=>setLibCollapsed(v=>!v)}
-        inPlayer={view==='player'} scAuth={settings.soundcloudAuth||null} profileRef={sidebarProfileRef}
-        roomLive={!!(room.role)}
-        sourceMode={sourceMode} onToggleSource={handleToggleSource} avatarFlying={avatarFlying}/>
+      {navDock === 'left' && sidebarEl}
 
-      <div style={{position:'relative', flex:1, height:'100%', overflow:'hidden'}}>
+      <div style={{display:'flex', flexDirection:'column', flex:1, minHeight:0, minWidth:0, overflow:'hidden'}}>
+      {navDock === 'top' && (
+        <div className="nav-dock-bar" style={playerPanelStyle(settings.navDockAlpha)}>
+          <PlayerBgDimOverlay dim={settings.navDockDim} />
+          <div id="nav-dock-progress" />
+          <div style={{ position:'relative', zIndex:1 }}>{sidebarEl}</div>
+        </div>
+      )}
+
+      <div style={{position:'relative', flex:1, height:'100%', minHeight:0, overflow:'hidden', zIndex:1}}>
 
         {(
           <div ref={homeScrollRef} className="scroll-thin scroll-home" style={{
@@ -8457,9 +9697,10 @@ function App() {
             transition:'opacity 0.1s ease',
             pointerEvents: playerVisible ? 'auto' : 'none',
           }}>
+        {!playerWindowBg && <PlayerBackground settings={settings} fullTab />}
         {/* library panel */}
         <div style={{
-          width: libCollapsed ? 0 : 260,
+          width: queueOpen ? libPanelWidth : 0,
           flexShrink:0, height:'100%',
           background:'transparent',
           zIndex:9, overflow:'hidden',
@@ -8469,7 +9710,13 @@ function App() {
             ? 'opacity 0.36s ease 0.1s, transform 0.44s cubic-bezier(0.22,1,0.36,1) 0.1s, width 0.44s cubic-bezier(0.4,0,0.2,1)'
             : 'opacity 0.14s ease, transform 0.18s ease, width 0.44s cubic-bezier(0.4,0,0.2,1)',
         }}>
-          <div style={{width: 260, flexShrink:0, height:'100%', display:'flex', flexDirection:'column'}}>
+          <div style={{
+            width: libPanelWidth, flexShrink:0, height:'100%',
+            display:'flex', flexDirection:'column', position:'relative',
+            ...playerPanelStyle(settings.playerBgLibAlpha),
+          }}>
+          <PlayerBgDimOverlay dim={settings.playerBgLibDim} />
+          <div style={{position:'relative', zIndex:1, flex:1, minHeight:0, display:'flex', flexDirection:'column'}}>
           {stationActive ? (
             <div style={{padding:'12px 14px 10px', flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center'}}>
               <div style={{
@@ -8512,6 +9759,7 @@ function App() {
                 </svg>
                 <input
                   ref={libSearchRef}
+                  className="aoi-focus-hand"
                   value={search}
                   onChange={e=>setSearch(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
@@ -8562,15 +9810,43 @@ function App() {
             isPlaying={isPlaying}
           />
           </div>
+          </div>
         </div>
 
-        {/* drag handle — positioned relative to flex parent, sits on library's right edge */}
+        {queueOpen && (
+        <div
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startW = libPanelWidth;
+            const move = (ev) => {
+              const next = Math.max(180, Math.min(520, startW + (ev.clientX - startX)));
+              setSettings(s => ({ ...s, libWidth: next }));
+            };
+            const up = () => {
+              document.removeEventListener('mousemove', move);
+              document.removeEventListener('mouseup', up);
+            };
+            document.addEventListener('mousemove', move);
+            document.addEventListener('mouseup', up);
+          }}
+          style={{
+            width:6, flexShrink:0, cursor:'col-resize', alignSelf:'stretch',
+            background:'transparent', zIndex:12,
+          }}
+          title={t('lib_width')}
+        />
+        )}
+
         {/* center player */}
         <div style={{
           flex:1, minWidth:0, height:'100%', position:'relative', zIndex:1,
           display:'flex', alignItems:'center', justifyContent:'center',
+          overflow:'hidden',
         }}>
+          <PlayerBackground settings={settings} />
           <div style={{
+            position:'relative', zIndex:1,
             width:'calc(100% - 48px)',
             maxWidth:'clamp(380px, 55vw, 900px)', minWidth:220,
             display:'flex', flexDirection:'column',
@@ -8652,6 +9928,7 @@ function App() {
                         }
                       }}
                       style={{fontSize:'clamp(18px, 2.6vw, 28px)', fontWeight:600, letterSpacing:'-0.022em'}}
+                      className="track-title-letterpress"
                       maxWidth={'min(clamp(280px, 38vw, 520px), 88%)'}
                     />
                   </div>
@@ -8664,18 +9941,23 @@ function App() {
                 marginBottom:24,
                 position:'relative',
               }}>
+                {uiShow.playerGlow !== false && <div className="aoi-corner-leak" aria-hidden/>}
+                {track.title && <div className="aoi-cover-shadow-type" aria-hidden>{track.title}</div>}
                 {/* ambient glow blob — uses app accent (cover-derived or preset) */}
                 <AmbientGlow
                   accent={appAccent}
                   isPlaying={isPlaying}
-                  visible={!((hero && !heroExiting) || reverseHero)}
+                  visible={uiShow.playerGlow !== false && !((hero && !heroExiting) || reverseHero)}
                   audioRef={audioRef}
                   eqAnalyserRef={eqAnalyserRef}
                 />
                 <div id="player-album-art" ref={playerArtRef}
                   style={{opacity: ((hero && !heroExiting) || reverseHero) ? 0 : 1, position:'relative', zIndex:1, overflow:'visible'}}>
                   <div ref={artEntranceRef} style={{ position:'relative', overflow:'visible' }}>
-                    <AlbumArt track={track} isPlaying={isPlaying} sleepy={sleepyEdge} someoneElse={someoneElse}/>
+                    {uiShow.playerProgress !== false && (
+                      <CoverProgressRing progressRef={progressRef} isPlaying={isPlaying} visible={playerVisible}/>
+                    )}
+                    <AlbumArt track={track} isPlaying={isPlaying} sleepy={sleepyEdge} someoneElse={someoneElse} iris={irisPulse}/>
                   </div>
                 </div>
               </div>
@@ -8686,15 +9968,19 @@ function App() {
               transform: playerVisible ? 'translateY(0)' : 'translateY(10px)',
               transition: playerVisible ? 'opacity 0.36s ease 0.28s, transform 0.48s cubic-bezier(0.22,1,0.36,1) 0.28s' : 'opacity 0.1s ease, transform 0.1s ease',
             }}>
+              {uiShow.playerProgress !== false && (
               <ProgressBar progressRef={progressRef} total={track.duration || 0}
                 onSeek={handleSeek} isPlaying={isPlaying} visible={playerVisible}
                 accentRGB={appAccent}/>
+              )}
             {(()=>{ const P = { spring:0.055, damping:0.84, clamp:10 }; return (
             <div style={{display:'flex', alignItems:'center', gap:14, justifyContent:'center', marginTop:16}}>
               {scPlayingTrack && <div style={{width:27, marginRight:14, flexShrink:0}}/>}
+              {uiShow.playerShuffle !== false && (
               <MagBtn onClick={()=>setShuffle(s=>!s)} active={shuffle} size={'clamp(40px, 5.2vw, 58px)'} physics={P}>
                 <img src="./assets/shuffle.png" style={{width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)',filter:'brightness(0) invert(1)',opacity:shuffle?1:0.38,transition:'opacity 0.2s ease'}}/>
               </MagBtn>
+              )}
               <MagBtn onClick={handlePrev} size={'clamp(46px, 6vw, 66px)'} physics={P}>
                 <img src="./assets/rewind.png" style={{width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)',filter:'brightness(0) invert(1)',opacity:0.38}}/>
               </MagBtn>
@@ -8705,12 +9991,14 @@ function App() {
               <MagBtn onClick={() => handleNext('user')} onHoldStart={startNeedle} onHoldEnd={stopNeedle} title={t('needle_fwd')} size={'clamp(46px, 6vw, 66px)'} physics={P}>
                 <img src="./assets/forward.png" style={{width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)',filter:'brightness(0) invert(1)',opacity:0.38}}/>
               </MagBtn>
+              {uiShow.playerRepeat !== false && (
               <MagBtn onClick={()=>setRepeat(r=>r==='off'?'all':r==='all'?'one':'off')} active={repeat!=='off'} size={'clamp(40px, 5.2vw, 58px)'} physics={P}>
                 <div style={{position:'relative',width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)'}}>
                   <img src="./assets/repeat.png"  style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',filter:'brightness(0) invert(1)',opacity:repeat==='off'?0.38:repeat==='all'?1:0,transition:'opacity 0.2s ease'}}/>
                   <img src="./assets/repeat1.png" style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',filter:'brightness(0) invert(1)',opacity:repeat==='one'?1:0,transition:'opacity 0.2s ease'}}/>
                 </div>
               </MagBtn>
+              )}
               {scPlayingTrack && (() => {
                 const liked = likedIds.has(scPlayingTrack.id);
                 return <PlayerLikeBtn liked={liked} onLike={() => handleLike(scPlayingTrack)} style={{marginLeft:14}}/>;
@@ -8722,6 +10010,7 @@ function App() {
         </div>
 
         {/* volume panel */}
+        {(uiShow.playerVolume !== false || uiShow.playerEq !== false) && (
         <div style={{
           width:28, flexShrink:0, height:'100%',
           display:'flex', flexDirection:'column', alignItems:'center',
@@ -8732,7 +10021,10 @@ function App() {
           transform: playerVisible ? 'translateX(0)' : 'translateX(8px)',
           transition: playerVisible ? 'opacity 0.36s ease 0.44s, transform 0.48s cubic-bezier(0.22,1,0.36,1) 0.44s' : 'opacity 0.1s ease, transform 0.1s ease',
         }}>
+          {uiShow.playerVolume !== false && (
           <ThinVolumeSlider volume={volume} onChange={handleVolumeChange} onLiveChange={handleVolumeLive} accentKey={`${appAccent.r},${appAccent.g},${appAccent.b}`}/>
+          )}
+          {uiShow.playerEq !== false && (
           <div data-eq-btn onClick={() => { ensureEqChain(); resumeEqCtx(eqCtxRef); setEqOpen(o => !o); }} title={t('eq')}
             style={{
               width:28, height:28, flexShrink:0, marginTop:6,
@@ -8748,7 +10040,8 @@ function App() {
               <rect x="17" y="9" width="3" height="11" rx="1"/>
             </svg>
           </div>
-          {eqOpen && (
+          )}
+          {uiShow.playerEq !== false && eqOpen && (
             <EqPopover
               gains={settings.eqGains || EQ_ZERO}
               eqId={settings.eqId || eqIdOf(settings.eqGains, settings.eqCustom)}
@@ -8803,6 +10096,7 @@ function App() {
             {sleepOn && <span style={{fontSize:8, letterSpacing:'0.04em', fontVariantNumeric:'tabular-nums', opacity:0.85}}>{sleepRemain}</span>}
           </div>
         </div>
+        )}
           </div>
         )}
 
@@ -8836,6 +10130,8 @@ function App() {
         <PlaylistView
           visible={view==='playlists'}
           playlists={settings.playlists || []}
+          scPlaylists={settings.scPlaylists || []}
+          scAuth={settings.soundcloudAuth || null}
           openId={openPlaylistId}
           onOpen={setOpenPlaylistId}
           onBack={() => setOpenPlaylistId(null)}
@@ -8843,6 +10139,8 @@ function App() {
           onRename={handleRenamePlaylist}
           onDelete={handleDeletePlaylist}
           onRemoveItem={handleRemovePlaylistItem}
+          onPlayScPlaylist={handlePlayScPlaylist}
+          onSaveScPlaylists={(list) => setSettings(s => ({ ...s, scPlaylists: list }))}
           onPlayTrack={(tr, items) => {
             playlistQueueRef.current = items || null;
             searchQueueRef.current = null;
@@ -8856,6 +10154,8 @@ function App() {
           loadingTrackId={loadingTrackId}
           errorTrackId={errorTrackId}
           hideDividers={settings.hideDividers}
+          likedIds={likedIds}
+          onLike={handleLike}
           onContextMenu={(tr, x, y) => setTrackMenu({ track: tr, x, y })}
           accentRGB={appAccent}/>
         <RoomsView
@@ -8900,6 +10200,7 @@ function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 5, scale: 0.98 }}
               transition={{ duration: 0.16, ease: 'easeOut' }}
+              className="aoi-toast"
               style={{
                 position:'absolute', bottom:28, left:'50%',
                 translate:'-50% 0',
@@ -8933,6 +10234,7 @@ function App() {
           blocked={settings.blockedPresence || []}
           friends={settings.friends || []}
           friendCrate={settings.friendCrate || []}
+          remoteCrates={remoteCrates}
           onPlayCrate={(item) => {
             if (!item) return;
             if (item.path) {
@@ -8975,6 +10277,8 @@ function App() {
         )}
 
       </div>
+      </div>
+      {navDock === 'right' && sidebarEl}
     </div>
     </LangContext.Provider>
   );

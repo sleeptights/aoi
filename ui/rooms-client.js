@@ -259,6 +259,51 @@
     }).catch(function () { return { ok: false, n: 0 }; });
   };
 
+  window.AoiRooms.cratePush = function (opts) {
+    opts = opts || {};
+    return fetch(roomsUrl() + '/presence/crate/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: presenceToken(),
+        uid: opts.uid || '',
+        name: opts.name || '',
+        items: opts.items || [],
+      }),
+    }).then(function (r) {
+      if (!r.ok) return { ok: false };
+      return r.json();
+    }).catch(function () { return { ok: false }; });
+  };
+
+  window.AoiRooms.proxyBases = function () {
+    var bases = [roomsUrl()];
+    var extra = window.AOI_PROXY_MIRRORS;
+    if (typeof extra === 'string' && extra.trim()) {
+      extra.split(',').forEach(function (p) {
+        p = String(p || '').trim().replace(/\/+$/, '');
+        if (p && bases.indexOf(p) < 0) bases.push(p);
+      });
+    }
+    var fallback = DEFAULT_URL.replace(/\/+$/, '');
+    if (bases.indexOf(fallback) < 0) bases.push(fallback);
+    return bases;
+  };
+
+  window.AoiRooms.proxyCandidates = function (url) {
+    var u = String(url || '');
+    if (!u) return [u];
+    return window.AoiRooms.proxyBases().map(function (b) {
+      return b + '/sc/proxy?url=' + encodeURIComponent(u);
+    }).concat([u]);
+  };
+
+  window.AoiRooms.proxyScUrl = function (url, attempt) {
+    var list = window.AoiRooms.proxyCandidates(url);
+    var i = Math.max(0, Number(attempt) || 0);
+    return list[i % list.length];
+  };
+
   window.AoiRooms.presenceLeave = function () {
     var tok = presenceToken();
     return fetch(roomsUrl() + '/presence/leave', {
@@ -302,6 +347,114 @@
       })
       .catch(function () { return { ok: false, n: 0, peers: [] }; });
   };
+
+  function PresenceSocket() {
+    this.ws = null;
+    this.closed = false;
+    this.handlers = [];
+    this.pingTimer = null;
+    this.retry = 0;
+    this.friendUids = [];
+  }
+
+  PresenceSocket.prototype.on = function (fn) {
+    this.handlers.push(fn);
+    return function () {
+      this.handlers = this.handlers.filter(function (h) { return h !== fn; });
+    }.bind(this);
+  };
+
+  PresenceSocket.prototype.emit = function (msg) {
+    this.handlers.forEach(function (fn) {
+      try { fn(msg); } catch (e) {}
+    });
+  };
+
+  PresenceSocket.prototype.setFriends = function (uids) {
+    this.friendUids = Array.isArray(uids) ? uids.slice(0, 32) : [];
+    if (this.ws && this.ws.readyState === 1) {
+      try {
+        this.ws.send(JSON.stringify({ type: 'friends', friendUids: this.friendUids }));
+      } catch (e) {}
+    }
+  };
+
+  PresenceSocket.prototype.connect = function () {
+    this.disconnect();
+    this.closed = false;
+    this.retry = 0;
+    this._open();
+  };
+
+  PresenceSocket.prototype._open = function () {
+    var self = this;
+    if (this.closed) return;
+    this._gen = (this._gen || 0) + 1;
+    var gen = this._gen;
+    if (this.ws) {
+      try { this.ws.onopen = null; this.ws.onmessage = null; this.ws.onclose = null; this.ws.onerror = null; this.ws.close(); } catch (e) {}
+      this.ws = null;
+    }
+    var tok = presenceToken();
+    var url = wsUrl(roomsUrl()) + '/presence/ws?token=' + encodeURIComponent(tok);
+    var ws;
+    try { ws = new WebSocket(url); } catch (e) { return; }
+    this.ws = ws;
+    ws.onopen = function () {
+      if (gen !== self._gen || self.ws !== ws) return;
+      self.retry = 0;
+      self._armPing();
+      if (self.friendUids.length) {
+        try { ws.send(JSON.stringify({ type: 'friends', friendUids: self.friendUids })); } catch (e) {}
+      }
+      self.emit({ type: 'open' });
+    };
+    ws.onmessage = function (ev) {
+      if (gen !== self._gen || self.ws !== ws) return;
+      var msg;
+      try { msg = JSON.parse(ev.data); } catch (e) { return; }
+      self.emit(msg);
+    };
+    ws.onclose = function () {
+      if (gen !== self._gen || self.ws !== ws) return;
+      self._clearPing();
+      if (self.closed) return;
+      var wait = Math.min(6000, 400 * Math.pow(2, self.retry++));
+      setTimeout(function () {
+        if (gen !== self._gen || self.closed) return;
+        self._open();
+      }, wait);
+    };
+    ws.onerror = function () {
+      try { ws.close(); } catch (e) {}
+    };
+  };
+
+  PresenceSocket.prototype._armPing = function () {
+    var self = this;
+    this._clearPing();
+    this.pingTimer = setInterval(function () {
+      if (self.ws && self.ws.readyState === 1) {
+        try { self.ws.send(JSON.stringify({ type: 'ping' })); } catch (e) {}
+      }
+    }, 22000);
+  };
+
+  PresenceSocket.prototype._clearPing = function () {
+    if (this.pingTimer) { clearInterval(this.pingTimer); this.pingTimer = null; }
+  };
+
+  PresenceSocket.prototype.disconnect = function () {
+    this.closed = true;
+    this._gen = (this._gen || 0) + 1;
+    this._clearPing();
+    if (this.ws) {
+      try { this.ws.close(); } catch (e) {}
+      this.ws = null;
+    }
+  };
+
+  window.AoiRooms.presenceSocket = new PresenceSocket();
 
   window.AoiRooms.pulse = function (id, token) {
     var trackId = String(id || '').replace(/[^\w-]/g, '').slice(0, 64);

@@ -166,6 +166,65 @@ fn datadome_value(app: &AppHandle) -> Option<String> {
         .map(|(_, value)| value)
 }
 
+fn encode_uri_component(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 16);
+    for b in s.bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char)
+            }
+            _ => out.push_str(&format!("%{b:02X}")),
+        }
+    }
+    out
+}
+
+fn proxy_base() -> String {
+    std::env::var("AOI_ROOMS_URL")
+        .unwrap_or_else(|_| "https://aoi-rooms.elvishedcc.workers.dev".into())
+        .trim_end_matches('/')
+        .to_string()
+}
+
+fn proxy_bases() -> Vec<String> {
+    let primary = proxy_base();
+    let mut bases = vec![primary];
+    if let Ok(extra) = std::env::var("AOI_PROXY_MIRRORS") {
+        for part in extra.split(',') {
+            let p = part.trim().trim_end_matches('/');
+            if !p.is_empty() && !bases.iter().any(|b| b == p) {
+                bases.push(p.to_string());
+            }
+        }
+    }
+    bases
+}
+
+fn proxy_candidates(app: &AppHandle, url: &str) -> Vec<String> {
+    let settings = settings::read_settings_file(app);
+    let use_proxy = settings
+        .get("useAoiProxy")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !use_proxy {
+        return vec![url.to_string()];
+    }
+    let mut out: Vec<String> = proxy_bases()
+        .into_iter()
+        .map(|b| format!("{b}/sc/proxy?url={}", encode_uri_component(url)))
+        .collect();
+    out.push(url.to_string());
+    out
+}
+
+#[allow(dead_code)]
+fn maybe_proxy_url(app: &AppHandle, url: &str) -> String {
+    proxy_candidates(app, url)
+        .into_iter()
+        .next()
+        .unwrap_or_else(|| url.to_string())
+}
+
 pub async fn sc_fetch(
     app: &AppHandle,
     url: &str,
@@ -237,35 +296,57 @@ pub async fn sc_fetch(
         }
     }
 
-    let mut req = client
-        .request(
-            reqwest::Method::from_bytes(method_up.as_bytes()).unwrap_or(reqwest::Method::GET),
-            &full_url,
-        )
-        .headers(headers);
-    if method_up == "POST" {
-        req = req.body("{}");
-    }
+    let candidates = proxy_candidates(app, &full_url);
+    let max_attempts = 120usize;
+    let mut attempt = 0usize;
 
-    let resp = req.send().await.map_err(|e| e.to_string())?;
-    let status = resp.status();
-    let code = status.as_u16();
-    let text = resp.text().await.map_err(|e| e.to_string())?;
-    if is_write {
-        log_write(app, &method_up, &full_url, code, &text);
-    }
-
-    // DELETE + 404: the resource is already gone, treat as success (e.g. unliking a track
-    // that was never liked server-side).
-    let ok = status.is_success() || code == 409 || (code == 404 && method_up == "DELETE");
-    if ok {
-        if text.trim().is_empty() {
-            return Ok(json!({ "data": null }));
+    loop {
+        let try_url = &candidates[attempt % candidates.len()];
+        let mut req = client
+            .request(
+                reqwest::Method::from_bytes(method_up.as_bytes()).unwrap_or(reqwest::Method::GET),
+                try_url,
+            )
+            .headers(headers.clone());
+        if method_up == "POST" {
+            req = req.body("{}");
         }
-        return match serde_json::from_str::<Value>(&text) {
-            Ok(data) => Ok(json!({ "data": data })),
-            Err(_) => Ok(json!({ "data": null })),
+
+        let resp = match req.send().await {
+            Ok(r) => r,
+            Err(e) => {
+                attempt += 1;
+                if attempt >= max_attempts {
+                    return Err(e.to_string());
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(280)).await;
+                continue;
+            }
         };
+        let status = resp.status();
+        let code = status.as_u16();
+        let text = resp.text().await.map_err(|e| e.to_string())?;
+        if is_write {
+            log_write(app, &method_up, &full_url, code, &text);
+        }
+
+        let ok = status.is_success() || code == 409 || (code == 404 && method_up == "DELETE");
+        if ok {
+            if text.trim().is_empty() {
+                return Ok(json!({ "data": null }));
+            }
+            return match serde_json::from_str::<Value>(&text) {
+                Ok(data) => Ok(json!({ "data": data })),
+                Err(_) => Ok(json!({ "data": null })),
+            };
+        }
+
+        let retryable = matches!(code, 429 | 502 | 503 | 504);
+        if retryable && attempt + 1 < max_attempts {
+            attempt += 1;
+            tokio::time::sleep(std::time::Duration::from_millis(280)).await;
+            continue;
+        }
+        return Ok(json!({ "error": code }));
     }
-    Ok(json!({ "error": code }))
 }

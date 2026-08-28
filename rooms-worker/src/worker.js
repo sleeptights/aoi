@@ -101,7 +101,7 @@ export default {
 
     const url = new URL(req.url);
     if (url.pathname === '/' || url.pathname === '/health') {
-      return json({ ok: true, service: 'aoi-rooms', v: 5 });
+      return json({ ok: true, service: 'aoi-rooms', v: 6 });
     }
 
     if (url.pathname === '/update/latest') {
@@ -132,6 +132,57 @@ export default {
     if (url.pathname === '/presence/list') {
       const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
       return stub.fetch(new Request('https://presence/list', { method: 'GET' }));
+    }
+    if (url.pathname === '/presence/ws') {
+      const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
+      return stub.fetch(req);
+    }
+    if (url.pathname === '/presence/crate/push' && req.method === 'POST') {
+      const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
+      return stub.fetch(new Request('https://presence/crate/push', { method: 'POST', body: req.body, headers: req.headers }));
+    }
+
+    if (url.pathname === '/sc/proxy') {
+      const target = url.searchParams.get('url') || '';
+      const okProxy = /^https:\/\/(api-v2\.soundcloud\.com|api\.soundcloud\.com|sndcdn\.com|[\w.-]+\.sndcdn\.com)\//.test(target);
+      if (!okProxy) {
+        return json({ error: 'bad_url' }, 400);
+      }
+      try {
+        const fwd = new Headers();
+        const auth = req.headers.get('Authorization');
+        if (auth) fwd.set('Authorization', auth);
+        const range = req.headers.get('Range');
+        if (range) fwd.set('Range', range);
+        const isApi = target.includes('soundcloud.com/');
+        fwd.set('Accept', isApi ? 'application/json; charset=utf-8' : '*/*');
+        fwd.set('Origin', 'https://soundcloud.com');
+        fwd.set('Referer', 'https://soundcloud.com/');
+        fwd.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+        const dd = req.headers.get('x-datadome-clientid');
+        if (dd) fwd.set('x-datadome-clientid', dd);
+        const cookie = req.headers.get('Cookie');
+        if (cookie) fwd.set('Cookie', cookie);
+        const method = req.method === 'POST' ? 'POST' : req.method === 'PUT' ? 'PUT' : req.method === 'DELETE' ? 'DELETE' : 'GET';
+        const resp = await fetch(target, {
+          method,
+          headers: fwd,
+          body: method === 'GET' || method === 'DELETE' ? undefined : (req.body || '{}'),
+        });
+        const ct = resp.headers.get('content-type') || (isApi ? 'application/json; charset=utf-8' : 'application/octet-stream');
+        const outHdrs = { 'Content-Type': ct, ...cors() };
+        for (const h of ['Content-Length', 'Content-Range', 'Accept-Ranges', 'Cache-Control']) {
+          const v = resp.headers.get(h);
+          if (v) outHdrs[h] = v;
+        }
+        if (!isApi && resp.body) {
+          return new Response(resp.body, { status: resp.status, headers: outHdrs });
+        }
+        const text = await resp.text();
+        return new Response(text, { status: resp.status, headers: outHdrs });
+      } catch (e) {
+        return json({ error: 'proxy_fail' }, 502);
+      }
     }
 
     if (url.pathname === '/create' && req.method === 'POST') {
@@ -645,6 +696,22 @@ function clampPresenceStatus(raw) {
   return s === 'listening' || s === 'idle' || s === 'afk' ? s : 'idle';
 }
 
+function sanitizeCrateItem(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = String(raw.id || '').replace(/[^\w-]/g, '').slice(0, 40);
+  if (!id) return null;
+  return {
+    id,
+    title: String(raw.title || '').slice(0, 120),
+    artist: String(raw.artist || '').slice(0, 80),
+    coverUrl: clampAvatar(raw.coverUrl) || '',
+    streamUrl: String(raw.streamUrl || '').slice(0, 500),
+    hlsUrl: String(raw.hlsUrl || '').slice(0, 500),
+    path: String(raw.path || '').slice(0, 400),
+    from: String(raw.from || '').slice(0, 40),
+  };
+}
+
 const PRESENCE_TTL_MS = 90000;
 const PRESENCE_MAX = 500;
 const INVITE_TTL_MS = 10 * 60 * 1000;
@@ -666,13 +733,14 @@ export class PresenceHub {
     this.loaded = false;
     this.peers = new Map();
     this.invites = [];
+    this.crates = new Map();
     this.update = { ...DEFAULT_UPDATE };
   }
 
   async ensureLoaded() {
     if (this.loaded) return;
     this.loaded = true;
-    const saved = await this.ctx.storage.get(['peers', 'invites', 'update']);
+    const saved = await this.ctx.storage.get(['peers', 'invites', 'update', 'crates']);
     const peers = saved.get('peers');
     if (Array.isArray(peers)) {
       for (const row of peers) {
@@ -685,6 +753,13 @@ export class PresenceHub {
     const update = saved.get('update');
     if (update && typeof update === 'object' && update.version) {
       this.update = { ...DEFAULT_UPDATE, ...update };
+    }
+    const crates = saved.get('crates');
+    if (crates && typeof crates === 'object') {
+      for (const [uid, row] of Object.entries(crates)) {
+        if (!uid || !row || !Array.isArray(row.items)) continue;
+        this.crates.set(uid, row);
+      }
     }
   }
 
@@ -706,6 +781,30 @@ export class PresenceHub {
 
   async persistInvites() {
     await this.ctx.storage.put('invites', this.invites.slice(0, 200));
+  }
+
+  async persistCrates() {
+    const obj = {};
+    for (const [uid, row] of this.crates.entries()) {
+      if (uid && row) obj[uid] = row;
+    }
+    await this.ctx.storage.put('crates', obj);
+  }
+
+  friendCratesFor(uids) {
+    const out = [];
+    for (const uid of uids) {
+      if (!uid) continue;
+      const row = this.crates.get(uid);
+      if (!row || !Array.isArray(row.items) || !row.items.length) continue;
+      out.push({
+        uid,
+        name: row.name || '',
+        items: row.items.slice(0, 40),
+        at: row.at || 0,
+      });
+    }
+    return out;
   }
 
   takeInvitesFor(tok, uid) {
@@ -730,10 +829,119 @@ export class PresenceHub {
     }
     if (mine.length) {
       this.invites = keep;
-      // fire-and-forget persist; beat already async path
       this.persistInvites();
     }
     return mine;
+  }
+
+  pushToToken(tok, msg) {
+    if (!tok) return false;
+    const raw = JSON.stringify(msg);
+    let sent = false;
+    for (const ws of this.ctx.getWebSockets()) {
+      const a = ws.deserializeAttachment() || {};
+      if (a.tok === tok) {
+        try { ws.send(raw); sent = true; } catch {}
+      }
+    }
+    return sent;
+  }
+
+  pushCrateToFriends(crateUid, box) {
+    if (!crateUid || !box) return;
+    const raw = JSON.stringify({ type: 'crate', crate: box });
+    for (const ws of this.ctx.getWebSockets()) {
+      const a = ws.deserializeAttachment() || {};
+      const friends = Array.isArray(a.friendUids) ? a.friendUids : [];
+      if (friends.includes(crateUid)) {
+        try { ws.send(raw); } catch {}
+      }
+    }
+  }
+
+  updateSnapshot() {
+    if (!this.update || !this.update.version || !this.update.url) return null;
+    return {
+      version: this.update.version,
+      url: this.update.url,
+      sha256: this.update.sha256 || '',
+      notes: this.update.notes || '',
+      changelog: Array.isArray(this.update.changelog) ? this.update.changelog.slice(0, 12) : [],
+    };
+  }
+
+  broadcastUpdate() {
+    const snap = this.updateSnapshot();
+    if (!snap) return 0;
+    const raw = JSON.stringify({ type: 'update', update: snap });
+    let n = 0;
+    for (const ws of this.ctx.getWebSockets()) {
+      try { ws.send(raw); n++; } catch {}
+    }
+    return n;
+  }
+
+  invitePayload(inv) {
+    return {
+      type: 'invite',
+      invite: {
+        id: inv.id,
+        roomCode: inv.roomCode,
+        fromName: inv.fromName,
+        fromAvatar: inv.fromAvatar,
+        trackId: inv.trackId || '',
+        trackTitle: inv.trackTitle || '',
+        trackArtist: inv.trackArtist || '',
+        seekSec: inv.seekSec || 0,
+        at: inv.at,
+      },
+    };
+  }
+
+  async handlePresenceWs(req) {
+    const url = new URL(req.url);
+    const tok = clampToken(url.searchParams.get('token'));
+    if (!tok) return json({ ok: false, error: 'token' }, 400);
+    const upgrade = req.headers.get('Upgrade') || '';
+    if (upgrade.toLowerCase() !== 'websocket') {
+      return json({ ok: false, error: 'ws_required' }, 426);
+    }
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
+    this.ctx.acceptWebSocket(server);
+    server.serializeAttachment({ tok, friendUids: [] });
+    const pending = this.takeInvitesFor(tok, '');
+    if (pending.length) {
+      for (const inv of pending) {
+        this.sendWs(server, this.invitePayload(inv));
+      }
+    }
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  sendWs(ws, msg) {
+    try { ws.send(JSON.stringify(msg)); } catch {}
+  }
+
+  async webSocketMessage(ws, raw) {
+    let msg;
+    try { msg = JSON.parse(typeof raw === 'string' ? raw : new TextDecoder().decode(raw)); }
+    catch { return; }
+    const att = ws.deserializeAttachment() || {};
+    if (msg.type === 'ping') {
+      this.sendWs(ws, { type: 'pong', t: Date.now() });
+      return;
+    }
+    if (msg.type === 'friends' && Array.isArray(msg.friendUids)) {
+      att.friendUids = msg.friendUids.map((u) => clampUid(u)).filter(Boolean).slice(0, 32);
+      ws.serializeAttachment(att);
+    }
+  }
+
+  async webSocketClose(ws) {}
+
+  async webSocketError(ws) {
+    try { ws.close(1011, 'error'); } catch {}
   }
 
   async fetch(req) {
@@ -741,6 +949,10 @@ export class PresenceHub {
     const url = new URL(req.url);
     const now = Date.now();
     this.prune(now);
+
+    if (url.pathname === '/ws' || url.pathname.endsWith('/presence/ws')) {
+      return this.handlePresenceWs(req);
+    }
 
     if (url.pathname === '/update') {
       return json({
@@ -790,7 +1002,8 @@ export class PresenceHub {
           : [],
       };
       await this.ctx.storage.put('update', this.update);
-      return json({ ok: true, ...this.update });
+      const pushed = this.broadcastUpdate();
+      return json({ ok: true, pushed, ...this.update });
     }
 
     if (url.pathname === '/beat' && req.method === 'POST') {
@@ -798,22 +1011,59 @@ export class PresenceHub {
       try { body = await req.json(); } catch {}
       const tok = clampToken(body.token);
       if (!tok) return json({ ok: false, error: 'token' }, 400);
+      const hideListening = !!body.hideListening;
+      const friendUids = Array.isArray(body.friendUids)
+        ? body.friendUids.map((u) => clampUid(u)).filter(Boolean).slice(0, 32)
+        : [];
       const peer = {
         tok,
         name: clampName(body.name),
         avatar: clampAvatar(body.avatar),
         uid: clampUid(body.uid),
         profile: clampProfile(body.profile),
-        status: clampPresenceStatus(body.status),
-        trackTitle: String(body.trackTitle || '').slice(0, 180),
-        trackArtist: String(body.trackArtist || '').slice(0, 180),
+        status: hideListening ? 'idle' : clampPresenceStatus(body.status),
+        hideListening,
+        trackTitle: hideListening ? '' : String(body.trackTitle || '').slice(0, 180),
+        trackArtist: hideListening ? '' : String(body.trackArtist || '').slice(0, 180),
+        friendUids,
         lastSeen: now,
       };
       const prev = this.peers.get(tok);
       this.peers.set(tok, peer);
       if (!prev || now - (prev.lastSeen || 0) >= 15000) await this.persistPeers();
       const invites = this.takeInvitesFor(tok, peer.uid);
-      return json({ ok: true, n: this.peers.size, invites });
+      const friendCrates = this.friendCratesFor(friendUids);
+      for (const ws of this.ctx.getWebSockets()) {
+        const a = ws.deserializeAttachment() || {};
+        if (a.tok === tok) {
+          a.friendUids = friendUids;
+          ws.serializeAttachment(a);
+          break;
+        }
+      }
+      return json({ ok: true, n: this.peers.size, invites, friendCrates, update: this.updateSnapshot() });
+    }
+
+    if (url.pathname === '/crate/push' && req.method === 'POST') {
+      let body = {};
+      try { body = await req.json(); } catch {}
+      const tok = clampToken(body.token);
+      const uid = clampUid(body.uid);
+      if (!tok || !uid) return json({ ok: false, error: 'bad_crate' }, 400);
+      const peer = this.peers.get(tok);
+      if (peer && peer.uid && peer.uid !== uid) return json({ ok: false, error: 'uid_mismatch' }, 403);
+      const items = Array.isArray(body.items)
+        ? body.items.map(sanitizeCrateItem).filter(Boolean).slice(0, 40)
+        : [];
+      this.crates.set(uid, {
+        items,
+        name: clampName(body.name || (peer && peer.name)),
+        at: now,
+      });
+      await this.persistCrates();
+      const box = { uid, name: clampName(body.name || (peer && peer.name)), items, at: now };
+      this.pushCrateToFriends(uid, box);
+      return json({ ok: true, n: items.length });
     }
 
     if (url.pathname === '/leave' && req.method === 'POST') {
@@ -857,7 +1107,16 @@ export class PresenceHub {
         i.roomCode === roomCode && ((toTok && i.toTok === toTok) || (toUid && i.toUid === toUid))
       ))].slice(0, 200);
       await this.persistInvites();
-      return json({ ok: true, id: inv.id });
+      const pushed = this.pushToToken(toTok, this.invitePayload(inv));
+      if (!pushed && toUid) {
+        for (const [ptok, p] of this.peers) {
+          if (p && p.uid === toUid) {
+            this.pushToToken(ptok, this.invitePayload(inv));
+            break;
+          }
+        }
+      }
+      return json({ ok: true, id: inv.id, pushed: !!pushed });
     }
 
     if (url.pathname === '/list') {
@@ -871,9 +1130,10 @@ export class PresenceHub {
           avatar: p.avatar,
           uid: p.uid,
           profile: p.profile,
-          status: p.status,
-          trackTitle: p.trackTitle,
-          trackArtist: p.trackArtist,
+          status: p.hideListening ? 'idle' : p.status,
+          trackTitle: p.hideListening ? '' : p.trackTitle,
+          trackArtist: p.hideListening ? '' : p.trackArtist,
+          hideListening: !!p.hideListening,
         }));
       return json({ ok: true, n: peers.length, peers });
     }
