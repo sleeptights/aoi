@@ -1,13 +1,14 @@
 ﻿{
-    "notes":  "aoi 1.1.0",
+    "notes":  "aoi 1.2.2-j",
     "changelog":  [
-                      "friends + crate",
-                      "multi accounts",
-                      "notif duck",
-                      "quiet likes",
-                      "overnight pack"
+                      "nav dock top: flat bar, win controls in nav, titlebar slides on side dock",
+                      "appearance: nav transparency/dim for top dock, no glass panels",
+                      "proxy moved to System / Network with mirror auto-fallback",
+                      "minimal player animations: iris, vinyl rim, moon ring, view fog, corner leak",
+                      "presence: push update notifications to online clients on release",
+                      "bugfixes: top nav clicks, settings layout, proxy retry on SC/HLS"
                   ],
-    "url":  "https://github.com/sleeptights/aoi/releases/download/v1.1.0/aoi-setup-win-x64.exe",
-    "version":  "1.1.0",
-    "sha256":  "45bcb34d3e4d23e67d34590e130de48d278c22c38e4f7448959a6b2d2cedc982"
+    "url":  "https://github.com/sleeptights/aoi/releases/download/v1.2.2-j/aoi-setup-win-x64.exe",
+    "version":  "1.2.2-j",
+    "sha256":  "30dfbeb656cf408dfd9b329a07b098686d9f56810d37326777e085c20a7249a0"
 }

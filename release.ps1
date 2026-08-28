@@ -21,7 +21,7 @@ $notes = "aoi $version"
 $changelog = @(
   'nav dock top: flat bar, win controls in nav, titlebar slides on side dock',
   'appearance: nav transparency/dim for top dock, no glass panels',
-  'proxy moved to System → Network with mirror auto-fallback',
+  'proxy moved to System / Network with mirror auto-fallback',
   'minimal player animations: iris, vinyl rim, moon ring, view fog, corner leak',
   'presence: push update notifications to online clients on release',
   'bugfixes: top nav clicks, settings layout, proxy retry on SC/HLS'
