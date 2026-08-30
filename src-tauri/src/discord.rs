@@ -13,6 +13,10 @@ use crate::state;
 
 pub const DEFAULT_APP_ID: &str = "1539444732248203345";
 
+/// Small overlay icon (bottom-right of cover) — public HTTPS, Discord accepts URLs.
+const SMALL_IMAGE_URL: &str =
+    "https://wsrv.nl/?url=raw.githubusercontent.com/sleeptights/aoi/master/src-tauri/icons/128x128.png&w=128&h=128&output=png";
+
 enum Cmd {
     Connect(String),
     Disconnect,
@@ -82,7 +86,11 @@ fn public_image_url(raw: &str) -> Option<String> {
         return None;
     }
     if url.contains("wsrv.nl") || url.contains("weserv.nl") {
-        return if url.len() <= 256 { Some(url.to_string()) } else { None };
+        return if url.len() <= 256 {
+            Some(url.to_string())
+        } else {
+            None
+        };
     }
     let stripped = url
         .trim_start_matches("https://")
@@ -124,28 +132,32 @@ fn build_activity<'a>(
     timestamps: Option<Timestamps>,
     cover: Option<&'a str>,
     is_playing: bool,
-    listening: bool,
+    party_size: Option<[i32; 2]>,
     instance: &'a str,
 ) -> Activity<'a> {
-    // Playing always draws an elapsed clock if we omit timestamps after a start/end pair.
-    // Pause must be a new instance without timestamps so Discord does not keep counting.
+    // Always Listening → Discord header "Слушает aoi" (like Lane / Spotify card).
+    let mut party = Party::new().id(instance);
+    if let Some(sz) = party_size {
+        party = party.size(sz);
+    }
     let mut act = Activity::new()
         .details(details)
         .state(state_line)
-        .party(Party::new().id(instance))
-        .activity_type(if listening || !is_playing {
-            ActivityType::Listening
-        } else {
-            ActivityType::Playing
-        });
+        .party(party)
+        .activity_type(ActivityType::Listening);
+    // Pause must omit timestamps so Discord does not keep counting.
     if is_playing {
         if let Some(ts) = timestamps {
             act = act.timestamps(ts);
         }
     }
+    let mut assets = Assets::new()
+        .small_image(SMALL_IMAGE_URL)
+        .small_text("aoi");
     if let Some(url) = cover {
-        act = act.assets(Assets::new().large_image(url).large_text("aoi"));
+        assets = assets.large_image(url).large_text(details);
     }
+    act = act.assets(assets);
     act
 }
 
@@ -160,19 +172,22 @@ struct PresenceMem {
     pause_wiped: bool,
 }
 
-fn room_state_line(data: &Value, is_playing: bool) -> Option<String> {
+/// Companions for rooms → state suffix "с Alice, Bob" (not replacing the artist).
+fn room_companions(data: &Value) -> Option<(String, i32)> {
     let room = data.get("room")?;
     if room.is_null() {
         return None;
     }
+    let self_name = room
+        .get("self")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
     let host = room
         .get("host")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .trim();
-    if host.is_empty() {
-        return None;
-    }
     let peers: Vec<&str> = room
         .get("peers")
         .and_then(|v| v.as_array())
@@ -180,22 +195,27 @@ fn room_state_line(data: &Value, is_playing: bool) -> Option<String> {
             arr.iter()
                 .filter_map(|x| x.as_str())
                 .map(|s| s.trim())
-                .filter(|s| !s.is_empty() && *s != host)
+                .filter(|s| !s.is_empty())
                 .collect()
         })
         .unwrap_or_default();
-    let with = if peers.is_empty() {
-        String::new()
-    } else if peers.len() == 1 {
-        format!(" · с {}", peers[0])
-    } else {
-        format!(" · с {}", peers.join(", "))
-    };
-    if is_playing {
-        Some(clamp_rpc(&format!("{host}{with}")))
-    } else {
-        Some(clamp_rpc(&format!("paused · {host}{with}")))
+
+    let mut names: Vec<&str> = Vec::new();
+    if !host.is_empty() && host != self_name {
+        names.push(host);
     }
+    for p in peers {
+        if p == self_name || names.iter().any(|n| *n == p) {
+            continue;
+        }
+        names.push(p);
+    }
+    // Party size = self + companions (min 1). Alone in room → no "с …" text.
+    let party_n = (names.len() + 1).max(1) as i32;
+    if names.is_empty() {
+        return Some((String::new(), party_n));
+    }
+    Some((format!("с {}", names.join(", ")), party_n))
 }
 
 fn apply(client: &mut DiscordIpcClient, data: &Value, mem: &mut PresenceMem) -> bool {
@@ -207,15 +227,28 @@ fn apply(client: &mut DiscordIpcClient, data: &Value, mem: &mut PresenceMem) -> 
     }
     let artist = state::opt_str(data, "artist").unwrap_or_default();
     let is_playing = state::opt_bool(data, "isPlaying");
-    let in_room = data.get("room").map(|v| !v.is_null()).unwrap_or(false);
     let details = clamp_rpc(&title);
-    let state_line = room_state_line(data, is_playing).unwrap_or_else(|| {
-        if is_playing {
+
+    let (room_suffix, party_size) = match room_companions(data) {
+        Some((suf, n)) => (suf, Some([n.max(1), n.max(2)])),
+        None => (String::new(), None),
+    };
+
+    // Base card = title + artist (Lane style). Rooms append " · с …".
+    let state_line = if is_playing {
+        if room_suffix.is_empty() {
             clamp_rpc(&artist)
+        } else if artist.trim().is_empty() {
+            clamp_rpc(&room_suffix)
         } else {
-            clamp_rpc("paused")
+            clamp_rpc(&format!("{artist} · {room_suffix}"))
         }
-    });
+    } else if room_suffix.is_empty() {
+        clamp_rpc("paused")
+    } else {
+        clamp_rpc(&format!("paused · {room_suffix}"))
+    };
+
     let cover = state::opt_str(data, "coverUrl")
         .as_deref()
         .and_then(public_image_url);
@@ -224,8 +257,7 @@ fn apply(client: &mut DiscordIpcClient, data: &Value, mem: &mut PresenceMem) -> 
     let timestamp_mode = state::opt_str(data, "timestamp").unwrap_or_else(|| "progress".into());
 
     // Discord merges omitted timestamps into the last start/end.
-    // After `end` it switches to elapsed and counts forever.
-    // Only send `start` while playing. On pause, wipe once, then never send timestamps.
+    // After track end it can keep counting — wipe once on pause, then no timestamps.
     if !is_playing && (mem.playing || !mem.pause_wiped) {
         wipe_clock(client);
         mem.pause_wiped = true;
@@ -235,9 +267,18 @@ fn apply(client: &mut DiscordIpcClient, data: &Value, mem: &mut PresenceMem) -> 
         mem.pause_wiped = false;
     }
 
+    // progress = start+end → blue bar + 00:36 / 03:42 (screenshot)
+    // elapsed = start only → counting up
     let timestamps = if is_playing && duration > 0.0 && timestamp_mode != "none" {
-        let elapsed_ms = (progress * duration * 1000.0) as i64;
-        Some(Timestamps::new().start(now_ms() - elapsed_ms))
+        let dur_ms = (duration * 1000.0).round() as i64;
+        let elapsed_ms = ((progress * duration) * 1000.0).round() as i64;
+        let start = now_ms() - elapsed_ms.max(0).min(dur_ms);
+        if timestamp_mode == "elapsed" {
+            Some(Timestamps::new().start(start))
+        } else {
+            // default: progress
+            Some(Timestamps::new().start(start).end(start + dur_ms))
+        }
     } else {
         None
     };
@@ -249,7 +290,7 @@ fn apply(client: &mut DiscordIpcClient, data: &Value, mem: &mut PresenceMem) -> 
         timestamps.clone(),
         cover.as_deref(),
         is_playing,
-        in_room,
+        party_size,
         instance,
     );
     if cover.is_some() && push(client, with_art) {
@@ -263,7 +304,7 @@ fn apply(client: &mut DiscordIpcClient, data: &Value, mem: &mut PresenceMem) -> 
             timestamps,
             None,
             is_playing,
-            in_room,
+            party_size,
             instance,
         ),
     )
@@ -290,12 +331,18 @@ fn worker(rx: mpsc::Receiver<Cmd>) {
             Ok(Cmd::Disconnect) => {
                 enabled = false;
                 last = None;
-                mem = PresenceMem { playing: true, pause_wiped: false };
+                mem = PresenceMem {
+                    playing: true,
+                    pause_wiped: false,
+                };
                 close_client(&mut client);
             }
             Ok(Cmd::Clear) => {
                 last = None;
-                mem = PresenceMem { playing: true, pause_wiped: false };
+                mem = PresenceMem {
+                    playing: true,
+                    pause_wiped: false,
+                };
                 if let Some(c) = client.as_mut() {
                     if c.clear_activity().is_err() {
                         close_client(&mut client);
@@ -311,7 +358,10 @@ fn worker(rx: mpsc::Receiver<Cmd>) {
                 if client.is_none() {
                     client = connect_now(&app_id);
                     next_retry = Instant::now() + Duration::from_secs(8);
-                    mem = PresenceMem { playing: true, pause_wiped: false };
+                    mem = PresenceMem {
+                        playing: true,
+                        pause_wiped: false,
+                    };
                     if let (Some(c), Some(data)) = (client.as_mut(), last.as_ref()) {
                         if !apply(c, data, &mut mem) {
                             close_client(&mut client);
@@ -338,7 +388,10 @@ fn worker(rx: mpsc::Receiver<Cmd>) {
                 if enabled && client.is_none() && Instant::now() >= next_retry {
                     client = connect_now(&app_id);
                     next_retry = Instant::now() + Duration::from_secs(8);
-                    mem = PresenceMem { playing: true, pause_wiped: false };
+                    mem = PresenceMem {
+                        playing: true,
+                        pause_wiped: false,
+                    };
                     if let (Some(c), Some(data)) = (client.as_mut(), last.as_ref()) {
                         if !apply(c, data, &mut mem) {
                             close_client(&mut client);

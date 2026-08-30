@@ -131,7 +131,9 @@ IPC: `window.electronAPI.*` в `ui/tauri-api.js` → команды в `lib.rs`.
 ## Discord
 
 `DEFAULT_APP_ID = 1539444732248203345` (приложение **aoi**).  
-Тип: **Playing**. Поток `aoi-discord`, UI не блокировать.  
+Тип: **Listening** («Слушает aoi»). Поток `aoi-discord`, UI не блокировать.  
+Timestamps `start`+`end` → полоска прогресса и `00:36 / 03:42`.  
+Обложка = large image, иконка aoi = small image. В комнате state: `artist · с …`.  
 Не включать aoi в Registered Games Discord — это «Играет в aoi» с вопросиком, не RPC.  
 Обложка: публичный https (`artworkUrl`), не localhost cache.
 

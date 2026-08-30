@@ -259,21 +259,32 @@
     }).catch(function () { return { ok: false, n: 0 }; });
   };
 
-  window.AoiRooms.cratePush = function (opts) {
+  function cratePost(path, opts) {
     opts = opts || {};
-    return fetch(roomsUrl() + '/presence/crate/push', {
+    return fetch(roomsUrl() + '/presence/crate/' + path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token: presenceToken(),
-        uid: opts.uid || '',
-        name: opts.name || '',
-        items: opts.items || [],
-      }),
+      body: JSON.stringify(Object.assign({ token: presenceToken() }, opts)),
     }).then(function (r) {
       if (!r.ok) return { ok: false };
       return r.json();
     }).catch(function () { return { ok: false }; });
+  }
+
+  window.AoiRooms.cratePush = function (opts) {
+    return cratePost('push', opts);
+  };
+
+  window.AoiRooms.crateAdd = function (opts) {
+    return cratePost('add', opts);
+  };
+
+  window.AoiRooms.crateRemove = function (opts) {
+    return cratePost('remove', opts);
+  };
+
+  window.AoiRooms.crateClear = function (opts) {
+    return cratePost('clear', opts);
   };
 
   window.AoiRooms.proxyBases = function () {
@@ -370,11 +381,16 @@
     });
   };
 
-  PresenceSocket.prototype.setFriends = function (uids) {
+  PresenceSocket.prototype.setFriends = function (uids, names) {
     this.friendUids = Array.isArray(uids) ? uids.slice(0, 32) : [];
+    this.friendNames = Array.isArray(names) ? names.slice(0, 32) : [];
     if (this.ws && this.ws.readyState === 1) {
       try {
-        this.ws.send(JSON.stringify({ type: 'friends', friendUids: this.friendUids }));
+        this.ws.send(JSON.stringify({
+          type: 'friends',
+          friendUids: this.friendUids,
+          friendNames: this.friendNames,
+        }));
       } catch (e) {}
     }
   };
@@ -405,7 +421,13 @@
       self.retry = 0;
       self._armPing();
       if (self.friendUids.length) {
-        try { ws.send(JSON.stringify({ type: 'friends', friendUids: self.friendUids })); } catch (e) {}
+        try {
+          ws.send(JSON.stringify({
+            type: 'friends',
+            friendUids: self.friendUids,
+            friendNames: self.friendNames || [],
+          }));
+        } catch (e) {}
       }
       self.emit({ type: 'open' });
     };

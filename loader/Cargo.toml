@@ -1,6 +1,6 @@
 [package]
 name = "aoi-setup"
-version = "1.2.2-j"
+version = "1.2.2-m"
 edition = "2021"
 description = "aoi installer"
 

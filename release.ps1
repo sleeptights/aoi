@@ -19,12 +19,11 @@ Write-Host "sha256: $sha" -ForegroundColor Green
 
 $notes = "aoi $version"
 $changelog = @(
-  'nav dock top: flat bar, win controls in nav, titlebar slides on side dock',
-  'appearance: nav transparency/dim for top dock, no glass panels',
-  'proxy moved to System / Network with mirror auto-fallback',
-  'minimal player animations: iris, vinyl rim, moon ring, view fog, corner leak',
-  'presence: push update notifications to online clients on release',
-  'bugfixes: top nav clicks, settings layout, proxy retry on SC/HLS'
+  'shared playlist with friends: one list per pair, both can add tracks',
+  'shared crate: play queue, likes, dock player, live sync via worker',
+  'auto-update on app restart from GitHub releases',
+  'version compare: letter bumps (1.2.2-l -> 1.2.2-m)',
+  'discord: listening mode with progress bar and room companions'
 )
 
 $gh = "$env:LOCALAPPDATA\aoi-tools\gh\gh.exe"

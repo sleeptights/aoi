@@ -1187,9 +1187,12 @@ const STRINGS = {
     notif_unlike_ok:'лайк убран', notif_unlike_fail:'не удалось убрать лайк',
     backup_settings:'бэкап настроек', backup_ok:'бэкап сохранён', backup_err:'не удалось сохранить бэкап',
     friends_section:'Друзья', online_section:'Онлайн', add_friend:'В друзья', remove_friend:'Из друзей',
-    crate_title:'Общий ящик', crate_add:'В ящик', crate_empty:'Ящик пуст',
+    crate_title:'Общий плейлист', crate_add:'В общий плейлист', crate_empty:'Пока пусто',
     crate_remove:'Убрать', crate_clear:'Очистить',
-    crate_from:'Ящик · {name}',
+    crate_from:'С {name}', crate_shared_with:'С {name}',
+    crate_add_current:'Добавить текущий', crate_added_ok:'Добавлено в общий плейлист',
+    crate_add_fail:'Не удалось добавить', crate_need_track:'Сначала включите трек',
+    crate_need_login:'Войдите в SoundCloud', crate_need_friend:'Друг должен быть онлайн',
     hide_listening:'Скрыть прослушивание',
     hide_listening_sub:'Не показывать текущий трек в списке онлайн',
     use_aoi_proxy:'Прокси AOI',
@@ -1253,6 +1256,8 @@ const STRINGS = {
     notif_clear:'Очистить',
     update_err:'Не удалось обновить',
     update_ready:'Обновление готово',
+    update_auto:'Скачивание обновления…',
+    update_auto_sub:'Приложение перезапустится',
   },
   en: {
     minimize:'Minimize', maximize:'Maximize', close:'Close',
@@ -1406,9 +1411,12 @@ const STRINGS = {
     notif_unlike_ok:'like removed', notif_unlike_fail:'could not remove like',
     backup_settings:'backup settings', backup_ok:'backup saved', backup_err:'backup failed',
     friends_section:'friends', online_section:'online', add_friend:'add friend', remove_friend:'remove friend',
-    crate_title:'shared crate', crate_add:'to crate', crate_empty:'crate is empty',
+    crate_title:'shared playlist', crate_add:'to shared playlist', crate_empty:'empty',
     crate_remove:'remove', crate_clear:'clear',
-    crate_from:'{name}\'s crate',
+    crate_from:'with {name}', crate_shared_with:'with {name}',
+    crate_add_current:'add current track', crate_added_ok:'added to shared playlist',
+    crate_add_fail:'could not add', crate_need_track:'play a track first',
+    crate_need_login:'sign in to SoundCloud', crate_need_friend:'friend must be online',
     hide_listening:'Hide Listening',
     hide_listening_sub:'Do not show the current track in the online list',
     use_aoi_proxy:'AOI Proxy',
@@ -1472,6 +1480,8 @@ const STRINGS = {
     notif_clear:'clear',
     update_err:'update failed',
     update_ready:'update ready',
+    update_auto:'downloading update…',
+    update_auto_sub:'the app will restart',
   },
 };
 const LangContext = React.createContext('ru');
@@ -1680,14 +1690,68 @@ function resolveFriendUids(friends, peers) {
   return [...uids].slice(0, 32);
 }
 
+function resolveFriendBeatMeta(friends, peers) {
+  const friendUids = resolveFriendUids(friends, peers);
+  const names = new Set();
+  (friends || []).forEach(f => {
+    const n = String(f?.name || '').trim();
+    if (n && n.toLowerCase() !== 'friend') names.add(n);
+  });
+  (peers || []).forEach(p => {
+    if (!window.AoiNight?.isFriend?.(friends, p)) return;
+    const n = String(p?.name || '').trim();
+    if (n && n.toLowerCase() !== 'friend') names.add(n);
+  });
+  return { friendUids, friendNames: [...names].slice(0, 32) };
+}
+
+function resolvePeerUid(peer, peers) {
+  if (!peer) return '';
+  if (peer.uid) return String(peer.uid);
+  const k = window.AoiNight?.peerKey?.(peer);
+  if (!k) return '';
+  const hit = (peers || []).find(p => window.AoiNight?.peerKey?.(p) === k);
+  return hit?.uid ? String(hit.uid) : '';
+}
+
+function upsertSharedCrate(list, box) {
+  if (!box || !box.friendUid) return Array.isArray(list) ? list : [];
+  const rest = (list || []).filter(b => String(b.friendUid) !== String(box.friendUid));
+  if (!box.items || !box.items.length) return rest;
+  return [box, ...rest];
+}
+
+function packCrateTrack(tr, auth, profile) {
+  if (!tr) return null;
+  return {
+    id: tr.id,
+    title: tr.title || '',
+    artist: tr.artist || '',
+    coverUrl: tr.coverUrl || tr.artworkUrl || null,
+    artworkUrl: tr.artworkUrl || tr.coverUrl || null,
+    streamUrl: tr.streamUrl || tr.resolvedUrl || null,
+    hlsUrl: tr.hlsUrl || null,
+    permalinkUrl: tr.permalinkUrl || null,
+    path: tr.path || null,
+    byUid: auth?.userId || '',
+    byName: profile?.name || '',
+  };
+}
+
 function parseAoiSemver(v) {
-  const clean = String(v || '').trim().replace(/^v/i, '').split(/[-+]/)[0];
-  const parts = clean.split('.');
+  const raw = String(v || '').trim().replace(/^v/i, '');
+  const [base, preRaw] = raw.split('-');
+  const pre = preRaw && /^[a-z]/i.test(preRaw) ? preRaw[0].toLowerCase() : null;
+  const parts = base.split('.');
   const major = parseInt(parts[0], 10);
   const minor = parseInt(parts[1], 10);
-  const patch = parseInt(parts[2], 10);
+  const patchPart = String(parts[2] || '');
+  const patchDigits = patchPart.match(/^\d+/)?.[0] || '';
+  const patch = parseInt(patchDigits, 10);
+  const letterFromPatch = patchPart.slice(patchDigits.length).match(/^[a-z]/i)?.[0]?.toLowerCase() || null;
+  const letter = pre || letterFromPatch;
   if (!Number.isFinite(major) || !Number.isFinite(minor) || !Number.isFinite(patch)) return null;
-  return [major, minor, patch];
+  return [major, minor, patch, letter];
 }
 
 function isAoiVersionNewer(remote, local) {
@@ -1696,7 +1760,13 @@ function isAoiVersionNewer(remote, local) {
   if (!r || !l) return false;
   if (r[0] !== l[0]) return r[0] > l[0];
   if (r[1] !== l[1]) return r[1] > l[1];
-  return r[2] > l[2];
+  if (r[2] !== l[2]) return r[2] > l[2];
+  const rl = r[3];
+  const ll = l[3];
+  if (!rl && !ll) return false;
+  if (rl && !ll) return false;
+  if (!rl && ll) return true;
+  return rl > ll;
 }
 
 function applyUpdateNotif(info, localVer, t, seenIds, onChanged) {
@@ -3025,7 +3095,7 @@ function HeroClone({ hero, exiting, reverse = false }) {
   );
 }
 
-function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen, onBack, onCreate, onRename, onDelete, onRemoveItem, onPlayTrack, onPlayScPlaylist, onSaveScPlaylists, activeId, loadingTrackId, errorTrackId, hideDividers, onContextMenu, likedIds, onLike, accentRGB }) {
+function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen, onBack, onCreate, onRename, onDelete, onRemoveItem, onPlayTrack, onPlayScPlaylist, onSaveScPlaylists, activeId, loadingTrackId, errorTrackId, hideDividers, onContextMenu, likedIds, onLike, accentRGB, dockTrack, dockPlaying, progressRef, onDockToggle, onDockPrev, onDockNext, onDockOpen, onDockSeek }) {
   const t = useLang();
   const lang = useContext(LangContext);
   const [editing, setEditing] = useState(null);
@@ -3041,6 +3111,20 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
   const [openSc, setOpenSc] = useState(null);
   const open = (playlists || []).find(p => p.id === openId) || null;
   const moods = window.AoiCustom?.SC_MOODS || [];
+  const dockOn = !!(dockTrack && dockTrack.title);
+
+  const dockBar = dockOn ? (
+    <SourceDeckPlayer
+      track={dockTrack}
+      isPlaying={dockPlaying}
+      progressRef={progressRef}
+      onToggle={onDockToggle}
+      onPrev={onDockPrev}
+      onNext={onDockNext}
+      onOpen={onDockOpen}
+      onSeek={onDockSeek}
+    />
+  ) : null;
 
   useEffect(() => {
     if (!visible) setOpenSc(null);
@@ -3182,7 +3266,7 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             {t('playlist_empty')}
           </div>
         ) : (
-          <div className="scroll-thin" style={{flex:1, overflowY:'auto'}}>
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto', paddingBottom: dockOn ? 108 : 0}}>
             {items.map((tr, i) => (
               <SearchTrackRow
                 key={tr.id || i}
@@ -3191,6 +3275,7 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
                 onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
                 onClick={() => onPlayTrack(tr, items)}
                 onCoverClick={() => onPlayTrack(tr, items)}
+                isActive={activeId != null && String(activeId) === String(tr.id)}
                 isLoading={loadingTrackId === tr.id}
                 isError={errorTrackId === tr.id}
                 hideDividers={hideDividers}
@@ -3199,6 +3284,7 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             ))}
           </div>
         )}
+        {dockBar}
       </div>
     );
   }
@@ -3241,7 +3327,7 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             <span style={{fontSize:12, opacity:0.7}}>{t('playlist_hint')}</span>
           </div>
         ) : (
-          <div className="scroll-thin" style={{flex:1, overflowY:'auto'}}>
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto', paddingBottom: dockOn ? 108 : 0}}>
             {items.map((tr, i) => (
               <div key={tr.id || i} style={{display:'flex', alignItems:'center', gap:8}}>
                 <div style={{flex:1, minWidth:0}}>
@@ -3251,6 +3337,7 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
                     onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
                     onClick={() => onPlayTrack(tr, items)}
                     onCoverClick={() => onPlayTrack(tr, items)}
+                    isActive={activeId != null && String(activeId) === String(tr.id)}
                     isLoading={loadingTrackId === tr.id}
                     isError={errorTrackId === tr.id}
                     hideDividers={hideDividers}
@@ -3263,6 +3350,7 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             ))}
           </div>
         )}
+        {dockBar}
       </div>
     );
   }
@@ -3734,7 +3822,99 @@ function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onT
   );
 }
 
-function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, friendCrate, remoteCrates, onPlayCrate, onRemoveCrate, onClearCrate }) {
+function SharedCrateView({ open, items, myUid, onBack, onPlayTrack, onRemoveItem, onClear, onAddCurrent, activeId, loadingTrackId, errorTrackId, hideDividers, likedIds, onLike, onContextMenu, dockTrack, dockPlaying, progressRef, onDockToggle, onDockPrev, onDockNext, onDockOpen, onDockSeek }) {
+  const t = useLang();
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === 'Escape') onBack?.(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onBack]);
+  if (!open) return null;
+  const list = items || [];
+  const dockOn = !!(dockTrack && dockTrack.title);
+  const dockBar = dockOn ? (
+    <SourceDeckPlayer
+      track={dockTrack}
+      isPlaying={dockPlaying}
+      progressRef={progressRef}
+      onToggle={onDockToggle}
+      onPrev={onDockPrev}
+      onNext={onDockNext}
+      onOpen={onDockOpen}
+      onSeek={onDockSeek}
+    />
+  ) : null;
+  return ReactDOM.createPortal(
+    <div style={{ position:'fixed', inset:0, zIndex:9850, background:'rgba(8,8,12,0.98)', display:'flex', flexDirection:'column' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'22px 28px 14px', flexShrink:0, borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+        <div onClick={onBack} title={t('back')} style={{
+          width:32, height:32, borderRadius:9, cursor:'pointer',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.7)',
+        }}>
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        </div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:16, fontWeight:700, color:'rgba(255,255,255,0.88)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            {t('crate_title')}
+          </div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', marginTop:2 }}>
+            {t('crate_shared_with').replace('{name}', open.friendName || 'friend')} · {list.length}
+          </div>
+        </div>
+        <div onClick={onAddCurrent} style={{
+          fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer',
+          background:'rgba(255,255,255,0.06)', borderRadius:8, padding:'6px 12px', flexShrink:0,
+        }}>{t('crate_add_current')}</div>
+        {list.length > 0 && (
+          <div onClick={onClear} style={{
+            fontSize:11, color:'rgba(255,80,80,0.75)', cursor:'pointer', padding:'6px 10px', flexShrink:0,
+          }}>{t('crate_clear')}</div>
+        )}
+      </div>
+      <div className="scroll-thin" style={{ flex:1, overflowY:'auto', padding:'12px 28px', paddingBottom: dockOn ? 108 : 28 }}>
+        {list.length === 0 ? (
+          <div style={{ fontSize:13, color:'rgba(255,255,255,0.32)', padding:'48px 0', textAlign:'center', lineHeight:1.6 }}>
+            {t('crate_empty')}<br/>
+            <span style={{ fontSize:12, opacity:0.7 }}>{t('crate_add_current')}</span>
+          </div>
+        ) : (
+          list.map((tr, i) => (
+            <div key={(tr.id || i) + '-scrate'} style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ flex:1, minWidth:0 }}>
+                <SearchTrackRow
+                  track={tr}
+                  isLiked={likedIds?.has(tr.id) || likedIds?.has(String(tr.id))}
+                  onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
+                  onClick={() => onPlayTrack?.(tr, list)}
+                  onCoverClick={() => onPlayTrack?.(tr, list)}
+                  isActive={activeId != null && String(activeId) === String(tr.id)}
+                  isLoading={loadingTrackId === tr.id}
+                  isError={errorTrackId === tr.id}
+                  hideDividers={hideDividers}
+                  onContextMenu={onContextMenu}
+                />
+                {tr.byName && String(tr.byUid) !== String(myUid) && (
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.22)', margin:'-4px 0 8px 52px' }}>
+                    {tr.byName}
+                  </div>
+                )}
+              </div>
+              <div onClick={() => onRemoveItem?.(tr)}
+                title={t('crate_remove')}
+                style={{ fontSize:16, color:'rgba(255,255,255,0.22)', cursor:'pointer', padding:'0 8px', flexShrink:0 }}>×</div>
+            </div>
+          ))
+        )}
+      </div>
+      {dockBar}
+    </div>,
+    document.body
+  );
+}
+
+function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, sharedCrates, onOpenSharedCrate }) {
   const t = useLang();
   useEffect(() => {
     if (!open) return;
@@ -3772,61 +3952,26 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
           </div>
         </div>
         <div className="scroll-thin" style={{ flex:1, overflowY:'auto', padding:'10px 12px 16px' }}>
-          {(friendCrate || []).length > 0 && (
+          {(sharedCrates || []).length > 0 && (
             <div style={{ marginBottom:14 }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, margin:'4px 8px 8px' }}>
-                <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)' }}>{t('crate_title')} · {t('presence_you')}</div>
-                <div onClick={(e) => { e.stopPropagation(); onClearCrate?.(); }}
-                  title={t('crate_clear')}
-                  style={{ fontSize:10, letterSpacing:'0.04em', color:'rgba(255,255,255,0.28)', cursor:'pointer', padding:'2px 4px', userSelect:'none' }}
-                  onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.55)'}
-                  onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.28)'}>
-                  {t('crate_clear')}
-                </div>
-              </div>
-              {(friendCrate || []).slice(0, 12).map((item, i) => (
-                <div key={(item.id || i) + '-crate'} onClick={() => onPlayCrate?.(item)}
-                  style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, marginBottom:3, cursor:'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
-                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+              <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>{t('crate_title')}</div>
+              {(sharedCrates || []).map((box) => (
+                <div key={'sc-' + (box.pairKey || box.friendUid)}
+                  onClick={() => onOpenSharedCrate?.({ friendUid: box.friendUid, friendName: box.friendName })}
+                  style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 10px', borderRadius:10, marginBottom:3, cursor:'pointer', background:'rgba(255,255,255,0.03)' }}
+                  onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.06)'}
+                  onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.03)'}>
+                  <div style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:14, color:'rgba(255,255,255,0.45)' }}>♪</div>
                   <div style={{ minWidth:0, flex:1 }}>
-                    <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.85)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.title || 'track'}</div>
-                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:2 }}>{item.artist || ''}</div>
+                    <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.85)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                      {t('crate_from').replace('{name}', box.friendName || 'friend')}
+                    </div>
+                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:2 }}>{(box.items || []).length} {(box.items || []).length === 1 ? 'track' : 'tracks'}</div>
                   </div>
-                  <div
-                    role="button"
-                    title={t('crate_remove')}
-                    onClick={(e) => { e.stopPropagation(); onRemoveCrate?.(item); }}
-                    style={{
-                      width:24, height:24, borderRadius:7, flexShrink:0, cursor:'pointer',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      color:'rgba(255,255,255,0.28)', fontSize:16, lineHeight:1,
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.color='rgba(255,255,255,0.7)'; e.currentTarget.style.background='rgba(255,255,255,0.06)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.28)'; e.currentTarget.style.background='transparent'; }}
-                  >×</div>
                 </div>
               ))}
             </div>
           )}
-          {(remoteCrates || []).map((box) => (
-            <div key={'rc-' + (box.uid || box.name)} style={{ marginBottom:14 }}>
-              <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>
-                {t('crate_from').replace('{name}', box.name || 'friend')}
-              </div>
-              {(box.items || []).slice(0, 12).map((item, i) => (
-                <div key={(item.id || i) + '-rcrate'} onClick={() => onPlayCrate?.(item)}
-                  style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:10, marginBottom:3, cursor:'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
-                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                  <div style={{ minWidth:0, flex:1 }}>
-                    <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.85)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.title || 'track'}</div>
-                    <div style={{ fontSize:11, color:'rgba(255,255,255,0.32)', marginTop:2 }}>{item.artist || ''}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
           {visible.length === 0 ? (
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.28)', textAlign:'center', padding:'48px 16px', lineHeight:1.5 }}>
               {t('presence_empty')}
@@ -3839,6 +3984,9 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
               {friendPeers.map(p => {
                 const mine = p.token && p.token === selfToken;
                 const activity = presenceActivityLabel(p, t);
+                const uid = p.uid || '';
+                const box = (sharedCrates || []).find(b => String(b.friendUid) === String(uid));
+                const n = box?.items?.length || 0;
                 return (
                   <div key={'f-'+(p.token || p.uid || p.name)}
                     onContextMenu={e => { e.preventDefault(); onUserMenu?.(p, e.clientX, e.clientY); }}
@@ -3855,6 +4003,19 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
                       </div>
                       <div style={{ fontSize:11.5, marginTop:3, color: p.status === 'listening' ? 'rgba(var(--accent-rgb),0.85)' : 'rgba(255,255,255,0.34)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{activity}</div>
                     </div>
+                    {!mine && uid && (
+                      <div
+                        onClick={(e) => { e.stopPropagation(); onOpenSharedCrate?.({ friendUid: uid, friendName: p.name }); }}
+                        title={t('crate_title')}
+                        style={{
+                          minWidth:28, height:28, borderRadius:8, flexShrink:0, cursor:'pointer',
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                          background: n > 0 ? 'rgba(var(--accent-rgb),0.12)' : 'rgba(255,255,255,0.05)',
+                          color: n > 0 ? 'rgba(var(--accent-rgb),0.9)' : 'rgba(255,255,255,0.35)',
+                          fontSize:11, fontWeight:600,
+                        }}
+                      >{n > 0 ? n : '♪'}</div>
+                    )}
                     <div style={{ width:7, height:7, borderRadius:99, flexShrink:0, background: p.status === 'afk' ? 'rgba(255,255,255,0.22)' : '#4ade80' }}/>
                   </div>
                 );
@@ -5196,8 +5357,74 @@ function SoundCloudView({
   );
 }
 
+/* ── SourceDeckPlayer — compact dock for search / playlists ─────────────── */
+function SourceDeckPlayer({ track, isPlaying, progressRef, onToggle, onPrev, onNext, onOpen, onSeek }) {
+  const t = useLang();
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    let raf;
+    const loop = () => { setTick(n => n + 1); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  if (!track || !track.title) return null;
+  const prog = Math.max(0, Math.min(1, progressRef?.current || 0));
+  const dur = Number(track.duration) || 0;
+  const curSec = dur > 0 ? prog * dur : 0;
+  return (
+    <div style={{
+      position:'absolute', left:0, right:0, bottom:0, zIndex:4,
+      padding:'10px 16px 14px',
+      background:'linear-gradient(180deg, transparent 0%, rgba(7,7,10,0.92) 28%, rgba(7,7,10,0.98) 100%)',
+      borderTop:'1px solid rgba(255,255,255,0.05)',
+      backdropFilter:'blur(12px)',
+    }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
+        <div onClick={onOpen} style={{
+          width:44, height:44, borderRadius:8, overflow:'hidden', flexShrink:0, cursor:'pointer', background:'#111116',
+        }}>
+          {track.coverUrl
+            ? <img src={track.coverUrl} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+            : <img src="./assets/note.png" style={{ width:18, height:18, margin:'13px', filter:'brightness(0) invert(1)', opacity:0.2 }}/>}
+        </div>
+        <div onClick={onOpen} style={{ flex:1, minWidth:0, cursor:'pointer' }}>
+          <div style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.9)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{track.title}</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.34)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{track.artist || ''}</div>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+          <div onClick={onPrev} style={{ width:30, height:30, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'rgba(255,255,255,0.55)' }}>
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+          </div>
+          <div onClick={onToggle} style={{
+            width:36, height:36, borderRadius:999, display:'flex', alignItems:'center', justifyContent:'center',
+            cursor:'pointer', background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.92)',
+          }}>
+            {isPlaying
+              ? <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+              : <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style={{ marginLeft:2 }}><polygon points="5,3 19,12 5,21"/></svg>}
+          </div>
+          <div onClick={onNext} style={{ width:30, height:30, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'rgba(255,255,255,0.55)' }}>
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div onClick={e => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        onSeek?.(Math.max(0, Math.min(1, x)));
+      }} style={{ height:4, borderRadius:999, background:'rgba(255,255,255,0.08)', cursor:'pointer', overflow:'hidden' }}>
+        <div style={{ width:`${prog * 100}%`, height:'100%', background:'rgba(var(--accent-rgb),0.85)', borderRadius:999 }}/>
+      </div>
+      <div style={{ display:'flex', justifyContent:'space-between', marginTop:5, fontSize:10, color:'rgba(255,255,255,0.28)', fontVariantNumeric:'tabular-nums' }}>
+        <span>{fmt(curSec)}</span>
+        <span>{dur > 0 ? fmt(dur) : ''}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ── SearchTrackRow ──────────────────────────────────────────────────────── */
-function SearchTrackRow({ track, isLiked, onLike, onClick, onCoverClick, isLoading, isError, hideDividers, onContextMenu }) {
+function SearchTrackRow({ track, isLiked, onLike, onClick, onCoverClick, isLoading, isError, hideDividers, onContextMenu, isActive }) {
   const t = useLang();
   const [hov, setHov] = useState(false);
   const lc = fmtCount(track.likesCount);
@@ -5219,6 +5446,8 @@ function SearchTrackRow({ track, isLiked, onLike, onClick, onCoverClick, isLoadi
         display:'flex', alignItems:'center', gap:12, padding:'7px 0',
         borderBottom: hideDividers ? 'none' : '1px solid rgba(255,255,255,0.032)',
         overflow:'hidden',
+        background: isActive ? 'rgba(var(--accent-rgb),0.06)' : 'transparent',
+        borderRadius: isActive ? 8 : 0,
       }}>
       {/* cover */}
       <div onClick={e=>{e.stopPropagation(); if(!isLoading) onCoverClick?.();}} style={{
@@ -5290,7 +5519,11 @@ function SearchTrackRow({ track, isLiked, onLike, onClick, onCoverClick, isLoadi
 }
 
 /* ── SearchView ──────────────────────────────────────────────────────────── */
-const SearchView = React.forwardRef(function SearchView({ visible, scAuth, likedIds, onLike, onPlayTrack, onSelectTrack, onResultsLoaded, onArtistClick, loadingTrackId, errorTrackId, hideDividers, onContextMenu }, ref) {
+const SearchView = React.forwardRef(function SearchView({
+  visible, scAuth, likedIds, onLike, onPlayTrack, onSelectTrack, onResultsLoaded, onArtistClick,
+  loadingTrackId, errorTrackId, hideDividers, onContextMenu, activeId,
+  dockTrack, dockPlaying, progressRef, onDockToggle, onDockPrev, onDockNext, onDockOpen, onDockSeek,
+}, ref) {
   const T = useLang();
   const inputRef = useRef(null);
   const [query,   setQuery]   = useState('');
@@ -5315,6 +5548,7 @@ const SearchView = React.forwardRef(function SearchView({ visible, scAuth, liked
   }));
 
   const hasResults = results.length > 0 || users.length > 0;
+  const dockOn = !!(dockTrack && dockTrack.title);
 
   const doSearch = async (q, off = 0) => {
     if (!q.trim() || !scAuth) return;
@@ -5410,8 +5644,8 @@ const SearchView = React.forwardRef(function SearchView({ visible, scAuth, liked
           className="scroll-thin"
           style={{
             position:'absolute', left:0, right:10,
-            top:'calc(8% + 76px)', bottom:0,
-            overflowY:'auto', padding:'16px 52px 32px',
+            top:'calc(8% + 76px)', bottom: dockOn ? 108 : 0,
+            overflowY:'auto', padding:`16px 52px ${dockOn ? 120 : 32}px`,
             willChange:'transform',
           }}>
           {users.length > 0 && (
@@ -5451,14 +5685,15 @@ const SearchView = React.forwardRef(function SearchView({ visible, scAuth, liked
             <div>
               <div style={{fontSize:10.5,letterSpacing:'0.09em',textTransform:'uppercase',color:'rgba(255,255,255,0.22)',marginBottom:8}}>{T('tracks_label')}</div>
               <AnimatePresence initial={false}>
-                {results.map(t => (
-                  <SearchTrackRow key={t.id} track={t}
-                    isLiked={likedIds.has(t.id)}
-                    onLike={() => onLike(t)}
-                    onClick={() => onSelectTrack(t, results)}
-                    onCoverClick={() => onPlayTrack(t, results)}
-                    isLoading={loadingTrackId === t.id}
-                    isError={errorTrackId === t.id}
+                {results.map(tr => (
+                  <SearchTrackRow key={tr.id} track={tr}
+                    isLiked={likedIds.has(tr.id)}
+                    onLike={() => onLike(tr)}
+                    onClick={() => onSelectTrack(tr, results)}
+                    onCoverClick={() => onPlayTrack(tr, results)}
+                    isActive={activeId != null && String(activeId) === String(tr.id)}
+                    isLoading={loadingTrackId === tr.id}
+                    isError={errorTrackId === tr.id}
                     hideDividers={hideDividers}
                     onContextMenu={onContextMenu}/>
                 ))}
@@ -5467,6 +5702,18 @@ const SearchView = React.forwardRef(function SearchView({ visible, scAuth, liked
             </div>
           )}
         </div>
+      )}
+      {dockOn && (
+        <SourceDeckPlayer
+          track={dockTrack}
+          isPlaying={dockPlaying}
+          progressRef={progressRef}
+          onToggle={onDockToggle}
+          onPrev={onDockPrev}
+          onNext={onDockNext}
+          onOpen={onDockOpen}
+          onSeek={onDockSeek}
+        />
       )}
     </div>
   );
@@ -6175,6 +6422,7 @@ function App() {
   const [volume,        setVolume]        = useState(0.7);
   const [hero,               setHero]               = useState(null);
   const [playerVisible,      setPlayerVisible]      = useState(false);
+  const [playbackDock,       setPlaybackDock]       = useState(null);
   const [homeVisible,        setHomeVisible]        = useState(true);
   const [heroExiting,        setHeroExiting]        = useState(false);
   const [reverseHero,        setReverseHero]        = useState(null);
@@ -6199,7 +6447,6 @@ function App() {
     notifications: [],
     notifSound: true,
     friends: [],
-    friendCrate: [],
     scAccounts: [],
     sleepTracksLeft: 0,
     deepWorkUntil: 0,
@@ -6231,7 +6478,6 @@ function App() {
     useAoiProxy: false,
     hideListening: false,
     scPlaylists: [],
-    remoteCrates: [],
   });
   const [settingsHydrated, setSettingsHydrated] = useState(false);
   const [sort,         setSort]         = useState('added');
@@ -6263,8 +6509,10 @@ function App() {
   const presencePeersRef = useRef([]);
   const appVersionRef = useRef('0.0.0');
   const updateCheckedRef = useRef(false);
+  const autoUpdateAttemptedRef = useRef(false);
   const [accentRGB,     setAccentRGB]     = useState(null);
-  const [remoteCrates, setRemoteCrates] = useState([]);
+  const [sharedCrates, setSharedCrates] = useState([]);
+  const [openSharedCrate, setOpenSharedCrate] = useState(null);
   const [room, setRoom] = useState({ role: null, code: '', members: [], status: 'idle', error: null, hostLeft: false, track: null, slots: emptyRoomSlots(), suggestions: [], you: null, locks: null });
   const [roomDraftLocks, setRoomDraftLocks] = useState(() => Array.from({ length: 8 }, () => false));
   const [roomJoinCode, setRoomJoinCode] = useState('');
@@ -6336,6 +6584,7 @@ function App() {
   const cfLockRef     = useRef(false);
   const repeatRef     = useRef('off');
   const playlistQueueRef = useRef(null);
+  const crateQueueRef    = useRef(null);
   const handleNextRef  = useRef(null);
   const handlePrevRef  = useRef(null);
   const handleSeekRef  = useRef(null);
@@ -6504,7 +6753,7 @@ function App() {
       const listening = isPlayingRef.current && hasTrack && !settingsRef.current?.hideListening;
       const status = settingsRef.current?.hideListening ? 'idle' : computePresenceStatus({ isPlaying: listening, hasTrack, hidden, idleMs });
       const p = roomProfileOf(settings.soundcloudAuth);
-      const friendUids = resolveFriendUids(settingsRef.current?.friends, presencePeersRef.current);
+      const friendBeat = resolveFriendBeatMeta(settingsRef.current?.friends, presencePeersRef.current);
       const res = await api.presenceBeat({
         name: p.name,
         avatar: p.avatar,
@@ -6514,12 +6763,13 @@ function App() {
         hideListening: !!settingsRef.current?.hideListening,
         trackTitle: listening && activeTrack && !settingsRef.current?.hideListening ? (activeTrack.title || '') : '',
         trackArtist: listening && activeTrack && !settingsRef.current?.hideListening ? (activeTrack.artist || '') : '',
-        friendUids,
+        friendUids: friendBeat.friendUids,
+        friendNames: friendBeat.friendNames,
       });
       if (!stop) {
         setPresenceConnected(!!(res && res.ok));
         if (res && Array.isArray(res.friendCrates)) {
-          setRemoteCrates(res.friendCrates.filter(b => b && b.items && b.items.length));
+          setSharedCrates(res.friendCrates.filter(b => b && b.friendUid));
         }
         if (res && Array.isArray(res.invites) && res.invites.length) {
           const added = applyPresenceInvites(res.invites, seenInviteRef.current, t, () => {
@@ -6584,12 +6834,18 @@ function App() {
           }));
         }
       }
+      if (msg.type === 'sharedCrate' && msg.crate) {
+        setSharedCrates(prev => upsertSharedCrate(prev, msg.crate));
+      }
       if (msg.type === 'crate' && msg.crate && msg.crate.items?.length) {
-        setRemoteCrates(prev => {
-          const box = msg.crate;
-          const rest = (prev || []).filter(b => String(b.uid) !== String(box.uid));
-          return [box, ...rest];
-        });
+        const legacy = {
+          friendUid: msg.crate.uid || '',
+          friendName: msg.crate.name || '',
+          items: msg.crate.items,
+          pairKey: '',
+          at: msg.crate.at || 0,
+        };
+        setSharedCrates(prev => upsertSharedCrate(prev, legacy));
       }
       if (msg.type === 'update' && msg.update) {
         const added = applyUpdateNotif(msg.update, appVersionRef.current, t, null, () => {
@@ -6610,20 +6866,9 @@ function App() {
   useEffect(() => {
     const sock = window.AoiRooms?.presenceSocket;
     if (!sock || !settingsHydrated) return;
-    sock.setFriends(resolveFriendUids(settings.friends, presencePeers));
+    const meta = resolveFriendBeatMeta(settings.friends, presencePeers);
+    sock.setFriends(meta.friendUids, meta.friendNames);
   }, [settingsHydrated, settings.friends, presencePeers]);
-
-  useEffect(() => {
-    if (!settingsHydrated) return;
-    const uid = settings.soundcloudAuth?.userId;
-    if (!uid) return;
-    const items = settings.friendCrate || [];
-    const p = roomProfileOf(settings.soundcloudAuth);
-    const id = setTimeout(() => {
-      try { window.AoiRooms?.cratePush?.({ uid, name: p.name, items }); } catch {}
-    }, 500);
-    return () => clearTimeout(id);
-  }, [settingsHydrated, settings.friendCrate, settings.soundcloudAuth?.userId]);
 
   useEffect(() => {
     if (!settingsHydrated) return;
@@ -6649,10 +6894,21 @@ function App() {
   useEffect(() => {
     if (!settingsHydrated) return;
     let stop = false;
-    const check = async () => {
+    const check = async (autoInstall) => {
       try {
         const info = await window.electronAPI?.checkForUpdate?.();
         if (stop || !info || !info.available) return;
+        if (autoInstall && !autoUpdateAttemptedRef.current) {
+          autoUpdateAttemptedRef.current = true;
+          setUpdateInstalling(true);
+          showToast(t('update_auto'));
+          try {
+            await window.electronAPI.installUpdate(info.url, info.sha256 || null);
+            return;
+          } catch {
+            setUpdateInstalling(false);
+          }
+        }
         const added = applyUpdateNotif(info, appVersionRef.current, t, null, () => {
           try { window.AoiNight?.onNotificationEvent?.(settingsRef.current); } catch {}
         });
@@ -6666,9 +6922,9 @@ function App() {
     };
     if (!updateCheckedRef.current) {
       updateCheckedRef.current = true;
-      check();
+      check(true);
     }
-    const id = setInterval(check, 6 * 60 * 60 * 1000);
+    const id = setInterval(() => check(false), 6 * 60 * 60 * 1000);
     return () => { stop = true; clearInterval(id); };
   }, [settingsHydrated]);
 
@@ -7252,12 +7508,13 @@ function App() {
     const r = roomRef.current;
     if (!r || !r.role) return null;
     const members = r.members || [];
+    const me = roomProfileOf(scAuthRef.current);
     const host = members.find(m => m.role === 'host');
-    const hostName = (host && host.name) || roomProfileOf(scAuthRef.current).name;
+    const hostName = (host && host.name) || me.name;
     const peers = members
       .filter(m => m && m.name && m.role !== 'host' && m.name !== hostName)
       .map(m => m.name);
-    return { host: hostName, peers };
+    return { host: hostName, peers, self: me.name || '' };
   }
 
   function packRoomTrack(tr) {
@@ -7756,26 +8013,75 @@ function App() {
     setSettings(s => ({ ...s, friends: window.AoiNight.toggleFriend(s.friends || [], peer) }));
   };
 
-  window.__aoiAddCrate = (peer) => {
+  window.__aoiAddCrate = async (peer) => {
     const tr = scPlayingTrackRef.current || tracksRef.current[trackIdxRef.current];
-    if (!tr) return;
-    setSettings(s => {
-      const item = {
-        id: tr.id, title: tr.title || '', artist: tr.artist || '',
-        coverUrl: tr.coverUrl || null, streamUrl: tr.streamUrl || null, hlsUrl: tr.hlsUrl || null,
-        path: tr.path || null, from: peer?.name || '',
-      };
-      const rest = (s.friendCrate || []).filter(x => String(x.id) !== String(item.id));
-      const friendCrate = [item, ...rest].slice(0, 40);
-      const uid = s.soundcloudAuth?.userId;
-      const p = roomProfileOf(s.soundcloudAuth);
-      if (uid) {
-        try {
-          window.AoiRooms?.cratePush?.({ uid, name: p.name, items: friendCrate });
-        } catch {}
-      }
-      return { ...s, friendCrate };
-    });
+    if (!tr) { showToast(t('crate_need_track')); return; }
+    const s = settingsRef.current;
+    const uid = s?.soundcloudAuth?.userId;
+    if (!uid) { showToast(t('crate_need_login')); return; }
+    const friendUid = resolvePeerUid(peer, presencePeersRef.current);
+    if (!friendUid) { showToast(t('crate_need_friend')); return; }
+    const p = roomProfileOf(s.soundcloudAuth);
+    const item = packCrateTrack(tr, s.soundcloudAuth, p);
+    if (!item?.id) return;
+    try {
+      const res = await window.AoiRooms?.crateAdd?.({
+        uid, friendUid, name: p.name, friendName: peer?.name || '', item,
+      });
+      if (res?.ok && res.crate) {
+        setSharedCrates(prev => upsertSharedCrate(prev, res.crate));
+        showToast(t('crate_added_ok'));
+      } else showToast(t('crate_add_fail'));
+    } catch { showToast(t('crate_add_fail')); }
+  };
+
+  const sharedCrateBox = openSharedCrate
+    ? (sharedCrates || []).find(b => String(b.friendUid) === String(openSharedCrate.friendUid))
+    : null;
+  const sharedCrateItems = sharedCrateBox?.items || [];
+
+  const postSharedCrate = async (path, body) => {
+    const uid = settings.soundcloudAuth?.userId;
+    if (!uid || !openSharedCrate?.friendUid) return null;
+    const p = roomProfileOf(settings.soundcloudAuth);
+    try {
+      const fn = window.AoiRooms?.['crate' + path];
+      if (!fn) return null;
+      return await fn({
+        uid,
+        friendUid: openSharedCrate.friendUid,
+        name: p.name,
+        friendName: openSharedCrate.friendName || '',
+        ...body,
+      });
+    } catch { return null; }
+  };
+
+  const handleAddToOpenSharedCrate = async () => {
+    const tr = scPlayingTrack || track;
+    if (!tr || !openSharedCrate) { showToast(t('crate_need_track')); return; }
+    const uid = settings.soundcloudAuth?.userId;
+    if (!uid) { showToast(t('crate_need_login')); return; }
+    const p = roomProfileOf(settings.soundcloudAuth);
+    const item = packCrateTrack(tr, settings.soundcloudAuth, p);
+    if (!item?.id) return;
+    const res = await postSharedCrate('Add', { item });
+    if (res?.ok && res.crate) {
+      setSharedCrates(prev => upsertSharedCrate(prev, res.crate));
+      showToast(t('crate_added_ok'));
+    } else showToast(t('crate_add_fail'));
+  };
+
+  const handleRemoveFromSharedCrate = async (item) => {
+    if (!item?.id || !openSharedCrate) return;
+    const res = await postSharedCrate('Remove', { itemId: item.id });
+    if (res?.ok) setSharedCrates(prev => upsertSharedCrate(prev, res.crate || { friendUid: openSharedCrate.friendUid, friendName: openSharedCrate.friendName, items: [] }));
+  };
+
+  const handleClearSharedCrate = async () => {
+    if (!openSharedCrate) return;
+    const res = await postSharedCrate('Clear', {});
+    if (res?.ok) setSharedCrates(prev => upsertSharedCrate(prev, res.crate || { friendUid: openSharedCrate.friendUid, friendName: openSharedCrate.friendName, items: [] }));
   };
 
   const handlePresenceBlock = (peer) => {
@@ -7857,6 +8163,57 @@ function App() {
       return;
     }
     handleScTrackClick(tr, -1, true);
+  }
+
+  function playSearchItem(tr, queue) {
+    if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
+    playlistQueueRef.current = null;
+    crateQueueRef.current = null;
+    stationQueueRef.current = null;
+    searchQueueRef.current = queue || searchQueueRef.current;
+    setPlaybackDock('search');
+    handleScTrackClick(tr, -1, true);
+  }
+
+  async function playCrateItem(item, queue) {
+    if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
+    const tr = await hydrateCrateItem(item);
+    if (!tr) return;
+    playlistQueueRef.current = null;
+    searchQueueRef.current = null;
+    stationQueueRef.current = null;
+    crateQueueRef.current = queue || crateQueueRef.current;
+    setPlaybackDock('crate');
+    if (tr.path) {
+      const li = tracks.findIndex(x => x.path === tr.path || String(x.id) === String(tr.id));
+      setScPlayingTrack(null);
+      if (li >= 0) { setTrackIdx(li); setIsPlaying(true); return; }
+      showToast(t('track_unavailable'));
+      return;
+    }
+    handleScTrackClick(tr, -1, true);
+  }
+
+  function openFullPlayer() {
+    setPlaybackDock(null);
+    setPlayerVisible(true);
+    setView('player');
+    setNavActive('library');
+  }
+
+  async function hydrateCrateItem(item) {
+    if (!item) return null;
+    if (item.streamUrl || item.hlsUrl || item.path) return item;
+    const auth = scAuthRef.current;
+    if (!auth?.token || !item.id || !window.electronAPI?.scFetch) return item;
+    try {
+      const res = await window.electronAPI.scFetch(
+        `https://api-v2.soundcloud.com/tracks/${encodeURIComponent(item.id)}`,
+        auth.token, auth.clientId
+      );
+      if (res?.data) return { ...item, ...mapScTrack(res.data, t('no_title')) };
+    } catch {}
+    return item;
   }
 
   function attachEq(el, key) {
@@ -7946,6 +8303,15 @@ function App() {
       if (i < 0) return plist[0];
       if (i + 1 < plist.length) return plist[i + 1];
       return repeatRef.current === 'all' ? plist[0] : null;
+    }
+    const clist = crateQueueRef.current;
+    if (clist && clist.length) {
+      const curId = scPlayingTrackRef.current?.id ?? tracksRef.current[trackIdxRef.current]?.id;
+      const curPath = tracksRef.current[trackIdxRef.current]?.path;
+      let i = clist.findIndex(x => String(x.id) === String(curId) || (curPath && x.path === curPath));
+      if (i < 0) return clist[0];
+      if (i + 1 < clist.length) return clist[i + 1];
+      return repeatRef.current === 'all' ? clist[0] : null;
     }
     const sc = scPlayingTrackRef.current;
     if (sc) {
@@ -8066,6 +8432,18 @@ function App() {
       else stopHere();
       return;
     }
+    const clist = crateQueueRef.current;
+    if (clist && clist.length) {
+      const curId = scPlayingTrack?.id ?? tracks[trackIdx]?.id;
+      const curPath = tracks[trackIdx]?.path;
+      let i = clist.findIndex(x => String(x.id) === String(curId) || (curPath && x.path === curPath));
+      if (i < 0) { playCrateItem(clist[0], clist); return; }
+      const ni = i + 1;
+      if (ni < clist.length) playCrateItem(clist[ni], clist);
+      else if (repeat === 'all') playCrateItem(clist[0], clist);
+      else stopHere();
+      return;
+    }
     if (scPlayingTrack) {
       const list = stationQueueRef.current || searchQueueRef.current || (searchRef.current ? filteredScRef.current : scTracksRef.current);
       if (!list || !list.length) { stopHere(); return; }
@@ -8139,6 +8517,15 @@ function App() {
       let i = plist.findIndex(x => String(x.id) === String(curId) || (curPath && x.path === curPath));
       if (i < 0) { playPlaylistItem(plist[plist.length - 1]); return; }
       if (i > 0) playPlaylistItem(plist[i - 1]);
+      return;
+    }
+    const clist = crateQueueRef.current;
+    if (clist && clist.length) {
+      const curId = scPlayingTrack?.id ?? tracks[trackIdx]?.id;
+      const curPath = tracks[trackIdx]?.path;
+      let i = clist.findIndex(x => String(x.id) === String(curId) || (curPath && x.path === curPath));
+      if (i < 0) { playCrateItem(clist[clist.length - 1], clist); return; }
+      if (i > 0) playCrateItem(clist[i - 1], clist);
       return;
     }
     if (scPlayingTrack) {
@@ -9376,10 +9763,8 @@ function App() {
       playlistQueueRef.current = items;
       searchQueueRef.current = null;
       stationQueueRef.current = null;
+      setPlaybackDock('playlist');
       handleScTrackClick(items[0], -1, false);
-      setPlayerVisible(true);
-      setView('player');
-      setNavActive('library');
     } catch {
       showToast(t('sc_error') || 'error');
     }
@@ -9443,6 +9828,11 @@ function App() {
       if (view === 'player') setPlayerVisible(false);
       if (view === 'home') setHomeVisible(false);
       setTimeout(() => setView('settings'), view === 'home' ? 240 : 300);
+    } else if (id === 'library') {
+      setPlaybackDock(null);
+      if (view === 'home') setHomeVisible(false);
+      setPlayerVisible(true);
+      setView('player');
     } else if (view === 'home') {
       const artEl = artRefs.current[track.id];
       const par = playerArtRef.current?.getBoundingClientRect();
@@ -9471,12 +9861,6 @@ function App() {
       setView('player');
     } else if (view === 'soundcloud') {
       setTimeout(() => { setPlayerVisible(true); setView('player'); }, 240);
-    } else if (view === 'search') {
-      setPlayerVisible(true);
-      setView('player');
-    } else if (view === 'playlists') {
-      setPlayerVisible(true);
-      setView('player');
     } else if (view === 'rooms') {
       setPlayerVisible(true);
       setView('player');
@@ -10120,8 +10504,17 @@ function App() {
         />
         <SearchView ref={searchViewRef} visible={view==='search'} scAuth={settings.soundcloudAuth||null}
           likedIds={likedIds} onLike={handleLike}
-          onPlayTrack={(tr, queue) => { playlistQueueRef.current = null; stationQueueRef.current = null; searchQueueRef.current = queue || null; handleScTrackClick(tr, -1); }}
-          onSelectTrack={(tr, queue) => { playlistQueueRef.current = null; stationQueueRef.current = null; searchQueueRef.current = queue || null; handleScTrackClick(tr, -1); setPlayerVisible(true); setView('player'); setNavActive('library'); }}
+          activeId={playbackDock === 'search' ? (scPlayingTrack?.id || null) : null}
+          onPlayTrack={(tr, queue) => playSearchItem(tr, queue)}
+          onSelectTrack={(tr, queue) => playSearchItem(tr, queue)}
+          dockTrack={playbackDock === 'search' ? (scPlayingTrack || null) : null}
+          dockPlaying={isPlaying}
+          progressRef={progressRef}
+          onDockToggle={() => setIsPlaying(v => !v)}
+          onDockPrev={handlePrev}
+          onDockNext={handleNext}
+          onDockOpen={openFullPlayer}
+          onDockSeek={handleSeek}
           onResultsLoaded={handleSearchResultsLoaded}
           onArtistClick={handleOpenArtist}
           loadingTrackId={loadingTrackId} errorTrackId={errorTrackId}
@@ -10144,13 +10537,20 @@ function App() {
           onPlayTrack={(tr, items) => {
             playlistQueueRef.current = items || null;
             searchQueueRef.current = null;
+            crateQueueRef.current = null;
             stationQueueRef.current = null;
+            setPlaybackDock('playlist');
             playPlaylistItem(tr);
-            setPlayerVisible(true);
-            setView('player');
-            setNavActive('library');
           }}
-          activeId={scPlayingTrack?.id || track?.id}
+          activeId={playbackDock === 'playlist' ? (scPlayingTrack?.id || track?.id) : (scPlayingTrack?.id || track?.id)}
+          dockTrack={playbackDock === 'playlist' ? (scPlayingTrack || track) : null}
+          dockPlaying={isPlaying}
+          progressRef={progressRef}
+          onDockToggle={() => setIsPlaying(v => !v)}
+          onDockPrev={handlePrev}
+          onDockNext={handleNext}
+          onDockOpen={openFullPlayer}
+          onDockSeek={handleSeek}
           loadingTrackId={loadingTrackId}
           errorTrackId={errorTrackId}
           hideDividers={settings.hideDividers}
@@ -10191,6 +10591,19 @@ function App() {
           loadingTrackId={loadingTrackId} errorTrackId={errorTrackId}
           onFollow={handleFollow} onCheckFollow={checkFollow}
           onContextMenu={(tr, x, y) => setTrackMenu({ track: tr, x, y })}/>
+
+        {updateInstalling && (
+          <div style={{
+            position:'fixed', inset:0, zIndex:10050,
+            background:'rgba(6,6,10,0.92)',
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+            pointerEvents:'auto',
+          }}>
+            <div style={{ width:28, height:28, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.08)', borderTopColor:'rgba(255,255,255,0.55)', animation:'spin 0.8s linear infinite', marginBottom:16 }}/>
+            <div style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.88)' }}>{t('update_auto')}</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', marginTop:6 }}>{t('update_auto_sub')}</div>
+          </div>
+        )}
 
         <AnimatePresence>
           {toast && !toastExiting && (
@@ -10233,27 +10646,39 @@ function App() {
           selfToken={presenceTokenRef.current}
           blocked={settings.blockedPresence || []}
           friends={settings.friends || []}
-          friendCrate={settings.friendCrate || []}
-          remoteCrates={remoteCrates}
-          onPlayCrate={(item) => {
-            if (!item) return;
-            if (item.path) {
-              const li = tracks.findIndex(x => x.path === item.path || String(x.id) === String(item.id));
-              if (li >= 0) { setScPlayingTrack(null); setTrackIdx(li); setIsPlaying(true); return; }
-            }
-            handleScTrackClick(item, scTracks.findIndex(x => String(x.id) === String(item.id)), false);
+          sharedCrates={sharedCrates}
+          onOpenSharedCrate={(peer) => {
+            setOnlinePanelOpen(false);
+            setOpenSharedCrate(peer);
           }}
-          onRemoveCrate={(item) => {
-            if (!item) return;
-            setSettings(s => ({
-              ...s,
-              friendCrate: (s.friendCrate || []).filter(x => String(x.id) !== String(item.id)),
-            }));
-          }}
-          onClearCrate={() => setSettings(s => ({ ...s, friendCrate: [] }))}
           presenceEnabled={settings.presenceEnabled !== false}
           onToggleVisible={v => setSettings(s => ({ ...s, presenceEnabled: !!v }))}
           onUserMenu={(peer, x, y) => setPresenceUserMenu({ peer, x, y })}
+        />
+        <SharedCrateView
+          open={openSharedCrate}
+          items={sharedCrateItems}
+          myUid={settings.soundcloudAuth?.userId || ''}
+          onBack={() => setOpenSharedCrate(null)}
+          onPlayTrack={(tr, queue) => playCrateItem(tr, queue)}
+          onRemoveItem={handleRemoveFromSharedCrate}
+          onClear={handleClearSharedCrate}
+          onAddCurrent={handleAddToOpenSharedCrate}
+          activeId={playbackDock === 'crate' ? (scPlayingTrack?.id || track?.id) : null}
+          dockTrack={playbackDock === 'crate' ? (scPlayingTrack || track) : null}
+          dockPlaying={isPlaying}
+          progressRef={progressRef}
+          onDockToggle={() => setIsPlaying(v => !v)}
+          onDockPrev={handlePrev}
+          onDockNext={handleNext}
+          onDockOpen={openFullPlayer}
+          onDockSeek={handleSeek}
+          loadingTrackId={loadingTrackId}
+          errorTrackId={errorTrackId}
+          hideDividers={settings.hideDividers}
+          likedIds={likedIds}
+          onLike={handleLike}
+          onContextMenu={(tr, x, y) => setTrackMenu({ track: tr, x, y })}
         />
         <NotificationsPanel
           open={notifPanelOpen}

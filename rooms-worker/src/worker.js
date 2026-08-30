@@ -141,6 +141,18 @@ export default {
       const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
       return stub.fetch(new Request('https://presence/crate/push', { method: 'POST', body: req.body, headers: req.headers }));
     }
+    if (url.pathname === '/presence/crate/add' && req.method === 'POST') {
+      const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
+      return stub.fetch(new Request('https://presence/crate/add', { method: 'POST', body: req.body, headers: req.headers }));
+    }
+    if (url.pathname === '/presence/crate/remove' && req.method === 'POST') {
+      const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
+      return stub.fetch(new Request('https://presence/crate/remove', { method: 'POST', body: req.body, headers: req.headers }));
+    }
+    if (url.pathname === '/presence/crate/clear' && req.method === 'POST') {
+      const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
+      return stub.fetch(new Request('https://presence/crate/clear', { method: 'POST', body: req.body, headers: req.headers }));
+    }
 
     if (url.pathname === '/sc/proxy') {
       const target = url.searchParams.get('url') || '';
@@ -696,19 +708,30 @@ function clampPresenceStatus(raw) {
   return s === 'listening' || s === 'idle' || s === 'afk' ? s : 'idle';
 }
 
+function cratePairKey(a, b) {
+  const x = clampUid(a);
+  const y = clampUid(b);
+  if (!x || !y || x === y) return '';
+  return [x, y].sort().join(':');
+}
+
 function sanitizeCrateItem(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const id = String(raw.id || '').replace(/[^\w-]/g, '').slice(0, 40);
   if (!id) return null;
+  const cover = clampAvatar(raw.coverUrl) || clampAvatar(raw.artworkUrl) || '';
   return {
     id,
     title: String(raw.title || '').slice(0, 120),
     artist: String(raw.artist || '').slice(0, 80),
-    coverUrl: clampAvatar(raw.coverUrl) || '',
+    coverUrl: cover,
+    artworkUrl: clampAvatar(raw.artworkUrl) || cover,
     streamUrl: String(raw.streamUrl || '').slice(0, 500),
     hlsUrl: String(raw.hlsUrl || '').slice(0, 500),
+    permalinkUrl: String(raw.permalinkUrl || '').slice(0, 500),
     path: String(raw.path || '').slice(0, 400),
-    from: String(raw.from || '').slice(0, 40),
+    byUid: clampUid(raw.byUid) || '',
+    byName: clampName(raw.byName || raw.from || '') || '',
   };
 }
 
@@ -734,13 +757,14 @@ export class PresenceHub {
     this.peers = new Map();
     this.invites = [];
     this.crates = new Map();
+    this.sharedCrates = new Map();
     this.update = { ...DEFAULT_UPDATE };
   }
 
   async ensureLoaded() {
     if (this.loaded) return;
     this.loaded = true;
-    const saved = await this.ctx.storage.get(['peers', 'invites', 'update', 'crates']);
+    const saved = await this.ctx.storage.get(['peers', 'invites', 'update', 'crates', 'sharedCrates']);
     const peers = saved.get('peers');
     if (Array.isArray(peers)) {
       for (const row of peers) {
@@ -759,6 +783,13 @@ export class PresenceHub {
       for (const [uid, row] of Object.entries(crates)) {
         if (!uid || !row || !Array.isArray(row.items)) continue;
         this.crates.set(uid, row);
+      }
+    }
+    const shared = saved.get('sharedCrates');
+    if (shared && typeof shared === 'object') {
+      for (const [key, row] of Object.entries(shared)) {
+        if (!key || !row || !Array.isArray(row.items)) continue;
+        this.sharedCrates.set(key, row);
       }
     }
   }
@@ -791,20 +822,92 @@ export class PresenceHub {
     await this.ctx.storage.put('crates', obj);
   }
 
-  friendCratesFor(uids) {
+  async persistSharedCrates() {
+    const obj = {};
+    for (const [key, row] of this.sharedCrates.entries()) {
+      if (key && row) obj[key] = row;
+    }
+    await this.ctx.storage.put('sharedCrates', obj);
+  }
+
+  sharedCrateBox(pairKey, myUid) {
+    const row = this.sharedCrates.get(pairKey);
+    if (!row || !Array.isArray(row.items) || !row.items.length) return null;
+    const members = pairKey.split(':');
+    const friendUid = members.find((u) => u && u !== myUid) || '';
+    return {
+      pairKey,
+      friendUid,
+      friendName: (row.labels && friendUid && row.labels[friendUid]) || '',
+      items: row.items.slice(0, 60),
+      at: row.at || 0,
+    };
+  }
+
+  sharedCratesFor(myUid, friendUids, friendNames) {
     const out = [];
-    for (const uid of uids) {
-      if (!uid) continue;
-      const row = this.crates.get(uid);
-      if (!row || !Array.isArray(row.items) || !row.items.length) continue;
-      out.push({
-        uid,
-        name: row.name || '',
-        items: row.items.slice(0, 40),
-        at: row.at || 0,
-      });
+    const seen = new Set();
+    const me = clampUid(myUid);
+    if (!me) return out;
+    const targets = new Set((friendUids || []).filter(Boolean));
+    const names = new Set(
+      (friendNames || [])
+        .map((n) => String(n || '').trim().toLowerCase())
+        .filter((n) => n && n !== 'friend'),
+    );
+    for (const p of this.peers.values()) {
+      if (!p?.uid) continue;
+      const pn = String(p.name || '').trim().toLowerCase();
+      if (targets.has(p.uid) || (pn && names.has(pn))) targets.add(p.uid);
+    }
+    for (const friendUid of targets) {
+      const key = cratePairKey(me, friendUid);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const box = this.sharedCrateBox(key, me);
+      if (box) {
+        if (!box.friendName) {
+          const peer = [...this.peers.values()].find((p) => p && p.uid === friendUid);
+          box.friendName = peer?.name || '';
+        }
+        out.push(box);
+      }
     }
     return out;
+  }
+
+  mutateSharedCrate(myUid, friendUid, myName, friendName, mutator) {
+    const key = cratePairKey(myUid, friendUid);
+    if (!key) return null;
+    const prev = this.sharedCrates.get(key) || { items: [], labels: {}, at: 0 };
+    const row = {
+      items: Array.isArray(prev.items) ? prev.items.slice() : [],
+      labels: { ...(prev.labels || {}) },
+      at: prev.at || 0,
+    };
+    if (myUid) row.labels[myUid] = clampName(myName);
+    if (friendUid) row.labels[friendUid] = clampName(friendName || row.labels[friendUid] || '');
+    const nextItems = mutator(row.items);
+    if (!Array.isArray(nextItems)) return null;
+    row.items = nextItems.slice(0, 60);
+    row.at = Date.now();
+    if (!row.items.length) this.sharedCrates.delete(key);
+    else this.sharedCrates.set(key, row);
+    return { key, row, box: this.sharedCrateBox(key, myUid) };
+  }
+
+  pushSharedCrateToPair(pairKey, box) {
+    if (!pairKey || !box) return;
+    const members = pairKey.split(':');
+    const raw = JSON.stringify({ type: 'sharedCrate', crate: box });
+    for (const ws of this.ctx.getWebSockets()) {
+      const att = ws.deserializeAttachment() || {};
+      const peer = this.peers.get(att.tok);
+      const uid = peer?.uid;
+      if (uid && members.includes(uid)) {
+        try { ws.send(raw); } catch {}
+      }
+    }
   }
 
   takeInvitesFor(tok, uid) {
@@ -849,11 +952,15 @@ export class PresenceHub {
 
   pushCrateToFriends(crateUid, box) {
     if (!crateUid || !box) return;
+    const ownerName = String(box.name || '').trim().toLowerCase();
     const raw = JSON.stringify({ type: 'crate', crate: box });
     for (const ws of this.ctx.getWebSockets()) {
       const a = ws.deserializeAttachment() || {};
       const friends = Array.isArray(a.friendUids) ? a.friendUids : [];
-      if (friends.includes(crateUid)) {
+      const friendNames = Array.isArray(a.friendNames) ? a.friendNames : [];
+      const byUid = friends.includes(crateUid);
+      const byName = ownerName && friendNames.some((n) => String(n || '').trim().toLowerCase() === ownerName);
+      if (byUid || byName) {
         try { ws.send(raw); } catch {}
       }
     }
@@ -934,6 +1041,9 @@ export class PresenceHub {
     }
     if (msg.type === 'friends' && Array.isArray(msg.friendUids)) {
       att.friendUids = msg.friendUids.map((u) => clampUid(u)).filter(Boolean).slice(0, 32);
+      att.friendNames = Array.isArray(msg.friendNames)
+        ? msg.friendNames.map((n) => clampName(n)).filter(Boolean).slice(0, 32)
+        : [];
       ws.serializeAttachment(att);
     }
   }
@@ -976,7 +1086,7 @@ export class PresenceHub {
       if (deployKey !== 'aoi-ship-2026' && secret !== expected) {
         return json({ ok: false, error: 'forbidden' }, 403);
       }
-      const version = String(body.version || '').replace(/[^\d.]/g, '').slice(0, 16);
+      const version = String(body.version || '').trim().replace(/^v/i, '').replace(/[^0-9.a-zA-Z-]/g, '').slice(0, 24);
       const fileUrl = String(body.url || '').trim().slice(0, 500);
       if (!version || !fileUrl.startsWith('https://')) {
         return json({ ok: false, error: 'bad_manifest' }, 400);
@@ -1015,6 +1125,9 @@ export class PresenceHub {
       const friendUids = Array.isArray(body.friendUids)
         ? body.friendUids.map((u) => clampUid(u)).filter(Boolean).slice(0, 32)
         : [];
+      const friendNames = Array.isArray(body.friendNames)
+        ? body.friendNames.map((n) => clampName(n)).filter(Boolean).slice(0, 32)
+        : [];
       const peer = {
         tok,
         name: clampName(body.name),
@@ -1032,11 +1145,12 @@ export class PresenceHub {
       this.peers.set(tok, peer);
       if (!prev || now - (prev.lastSeen || 0) >= 15000) await this.persistPeers();
       const invites = this.takeInvitesFor(tok, peer.uid);
-      const friendCrates = this.friendCratesFor(friendUids);
+      const friendCrates = this.sharedCratesFor(peer.uid, friendUids, friendNames);
       for (const ws of this.ctx.getWebSockets()) {
         const a = ws.deserializeAttachment() || {};
         if (a.tok === tok) {
           a.friendUids = friendUids;
+          a.friendNames = friendNames;
           ws.serializeAttachment(a);
           break;
         }
@@ -1045,6 +1159,101 @@ export class PresenceHub {
     }
 
     if (url.pathname === '/crate/push' && req.method === 'POST') {
+      let body = {};
+      try { body = await req.json(); } catch {}
+      const tok = clampToken(body.token);
+      const uid = clampUid(body.uid);
+      const friendUid = clampUid(body.friendUid);
+      if (!tok || !uid || !friendUid) return json({ ok: false, error: 'bad_crate' }, 400);
+      const peer = this.peers.get(tok);
+      if (peer && peer.uid && peer.uid !== uid) return json({ ok: false, error: 'uid_mismatch' }, 403);
+      const items = Array.isArray(body.items)
+        ? body.items.map((raw) => sanitizeCrateItem({ ...raw, byUid: uid, byName: body.name || peer?.name }))
+          .filter(Boolean)
+        : [];
+      if (!items.length) return json({ ok: false, error: 'bad_item' }, 400);
+      const changed = this.mutateSharedCrate(
+        uid,
+        friendUid,
+        body.name || peer?.name,
+        body.friendName,
+        (list) => {
+          const merged = [...items, ...list.filter((x) => !items.some((n) => n.id === x.id))];
+          return merged;
+        },
+      );
+      if (!changed) return json({ ok: false, error: 'bad_pair' }, 400);
+      await this.persistSharedCrates();
+      if (changed.box) this.pushSharedCrateToPair(changed.key, changed.box);
+      return json({ ok: true, n: changed.row.items.length, crate: changed.box });
+    }
+
+    if (url.pathname === '/crate/add' && req.method === 'POST') {
+      let body = {};
+      try { body = await req.json(); } catch {}
+      const tok = clampToken(body.token);
+      const uid = clampUid(body.uid);
+      const friendUid = clampUid(body.friendUid);
+      if (!tok || !uid || !friendUid) return json({ ok: false, error: 'bad_crate' }, 400);
+      const peer = this.peers.get(tok);
+      if (peer && peer.uid && peer.uid !== uid) return json({ ok: false, error: 'uid_mismatch' }, 403);
+      const item = sanitizeCrateItem({
+        ...(body.item || {}),
+        byUid: uid,
+        byName: body.name || peer?.name,
+      });
+      if (!item) return json({ ok: false, error: 'bad_item' }, 400);
+      const changed = this.mutateSharedCrate(
+        uid,
+        friendUid,
+        body.name || peer?.name,
+        body.friendName,
+        (list) => [item, ...list.filter((x) => x.id !== item.id)],
+      );
+      if (!changed) return json({ ok: false, error: 'bad_pair' }, 400);
+      await this.persistSharedCrates();
+      if (changed.box) this.pushSharedCrateToPair(changed.key, changed.box);
+      return json({ ok: true, n: changed.row.items.length, crate: changed.box });
+    }
+
+    if (url.pathname === '/crate/remove' && req.method === 'POST') {
+      let body = {};
+      try { body = await req.json(); } catch {}
+      const tok = clampToken(body.token);
+      const uid = clampUid(body.uid);
+      const friendUid = clampUid(body.friendUid);
+      const itemId = String(body.itemId || '').replace(/[^\w-]/g, '').slice(0, 40);
+      if (!tok || !uid || !friendUid || !itemId) return json({ ok: false, error: 'bad_crate' }, 400);
+      const peer = this.peers.get(tok);
+      if (peer && peer.uid && peer.uid !== uid) return json({ ok: false, error: 'uid_mismatch' }, 403);
+      const changed = this.mutateSharedCrate(uid, friendUid, body.name || peer?.name, body.friendName, (list) => (
+        list.filter((x) => x.id !== itemId)
+      ));
+      if (!changed) return json({ ok: false, error: 'bad_pair' }, 400);
+      await this.persistSharedCrates();
+      if (changed.box) this.pushSharedCrateToPair(changed.key, changed.box);
+      return json({ ok: true, n: changed.row.items.length, crate: changed.box || null });
+    }
+
+    if (url.pathname === '/crate/clear' && req.method === 'POST') {
+      let body = {};
+      try { body = await req.json(); } catch {}
+      const tok = clampToken(body.token);
+      const uid = clampUid(body.uid);
+      const friendUid = clampUid(body.friendUid);
+      if (!tok || !uid || !friendUid) return json({ ok: false, error: 'bad_crate' }, 400);
+      const peer = this.peers.get(tok);
+      if (peer && peer.uid && peer.uid !== uid) return json({ ok: false, error: 'uid_mismatch' }, 403);
+      const key = cratePairKey(uid, friendUid);
+      if (!key) return json({ ok: false, error: 'bad_pair' }, 400);
+      this.sharedCrates.delete(key);
+      await this.persistSharedCrates();
+      const box = { pairKey: key, friendUid, friendName: body.friendName || '', items: [], at: Date.now() };
+      this.pushSharedCrateToPair(key, box);
+      return json({ ok: true, n: 0, crate: box });
+    }
+
+    if (url.pathname === '/crate/push-legacy' && req.method === 'POST') {
       let body = {};
       try { body = await req.json(); } catch {}
       const tok = clampToken(body.token);

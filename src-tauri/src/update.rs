@@ -19,19 +19,46 @@ fn allowed_download_host(host: &str) -> bool {
         || h.ends_with(".githubusercontent.com")
 }
 
-fn parse_semver(v: &str) -> Option<(u64, u64, u64)> {
+fn aoi_letter_rank(s: &str) -> i32 {
+    let t = s.trim().to_ascii_lowercase();
+    if t.is_empty() {
+        return 0;
+    }
+    let mut chars = t.chars();
+    let c = chars.next().unwrap_or('\0');
+    if c.is_ascii_lowercase() && chars.next().is_none() {
+        return (c as i32) - ('a' as i32) + 1;
+    }
+    0
+}
+
+fn parse_aoi_version(v: &str) -> Option<(u64, u64, u64, i32)> {
     let clean = v.trim().trim_start_matches('v');
-    let base = clean.split(|c| c == '-' || c == '+').next().unwrap_or(clean);
+    let (base, suffix) = match clean.split_once('-') {
+        Some((b, s)) => (b.trim(), s.split('+').next().unwrap_or(s).trim()),
+        None => (clean.split('+').next().unwrap_or(clean).trim(), ""),
+    };
     let mut parts = base.split('.');
     let major = parts.next()?.parse().ok()?;
     let minor = parts.next()?.parse().ok()?;
     let patch = parts.next()?.parse().ok()?;
-    Some((major, minor, patch))
+    Some((major, minor, patch, aoi_letter_rank(suffix)))
 }
 
 fn is_newer(remote: &str, local: &str) -> bool {
-    match (parse_semver(remote), parse_semver(local)) {
-        (Some(r), Some(l)) => r > l,
+    match (parse_aoi_version(remote), parse_aoi_version(local)) {
+        (Some(r), Some(l)) => {
+            if r.0 != l.0 {
+                return r.0 > l.0;
+            }
+            if r.1 != l.1 {
+                return r.1 > l.1;
+            }
+            if r.2 != l.2 {
+                return r.2 > l.2;
+            }
+            r.3 > l.3
+        }
         _ => false,
     }
 }
