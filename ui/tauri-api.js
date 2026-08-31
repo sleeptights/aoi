@@ -74,6 +74,7 @@
       });
     },
     scClearCoversCache: function () { return invoke('sc_clear_covers_cache'); },
+    scClearSession: function () { return invoke('sc_clear_session'); },
     scClearLikesCache: function () { return invoke('sc_clear_likes_cache'); },
     scLoadLikesCache: function () { return invoke('sc_load_likes_cache'); },
     scSaveLikesCache: function (data) { return invoke('sc_save_likes_cache', { data: data }); },
@@ -111,6 +112,7 @@
       try { window.open(String(url), '_blank', 'noopener'); } catch (e2) {}
       return Promise.resolve();
     },
+    logPlay: function (entry) { return invoke('log_play', { entry: entry || {} }); },
     appVersion: function () { return invoke('app_version'); },
     checkForUpdate: function () { return invoke('check_for_update'); },
     installUpdate: function (url, sha256) {

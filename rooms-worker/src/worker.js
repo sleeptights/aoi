@@ -101,7 +101,7 @@ export default {
 
     const url = new URL(req.url);
     if (url.pathname === '/' || url.pathname === '/health') {
-      return json({ ok: true, service: 'aoi-rooms', v: 6 });
+      return json({ ok: true, service: 'aoi-rooms', v: 7 });
     }
 
     if (url.pathname === '/update/latest') {
@@ -145,6 +145,10 @@ export default {
       const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
       return stub.fetch(new Request('https://presence/crate/add', { method: 'POST', body: req.body, headers: req.headers }));
     }
+    if (url.pathname === '/presence/crate/create' && req.method === 'POST') {
+      const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
+      return stub.fetch(new Request('https://presence/crate/create', { method: 'POST', body: req.body, headers: req.headers }));
+    }
     if (url.pathname === '/presence/crate/remove' && req.method === 'POST') {
       const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
       return stub.fetch(new Request('https://presence/crate/remove', { method: 'POST', body: req.body, headers: req.headers }));
@@ -183,9 +187,13 @@ export default {
         });
         const ct = resp.headers.get('content-type') || (isApi ? 'application/json; charset=utf-8' : 'application/octet-stream');
         const outHdrs = { 'Content-Type': ct, ...cors() };
-        for (const h of ['Content-Length', 'Content-Range', 'Accept-Ranges', 'Cache-Control']) {
+        for (const h of ['Content-Length', 'Content-Range', 'Accept-Ranges', 'Cache-Control', 'ETag']) {
           const v = resp.headers.get(h);
           if (v) outHdrs[h] = v;
+        }
+        if (!isApi) {
+          if (!outHdrs['Cache-Control']) outHdrs['Cache-Control'] = 'public, max-age=300';
+          outHdrs['CDN-Cache-Control'] = 'public, max-age=600';
         }
         if (!isApi && resp.body) {
           return new Response(resp.body, { status: resp.status, headers: outHdrs });
@@ -832,16 +840,34 @@ export class PresenceHub {
 
   sharedCrateBox(pairKey, myUid) {
     const row = this.sharedCrates.get(pairKey);
-    if (!row || !Array.isArray(row.items) || !row.items.length) return null;
+    if (!row) return null;
     const members = pairKey.split(':');
     const friendUid = members.find((u) => u && u !== myUid) || '';
     return {
       pairKey,
       friendUid,
       friendName: (row.labels && friendUid && row.labels[friendUid]) || '',
-      items: row.items.slice(0, 60),
+      items: Array.isArray(row.items) ? row.items.slice(0, 60) : [],
       at: row.at || 0,
     };
+  }
+
+  async claimAoiNo(scUid) {
+    const uid = clampUid(scUid);
+    if (!uid) return 0;
+    if (!this.aoiNos) {
+      const saved = await this.ctx.storage.get(['aoiNos', 'aoiNoNext']);
+      const map = saved.get('aoiNos');
+      this.aoiNos = map && typeof map === 'object' ? map : {};
+      this.aoiNoNext = Number(saved.get('aoiNoNext')) || 1;
+      if (this.aoiNoNext < 1) this.aoiNoNext = 1;
+    }
+    if (this.aoiNos[uid]) return this.aoiNos[uid];
+    const n = this.aoiNoNext;
+    this.aoiNos[uid] = n;
+    this.aoiNoNext = n + 1;
+    await this.ctx.storage.put({ aoiNos: this.aoiNos, aoiNoNext: this.aoiNoNext });
+    return n;
   }
 
   sharedCratesFor(myUid, friendUids, friendNames) {
@@ -891,33 +917,43 @@ export class PresenceHub {
     if (!Array.isArray(nextItems)) return null;
     row.items = nextItems.slice(0, 60);
     row.at = Date.now();
-    if (!row.items.length) this.sharedCrates.delete(key);
-    else this.sharedCrates.set(key, row);
+    this.sharedCrates.set(key, row);
     return { key, row, box: this.sharedCrateBox(key, myUid) };
   }
 
-  pushSharedCrateToPair(pairKey, box) {
-    if (!pairKey || !box) return;
+  pushSharedCrateToPair(pairKey) {
+    if (!pairKey) return;
     const members = pairKey.split(':');
-    const raw = JSON.stringify({ type: 'sharedCrate', crate: box });
     for (const ws of this.ctx.getWebSockets()) {
       const att = ws.deserializeAttachment() || {};
       const peer = this.peers.get(att.tok);
       const uid = peer?.uid;
-      if (uid && members.includes(uid)) {
-        try { ws.send(raw); } catch {}
+      if (!uid || !members.includes(uid)) continue;
+      const box = this.sharedCrateBox(pairKey, uid);
+      if (!box) {
+        const empty = {
+          pairKey,
+          friendUid: members.find((u) => u && u !== uid) || '',
+          friendName: '',
+          items: [],
+          gone: true,
+          at: Date.now(),
+        };
+        try { ws.send(JSON.stringify({ type: 'sharedCrate', crate: empty })); } catch {}
+        continue;
       }
+      try { ws.send(JSON.stringify({ type: 'sharedCrate', crate: box })); } catch {}
     }
   }
 
   takeInvitesFor(tok, uid) {
     const now = Date.now();
-    const keep = [];
     const mine = [];
     for (const inv of this.invites) {
       if (!inv || inv.exp <= now) continue;
       const match = (tok && inv.toTok === tok) || (uid && inv.toUid && inv.toUid === uid);
-      if (match) mine.push({
+      if (!match) continue;
+      mine.push({
         id: inv.id,
         roomCode: inv.roomCode,
         fromName: inv.fromName,
@@ -928,11 +964,6 @@ export class PresenceHub {
         seekSec: inv.seekSec || 0,
         at: inv.at,
       });
-      else keep.push(inv);
-    }
-    if (mine.length) {
-      this.invites = keep;
-      this.persistInvites();
     }
     return mine;
   }
@@ -945,6 +976,20 @@ export class PresenceHub {
       const a = ws.deserializeAttachment() || {};
       if (a.tok === tok) {
         try { ws.send(raw); sent = true; } catch {}
+      }
+    }
+    return sent;
+  }
+
+  pushInvite(inv) {
+    if (!inv) return false;
+    let sent = false;
+    if (inv.toTok) sent = this.pushToToken(inv.toTok, this.invitePayload(inv)) || sent;
+    if (inv.toUid) {
+      for (const [ptok, p] of this.peers) {
+        if (p && p.uid === inv.toUid) {
+          sent = this.pushToToken(ptok, this.invitePayload(inv)) || sent;
+        }
       }
     }
     return sent;
@@ -1146,6 +1191,7 @@ export class PresenceHub {
       if (!prev || now - (prev.lastSeen || 0) >= 15000) await this.persistPeers();
       const invites = this.takeInvitesFor(tok, peer.uid);
       const friendCrates = this.sharedCratesFor(peer.uid, friendUids, friendNames);
+      const aoiNo = await this.claimAoiNo(peer.uid);
       for (const ws of this.ctx.getWebSockets()) {
         const a = ws.deserializeAttachment() || {};
         if (a.tok === tok) {
@@ -1155,7 +1201,7 @@ export class PresenceHub {
           break;
         }
       }
-      return json({ ok: true, n: this.peers.size, invites, friendCrates, update: this.updateSnapshot() });
+      return json({ ok: true, n: this.peers.size, invites, friendCrates, aoiNo, update: this.updateSnapshot() });
     }
 
     if (url.pathname === '/crate/push' && req.method === 'POST') {
@@ -1184,8 +1230,35 @@ export class PresenceHub {
       );
       if (!changed) return json({ ok: false, error: 'bad_pair' }, 400);
       await this.persistSharedCrates();
-      if (changed.box) this.pushSharedCrateToPair(changed.key, changed.box);
+      if (changed.box) this.pushSharedCrateToPair(changed.key);
       return json({ ok: true, n: changed.row.items.length, crate: changed.box });
+    }
+
+    if (url.pathname === '/crate/create' && req.method === 'POST') {
+      let body = {};
+      try { body = await req.json(); } catch {}
+      const tok = clampToken(body.token);
+      const uid = clampUid(body.uid);
+      const friendUid = clampUid(body.friendUid);
+      if (!tok || !uid || !friendUid) return json({ ok: false, error: 'bad_crate' }, 400);
+      const peer = this.peers.get(tok);
+      if (peer && peer.uid && peer.uid !== uid) return json({ ok: false, error: 'uid_mismatch' }, 403);
+      const key = cratePairKey(uid, friendUid);
+      if (!key) return json({ ok: false, error: 'bad_pair' }, 400);
+      const existed = this.sharedCrates.has(key);
+      const prev = this.sharedCrates.get(key) || { items: [], labels: {}, at: 0 };
+      const row = {
+        items: Array.isArray(prev.items) ? prev.items.slice() : [],
+        labels: { ...(prev.labels || {}) },
+        at: Date.now(),
+      };
+      if (uid) row.labels[uid] = clampName(body.name || peer?.name);
+      if (friendUid) row.labels[friendUid] = clampName(body.friendName || row.labels[friendUid] || '');
+      this.sharedCrates.set(key, row);
+      await this.persistSharedCrates();
+      this.pushSharedCrateToPair(key);
+      const box = this.sharedCrateBox(key, uid);
+      return json({ ok: true, n: (box && box.items && box.items.length) || 0, crate: box, created: !existed });
     }
 
     if (url.pathname === '/crate/add' && req.method === 'POST') {
@@ -1212,7 +1285,7 @@ export class PresenceHub {
       );
       if (!changed) return json({ ok: false, error: 'bad_pair' }, 400);
       await this.persistSharedCrates();
-      if (changed.box) this.pushSharedCrateToPair(changed.key, changed.box);
+      if (changed.box) this.pushSharedCrateToPair(changed.key);
       return json({ ok: true, n: changed.row.items.length, crate: changed.box });
     }
 
@@ -1231,7 +1304,7 @@ export class PresenceHub {
       ));
       if (!changed) return json({ ok: false, error: 'bad_pair' }, 400);
       await this.persistSharedCrates();
-      if (changed.box) this.pushSharedCrateToPair(changed.key, changed.box);
+      if (changed.box) this.pushSharedCrateToPair(changed.key);
       return json({ ok: true, n: changed.row.items.length, crate: changed.box || null });
     }
 
@@ -1248,8 +1321,8 @@ export class PresenceHub {
       if (!key) return json({ ok: false, error: 'bad_pair' }, 400);
       this.sharedCrates.delete(key);
       await this.persistSharedCrates();
-      const box = { pairKey: key, friendUid, friendName: body.friendName || '', items: [], at: Date.now() };
-      this.pushSharedCrateToPair(key, box);
+      this.pushSharedCrateToPair(key);
+      const box = { pairKey: key, friendUid, friendName: body.friendName || '', items: [], gone: true, at: Date.now() };
       return json({ ok: true, n: 0, crate: box });
     }
 
@@ -1316,15 +1389,7 @@ export class PresenceHub {
         i.roomCode === roomCode && ((toTok && i.toTok === toTok) || (toUid && i.toUid === toUid))
       ))].slice(0, 200);
       await this.persistInvites();
-      const pushed = this.pushToToken(toTok, this.invitePayload(inv));
-      if (!pushed && toUid) {
-        for (const [ptok, p] of this.peers) {
-          if (p && p.uid === toUid) {
-            this.pushToToken(ptok, this.invitePayload(inv));
-            break;
-          }
-        }
-      }
+      const pushed = this.pushInvite(inv);
       return json({ ok: true, id: inv.id, pushed: !!pushed });
     }
 

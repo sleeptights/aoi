@@ -62,6 +62,11 @@ fn cookies_path(app: &AppHandle) -> PathBuf {
     settings::app_data_dir(app).join("sc_cookies.json")
 }
 
+pub fn clear_cookie_jar(app: &AppHandle) {
+    let path = cookies_path(app);
+    let _ = fs::remove_file(&path);
+}
+
 fn load_cookies(path: &PathBuf) -> serde_json::Map<String, Value> {
     fs::read_to_string(path)
         .ok()
@@ -112,11 +117,28 @@ pub fn cookie_named(app: &AppHandle, name: &str) -> Option<String> {
 fn log_write(app: &AppHandle, method: &str, url: &str, status: u16, body: &str) {
     let path = settings::app_data_dir(app).join("sc_write.log");
     let path_only = url.split('?').next().unwrap_or(url);
-    let snippet: String = body.chars().take(240).collect::<String>().replace(['\n', '\r'], " ");
+    let snippet = redact_log_snippet(body);
     let line = format!("{method} {path_only} -> {status} {snippet}\n");
     if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(path) {
         let _ = f.write_all(line.as_bytes());
     }
+}
+
+fn redact_log_snippet(body: &str) -> String {
+    let lower = body.to_ascii_lowercase();
+    if lower.contains("oauth")
+        || lower.contains("access_token")
+        || lower.contains("refresh_token")
+        || lower.contains("_soundcloud_session")
+        || lower.contains("authorization")
+        || lower.contains("cookie")
+    {
+        return "[redacted]".into();
+    }
+    body.chars()
+        .take(240)
+        .collect::<String>()
+        .replace(['\n', '\r'], " ")
 }
 
 fn cookie_entries(app: &AppHandle) -> Vec<(String, String)> {

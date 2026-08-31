@@ -232,6 +232,10 @@ window.addEventListener('keydown', function (e) {
   /* aoi-night-css */
   :root { --black-lift: 0; }
   #app-shell { filter: brightness(calc(1 + var(--black-lift) * 0.35)); }
+  #app-shell.candle-sleep {
+    filter: brightness(calc((1 + var(--black-lift) * 0.35) * 0.62)) saturate(0.78);
+    transition: filter 2.4s ease;
+  }
   #app-shell.chrome-quiet .nav-sidebar {
     opacity:0;
     pointer-events:none;
@@ -346,6 +350,141 @@ window.addEventListener('keydown', function (e) {
     box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.32), 0 0 0 3px rgba(7,7,10,0.95);
   }
   .aoi-logo-breathe { animation: logoBreathe 4.2s ease-in-out infinite; transform-origin: center; }
+  #app-shell.is-playing .aoi-cover-shadow-type,
+  #app-shell.is-playing .aoi-corner-leak { opacity: 0; }
+  .aoi-cover-shadow-type, .aoi-corner-leak { transition: opacity 0.7s ease; }
+  @keyframes aoiPopIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes aoiStampIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes aoiDigitFlip {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes aoiBadgeRoll {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes aoiPresenceBeat {
+    0%,100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+  @keyframes aoiBannerDrift {
+    0% { transform: scale(1.06); }
+    100% { transform: scale(1.12); }
+  }
+  @keyframes aoiSlotIn {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes aoiSuggestIn {
+    from { opacity: 0; transform: translateX(6px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes aoiAccountSlip {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes aoiEditGrow {
+    from { transform: scaleX(0.28); opacity: 0.5; }
+    to { transform: scaleX(1); opacity: 1; }
+  }
+  @keyframes aoiLoginWash {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes aoiDotOnce {
+    0% { opacity: 0; transform: scale(0.6); }
+    45% { opacity: 1; transform: scale(1.15); }
+    100% { opacity: 0.85; transform: scale(1); }
+  }
+  @keyframes aoiEllipsis {
+    0%,100% { opacity: 0.28; }
+    50% { opacity: 0.8; }
+  }
+  @keyframes aoiMarkFill {
+    0%,100% { transform: scaleY(0.35); }
+    40% { transform: scaleY(1); }
+  }
+  @keyframes aoiFloorTap {
+    0%,100% { transform: translateY(0); }
+    40% { transform: translateY(-2px); }
+  }
+  .aoi-eq-pop { animation: aoiPopIn 0.18s ease both; }
+  .aoi-eq-pop .aoi-eq-band { animation: aoiPopIn 0.28s ease both; }
+  .aoi-code-stamp span {
+    display: inline-block;
+    animation: aoiStampIn 0.28s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .aoi-code-stamp.is-wet span { filter: contrast(1.12); }
+  .aoi-sleep-digit { display: inline-block; animation: aoiDigitFlip 0.16s ease both; }
+  .aoi-badge-roll { animation: aoiBadgeRoll 0.2s ease both; }
+  .aoi-presence-on { animation: aoiPresenceBeat 2.4s ease-in-out infinite; }
+  .aoi-artist-banner { animation: aoiBannerDrift 36s linear alternate infinite; transform-origin: center; }
+  .aoi-slot-in { animation: aoiSlotIn 0.22s ease both; }
+  .aoi-suggest-in { animation: aoiSuggestIn 0.2s ease both; }
+  .aoi-account-slip { animation: aoiAccountSlip 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+  .aoi-title-edit { transform-origin: center; animation: aoiEditGrow 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+  .aoi-login-wash { position: relative; overflow: hidden; }
+  .aoi-login-wash::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: rgba(255,120,50,0.22); transform: scaleX(0); transform-origin: left;
+    animation: aoiLoginWash 1.1s ease-in-out infinite;
+  }
+  .someone-else-dot { animation: aoiDotOnce 0.48s ease both; }
+  .aoi-room-live { animation: aoiDotOnce 0.48s ease both; }
+  .aoi-ellipsis-dot { animation: aoiEllipsis 0.9s ease-in-out infinite; }
+  .aoi-mark-bar { transform-origin: bottom; animation: aoiMarkFill 1.1s ease-in-out infinite; }
+  .aoi-vol-tap { animation: aoiFloorTap 80ms ease; }
+  .aoi-settings-sec { animation: aoiPopIn 0.16s ease both; }
+  .aoi-follow-wipe { position: relative; overflow: hidden; }
+  .aoi-follow-wipe::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: rgba(255,255,255,0.14); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.32s ease;
+  }
+  .aoi-follow-wipe.is-on::after { transform: scaleX(1); transform-origin: left; }
+  .aoi-follow-wipe.is-off::after { transform-origin: right; }
+  .aoi-shuffle-on img, .aoi-shuffle-off img { transition: transform 0.22s ease, opacity 0.2s ease; }
+  .aoi-shuffle-on img { transform: translateX(1.5px); }
+  .aoi-shuffle-off img { transform: translateX(0); }
+  .aoi-repeat-ico { transition: opacity 0.2s ease, filter 0.22s ease, transform 0.22s ease; }
+  .aoi-pl-tabs { position: relative; display: flex; gap: 6px; flex-wrap: wrap; }
+  .aoi-pl-rail {
+    position: absolute; top: 0; height: 32px; border-radius: 8px;
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.12);
+    transition: transform 0.28s cubic-bezier(0.22,1,0.36,1), width 0.28s ease;
+    pointer-events: none;
+  }
+  .aoi-moon-wane { transition: clip-path 0.45s ease; }
+  .aoi-mark-row { display: flex; align-items: flex-end; gap: 4px; height: 28px; margin-bottom: 16px; }
+  .aoi-needle-wrap { position: relative; }
+  .aoi-needle-hair {
+    position: absolute; left: 58%; top: 50%; height: 1px; width: 0;
+    background: rgb(var(--accent-rgb)); opacity: 0; pointer-events: none;
+    transition: width 0.32s ease, opacity 0.18s ease;
+  }
+  .aoi-needle-wrap.is-hold .aoi-needle-hair { width: 34px; opacity: 0.5; }
+  .aoi-join-slots { display: flex; gap: 6px; }
+  .aoi-join-slot {
+    width: 22px; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.1); transition: background 0.16s ease, transform 0.16s ease;
+  }
+  .aoi-join-slot.filled { background: rgb(var(--accent-rgb)); transform: translateY(-1px); }
+  .aoi-join-slot.ready { transform: scaleX(0.92); }
+  .aoi-xfade { position: relative; width: 100%; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.07); overflow: hidden; }
+  .aoi-xfade-a, .aoi-xfade-b { position: absolute; top: 0; height: 100%; border-radius: 3px; }
+  .aoi-xfade-a { left: 0; background: rgba(255,255,255,0.28); }
+  .aoi-xfade-b { right: 0; background: rgb(var(--accent-rgb)); opacity: 0.72; }
+  html.aoi-cinema .aoi-eq-pop,
+  html.aoi-cinema .aoi-code-stamp span,
+  html.aoi-cinema .aoi-artist-banner,
+  html.aoi-cinema .aoi-presence-on,
+  html.aoi-cinema .aoi-login-wash::before { animation: none !important; }
   #app-shell.chrome-quiet .top-nav-bar,
   #app-shell.chrome-quiet .nav-dock-bar {
     opacity: 0; pointer-events: none; transform: translateY(-6px);
@@ -544,6 +683,49 @@ function eqIdOf(gains, custom) {
   for (const k of Object.keys(EQ_PRESETS)) if (eqSame(gains, EQ_PRESETS[k])) return k;
   for (const c of custom || []) if (c && eqSame(gains, c.gains)) return 'u:' + c.name;
   return 'custom';
+}
+
+const RATE_PITCH_PRESETS = {
+  normal:    { rate: 1.00, preserve: true },
+  speedup:   { rate: 1.25, preserve: true },
+  nightcore: { rate: 1.35, preserve: false },
+  hyper:     { rate: 1.50, preserve: false },
+  daycore:   { rate: 0.85, preserve: false },
+  chopped:   { rate: 0.75, preserve: false },
+};
+function clampPlaybackRate(n) {
+  n = Number(n);
+  if (!isFinite(n)) return 1;
+  return Math.max(0.5, Math.min(2, n));
+}
+function applyPlaybackToEl(el, rate, preserve) {
+  if (!el) return;
+  const r = clampPlaybackRate(rate);
+  const keep = !!preserve;
+  try { el.playbackRate = r; } catch {}
+  try { el.preservesPitch = keep; } catch {}
+  try { el.mozPreservesPitch = keep; } catch {}
+  try { el.webkitPreservesPitch = keep; } catch {}
+}
+function applyPlaybackToEls(pool, current, rate, preserve) {
+  if (pool) {
+    applyPlaybackToEl(pool[0], rate, preserve);
+    applyPlaybackToEl(pool[1], rate, preserve);
+  }
+  if (current && current !== pool?.[0] && current !== pool?.[1]) {
+    applyPlaybackToEl(current, rate, preserve);
+  }
+}
+function isProbablyHlsUrl(url) {
+  return /\.m3u8(\?|#|$)/i.test(String(url || ''));
+}
+function inferPreservesPitch(rate, explicit) {
+  if (explicit === true || explicit === false) return explicit;
+  const r = clampPlaybackRate(rate);
+  for (const p of Object.values(RATE_PITCH_PRESETS)) {
+    if (!p.preserve && Math.abs(r - p.rate) < 0.03) return false;
+  }
+  return true;
 }
 
 function resumeEqCtx(ref) {
@@ -1149,6 +1331,7 @@ const STRINGS = {
     follow_err:'не удалось подписаться', unfollow_err:'не удалось отписаться',
     copy_link:'Скопировать ссылку', link_copied:'Ссылка скопирована', copy_link_err:'не удалось скопировать ссылку',
     start_station:'Запустить станцию', station_for:'Станция по треку', station_exit:'выйти', station_err:'не удалось запустить станцию',
+    queue_search:'Поиск', queue_exit:'к лайкам',
     sleep:'сон', sleep_on:'сон · громкость уйдёт в ноль за 100 мин', sleep_off:'выключить сон',
     mini_player:'Мини-плеер', mini_player_sub:'Компактное окно поверх других приложений',
     mini_open:'Открыть', mini_expand:'Развернуть', mini_no_track:'Нет трека',
@@ -1161,6 +1344,15 @@ const STRINGS = {
     eq:'эквалайзер', eq_flat:'ровно', eq_bass:'бас', eq_vocal:'голос', eq_treble:'верх',
     eq_electronic:'электро', eq_acoustic:'акустика', eq_custom:'свой',
     eq_save:'сохранить', eq_save_ph:'имя пресета', eq_saved:'пресет сохранён',
+    eq_speed:'Скорость', eq_pitch:'Питч',
+    eq_normal:'Normal', eq_speedup:'Speed Up', eq_nightcore:'Nightcore',
+    eq_hyper:'Hyper Nightcore', eq_daycore:'Daycore', eq_chopped:'Chopped',
+    credits_title:'Credits',
+    credits_dev:'Разработчик',
+    credits_sub:'Сделано с вниманием к совместному прослушиванию',
+    credits_tg:'Telegram',
+    credits_dc:'Discord',
+    credits_dc_copied:'Ник Discord скопирован · emopara',
     someone_else:'кто-то ещё слушает это сейчас',
     needle_fwd:'удержи: игла вперёд',
     presence_online:'Онлайн',
@@ -1177,6 +1369,10 @@ const STRINGS = {
     presence_invite:'Пригласить в комнату',
     presence_block:'Заблокировать',
     presence_blocked:'Скрыт из списка',
+    presence_unblock:'Разблокировать',
+    presence_blocked_section:'Заблокированные',
+    presence_unblocked:'Разблокирован',
+    friends_offline:'Друзья офлайн',
     presence_invite_ok:'Код комнаты скопирован',
     presence_invite_need:'Сначала создайте комнату',
     presence_show_me:'Показывать меня в сети',
@@ -1188,11 +1384,16 @@ const STRINGS = {
     backup_settings:'бэкап настроек', backup_ok:'бэкап сохранён', backup_err:'не удалось сохранить бэкап',
     friends_section:'Друзья', online_section:'Онлайн', add_friend:'В друзья', remove_friend:'Из друзей',
     crate_title:'Общий плейлист', crate_add:'В общий плейлист', crate_empty:'Пока пусто',
+    crate_create:'Создать общий плейлист', crate_created:'Общий плейлист создан',
+    crate_named:'Общий плейлист с {name}',
     crate_remove:'Убрать', crate_clear:'Очистить',
     crate_from:'С {name}', crate_shared_with:'С {name}',
     crate_add_current:'Добавить текущий', crate_added_ok:'Добавлено в общий плейлист',
     crate_add_fail:'Не удалось добавить', crate_need_track:'Сначала включите трек',
     crate_need_login:'Войдите в SoundCloud', crate_need_friend:'Друг должен быть онлайн',
+    aoi_uid:'UID', aoi_uid_sub:'Номер в aoi, закреплён за аккаунтом SoundCloud',
+    aoi_uid_none:'Войдите в SoundCloud', aoi_uid_wait:'Появится после первого онлайна',
+    aoi_uid_copied:'UID скопирован',
     hide_listening:'Скрыть прослушивание',
     hide_listening_sub:'Не показывать текущий трек в списке онлайн',
     use_aoi_proxy:'Прокси AOI',
@@ -1226,6 +1427,7 @@ const STRINGS = {
     playlist_local:'Локальные',
     playlist_sc:'SoundCloud',
     playlist_discover:'Подборки',
+    playlist_shared:'Общие',
     playlist_sc_search:'Поиск плейлистов SoundCloud',
     playlist_sc_empty:'Нет сохранённых плейлистов',
     playlist_sc_login:'Войдите в SoundCloud для поиска плейлистов',
@@ -1373,6 +1575,7 @@ const STRINGS = {
     follow_err:'could not follow', unfollow_err:'could not unfollow',
     copy_link:'Copy link', link_copied:'Link copied', copy_link_err:'could not copy link',
     start_station:'Start station', station_for:'Station for', station_exit:'exit', station_err:'could not start station',
+    queue_search:'Search', queue_exit:'to likes',
     sleep:'sleep', sleep_on:'sleep · volume fades to zero over 100 min', sleep_off:'turn sleep off',
     mini_player:'Mini player', mini_player_sub:'Compact always-on-top window',
     mini_open:'Open', mini_expand:'Expand', mini_no_track:'No track',
@@ -1382,41 +1585,61 @@ const STRINGS = {
     accent_title:'Accent color', accent_sub:'Applied to all active interface elements',
     accent_default:'Default', accent_lavender:'Lavender', accent_mint:'Mint', accent_rose:'Rose', accent_amber:'Amber', accent_cover:'From cover',
     accent_cover_sub:'Dynamically follows the current track artwork',
-    eq:'equalizer', eq_flat:'flat', eq_bass:'bass', eq_vocal:'vocal', eq_treble:'treble',
-    eq_electronic:'electronic', eq_acoustic:'acoustic', eq_custom:'custom',
-    eq_save:'save', eq_save_ph:'preset name', eq_saved:'preset saved',
+    eq:'Equalizer', eq_flat:'Flat', eq_bass:'Bass', eq_vocal:'Vocal', eq_treble:'Treble',
+    eq_electronic:'Electronic', eq_acoustic:'Acoustic',
+    eq_speed:'Speed', eq_pitch:'Pitch',
+    eq_normal:'Normal', eq_speedup:'Speed Up', eq_nightcore:'Nightcore',
+    eq_hyper:'Hyper Nightcore', eq_daycore:'Daycore', eq_chopped:'Chopped',
+    eq_save_ph:'preset name', eq_save:'Save',
+    credits_title:'Credits',
+    credits_dev:'Developer',
+    credits_sub:'Made with care for listening together',
+    credits_tg:'Telegram',
+    credits_dc:'Discord',
+    credits_dc_copied:'Discord username copied · emopara',
+    eq_custom:'Custom',
+    eq_saved:'Preset saved',
     someone_else:'someone else is on this track',
     needle_fwd:'hold: needle forward',
     presence_online:'online',
     presence_offline:'offline',
     presence_in_net:'in aoi',
-    presence_list_title:'online',
-    presence_list_sub:'aoi users right now',
-    presence_empty:'no one here yet',
-    presence_you:'you',
-    presence_listening:'listening to {track}',
+    presence_list_title:'Online',
+    presence_list_sub:'AOI users right now',
+    presence_empty:'No one here yet — you are first',
+    presence_you:'You',
+    presence_open_profile:'Open profile',
+    presence_invite:'Invite to room',
+    presence_block:'Block',
+    presence_blocked:'Hidden from list',
+    presence_unblock:'Unblock',
+    presence_blocked_section:'Blocked',
+    presence_unblocked:'Unblocked',
+    friends_offline:'Offline friends',
+    friends_section:'Friends', online_section:'Online', add_friend:'Add friend', remove_friend:'Remove friend',
+    crate_title:'Shared playlist', crate_add:'To shared playlist', crate_empty:'Empty',
+    crate_create:'Create shared playlist', crate_created:'Shared playlist created',
+    crate_named:'Shared playlist with {name}',
+    crate_remove:'Remove', crate_clear:'Clear',
+    crate_from:'With {name}', crate_shared_with:'With {name}',
+    crate_add_current:'Add current', crate_added_ok:'Added to shared playlist',
+    crate_add_fail:'Could not add', crate_need_track:'Play a track first',
+    crate_need_login:'Sign in to SoundCloud', crate_need_friend:'Friend must be online',
+    aoi_uid:'UID', aoi_uid_sub:'aoi number, tied to this SoundCloud account',
+    aoi_uid_none:'Sign in to SoundCloud', aoi_uid_wait:'Assigned on first online',
+    aoi_uid_copied:'UID copied',
+    presence_listening:'Listening to {track}',
     presence_idle:'Online',
     presence_afk:'AFK',
-    presence_open_profile:'open profile',
-    presence_invite:'invite to room',
-    presence_block:'block',
-    presence_blocked:'hidden from list',
-    presence_invite_ok:'room code copied',
-    presence_invite_need:'create a room first',
-    presence_show_me:'show me online',
-    presence_show_me_sub:'others will see you in the online list',
-    notif_title:'notifications',
-    notif_sound:'notification sound', notif_sound_sub:'soft chime + brief duck',
-    notif_like_ok:'like saved', notif_like_fail:'could not save like',
-    notif_unlike_ok:'like removed', notif_unlike_fail:'could not remove like',
-    backup_settings:'backup settings', backup_ok:'backup saved', backup_err:'backup failed',
-    friends_section:'friends', online_section:'online', add_friend:'add friend', remove_friend:'remove friend',
-    crate_title:'shared playlist', crate_add:'to shared playlist', crate_empty:'empty',
-    crate_remove:'remove', crate_clear:'clear',
-    crate_from:'with {name}', crate_shared_with:'with {name}',
-    crate_add_current:'add current track', crate_added_ok:'added to shared playlist',
-    crate_add_fail:'could not add', crate_need_track:'play a track first',
-    crate_need_login:'sign in to SoundCloud', crate_need_friend:'friend must be online',
+    presence_invite_ok:'Room code copied',
+    presence_invite_need:'Create a room first',
+    presence_show_me:'Show me online',
+    presence_show_me_sub:'Others will see you in the online list',
+    notif_title:'Notifications',
+    notif_sound:'Notification sound', notif_sound_sub:'Soft chime + brief duck',
+    notif_like_ok:'Like saved', notif_like_fail:'Could not save like',
+    notif_unlike_ok:'Like removed', notif_unlike_fail:'Could not remove like',
+    backup_settings:'Backup settings', backup_ok:'Backup saved', backup_err:'Backup failed',
     hide_listening:'Hide Listening',
     hide_listening_sub:'Do not show the current track in the online list',
     use_aoi_proxy:'AOI Proxy',
@@ -1450,6 +1673,7 @@ const STRINGS = {
     playlist_local:'Local',
     playlist_sc:'SoundCloud',
     playlist_discover:'Discover',
+    playlist_shared:'Shared',
     playlist_sc_search:'Search SoundCloud playlists',
     playlist_sc_empty:'No saved playlists',
     playlist_sc_login:'Sign in to SoundCloud to search playlists',
@@ -1717,8 +1941,31 @@ function resolvePeerUid(peer, peers) {
 function upsertSharedCrate(list, box) {
   if (!box || !box.friendUid) return Array.isArray(list) ? list : [];
   const rest = (list || []).filter(b => String(b.friendUid) !== String(box.friendUid));
-  if (!box.items || !box.items.length) return rest;
-  return [box, ...rest];
+  if (box.gone) return rest;
+  return [{ ...box, items: Array.isArray(box.items) ? box.items : [] }, ...rest];
+}
+
+function formatAoiUid(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v <= 0) return '';
+  return '#' + String(Math.floor(v)).padStart(4, '0');
+}
+
+function sharedPlaylistName(t, name) {
+  const who = String(name || '').trim() || 'friend';
+  return t('crate_named').replace('{name}', who);
+}
+
+function mergeSharedCratesFromBeat(prev, incoming, friendUids) {
+  const list = Array.isArray(incoming) ? incoming.filter(b => b && b.friendUid) : [];
+  const known = new Set((friendUids || []).map(String).filter(Boolean));
+  if (!known.size && !list.length) return Array.isArray(prev) ? prev : [];
+  let next = Array.isArray(prev) ? prev.slice() : [];
+  if (known.size) {
+    next = next.filter(b => !known.has(String(b.friendUid)) || list.some(x => String(x.friendUid) === String(b.friendUid)));
+  }
+  for (const box of list) next = upsertSharedCrate(next, box);
+  return next;
 }
 
 function packCrateTrack(tr, auth, profile) {
@@ -1825,7 +2072,7 @@ function computePresenceStatus({ isPlaying, hasTrack, hidden, idleMs }) {
   return 'idle';
 }
 
-function buildScShuffle(list, currentId) {
+function buildScShuffle(list, currentId, recentIds) {
   const ids = list.map(t => t.id);
   const byId = new Map(list.map(t => [t.id, t]));
   const rest = currentId != null ? ids.filter(id => id !== currentId) : ids.slice();
@@ -1850,6 +2097,10 @@ function buildScShuffle(list, currentId) {
         }
       }
     }
+  }
+  if (recentIds && recentIds.length) {
+    const rec = new Set(recentIds.map(id => String(id)));
+    rest.sort((a, b) => (rec.has(String(a)) ? 1 : 0) - (rec.has(String(b)) ? 1 : 0));
   }
   return currentId != null ? [currentId, ...rest] : rest;
 }
@@ -1977,7 +2228,7 @@ function PlayerLikeBtn({ liked, onLike, style: extraStyle }) {
 }
 
 /* ── Progress Bar ────────────────────────────────────────────────────────── */
-function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB }) {
+function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB, rate }) {
   const trackRef         = useRef(null);
   const fillRef          = useRef(null);
   const thumbRef         = useRef(null);
@@ -1990,6 +2241,8 @@ function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB
   const remainingSpanRef = useRef(null);
   const totalRef         = useRef(total);
   totalRef.current = total;
+  const rateRef          = useRef(1);
+  rateRef.current = clampPlaybackRate(rate);
   const isPlayingRef     = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
   const [hover, setHover]   = useState(false);
@@ -2009,7 +2262,7 @@ function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB
     else { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
   }, [visible]);
 
-  useEffect(() => { kick(); }, [isPlaying]);
+  useEffect(() => { kick(); }, [isPlaying, rate, total]);
 
   useEffect(() => {
     const draw = () => {
@@ -2024,9 +2277,10 @@ function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB
       if (fillRef.current)  fillRef.current.style.width = (p * 100).toFixed(3) + '%';
       if (thumbRef.current) thumbRef.current.style.left = (p * 100).toFixed(3) + '%';
       const dur = totalRef.current || 0;
-      const de = Math.floor(p * dur);
+      const wall = dur / (rateRef.current || 1);
+      const de = Math.floor(p * wall);
       if (elapsedSpanRef.current)   elapsedSpanRef.current.textContent   = fmt(de);
-      if (remainingSpanRef.current) remainingSpanRef.current.textContent = '-' + fmt(dur - de);
+      if (remainingSpanRef.current) remainingSpanRef.current.textContent = '-' + fmt(Math.max(0, wall - de));
       if (!visibleRef.current) { rafRef.current = null; return; }
       if (!isPlayingRef.current && !dragging.current
           && Math.abs(progRef.current - dispProg.current) < 0.001) {
@@ -2063,7 +2317,7 @@ function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB
   const THUMB_SZ = active ? 16 : (hover ? 14 : 0);
   return (
     <div style={{width:'100%', display:'flex', alignItems:'center', gap:11}}>
-      <span ref={elapsedSpanRef} style={timeStyle}>{fmt(Math.floor(progressRef.current * (total||0)))}</span>
+      <span ref={elapsedSpanRef} style={timeStyle}>{fmt(Math.floor(progressRef.current * ((total||0) / clampPlaybackRate(rate))))}</span>
       {/* clickable hit-zone with vertical padding */}
       <div
         onMouseEnter={() => setHover(true)}
@@ -2072,8 +2326,9 @@ function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB
           const rect = trackRef.current?.getBoundingClientRect();
           if (!rect) return;
           const wrapRect = e.currentTarget.getBoundingClientRect();
+          const wall = (total || 0) / clampPlaybackRate(rate);
           const p = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-          setTip({ x: e.clientX - wrapRect.left, t: Math.floor(p * (total || 0)), show: true });
+          setTip({ x: e.clientX - wrapRect.left, t: Math.floor(p * wall), show: true });
         }}
         onMouseDown={e => { dragging.current = true; setActive(true); onSeek(getVal(e)); kick(); }}
         style={{
@@ -2149,7 +2404,7 @@ function ProgressBar({ progressRef, total, onSeek, isPlaying, visible, accentRGB
           }}/>
         </div>
       </div>
-      <span ref={remainingSpanRef} style={timeStyle}>-{fmt((total||0) - Math.floor(progressRef.current * (total||0)))}</span>
+      <span ref={remainingSpanRef} style={timeStyle}>-{fmt(Math.max(0, ((total||0) / clampPlaybackRate(rate)) - Math.floor(progressRef.current * ((total||0) / clampPlaybackRate(rate)))))}</span>
     </div>
   );
 }
@@ -2162,6 +2417,18 @@ function ThinVolumeSlider({ volume, onChange, onLiveChange, accentKey }) {
   const volActual  = useRef(volume); /* follows props when idle, follows cursor during drag */
   const volDisp    = useRef(volume); /* smoothly chases volActual */
   const dragging   = useRef(false);
+  const [floorTap, setFloorTap] = useState(false);
+  const wasZero = useRef(volume <= 0.001);
+  useEffect(() => {
+    const z = volume <= 0.001;
+    if (z && !wasZero.current) {
+      setFloorTap(true);
+      const id = setTimeout(() => setFloorTap(false), 90);
+      wasZero.current = true;
+      return () => clearTimeout(id);
+    }
+    wasZero.current = z;
+  }, [volume]);
   const onChangeCb = useRef(onChange);     /* commit to React state (mouseup only) */
   const onLiveCb   = useRef(onLiveChange); /* live apply during drag (no re-render) */
   const accentRef  = useRef(accentKey || '178,178,178');
@@ -2281,14 +2548,14 @@ function ThinVolumeSlider({ volume, onChange, onLiveChange, accentKey }) {
   }, [getVal]);
 
   return (
-    <div ref={wrapRef} style={{flex:1, minHeight:0, cursor:'ns-resize', display:'flex', alignItems:'stretch'}}
+    <div ref={wrapRef} className={floorTap ? 'aoi-vol-tap' : undefined} style={{flex:1, minHeight:0, cursor:'ns-resize', display:'flex', alignItems:'stretch'}}
       onMouseDown={e => { dragging.current = true; volActual.current = getVal(e); onLiveCb.current?.(volActual.current); kick(); }}>
       <canvas ref={canvasRef} style={{display:'block'}}/>
     </div>
   );
 }
 
-function EqPopover({ gains, eqId, custom, onGains, onPreset, onSave, onDelete, onClose }) {
+function EqPopover({ gains, eqId, custom, onGains, onPreset, onSave, onDelete, onClose, playbackRate, preservesPitch, onPlaybackRate }) {
   const t = useLang();
   const [name, setName] = useState('');
   const wrapRef = useRef(null);
@@ -2305,10 +2572,21 @@ function EqPopover({ gains, eqId, custom, onGains, onPreset, onSave, onDelete, o
     ['flat', t('eq_flat')], ['bass', t('eq_bass')], ['vocal', t('eq_vocal')],
     ['treble', t('eq_treble')], ['electronic', t('eq_electronic')], ['acoustic', t('eq_acoustic')],
   ];
+  const pitchPresets = [
+    ['normal', t('eq_normal')],
+    ['speedup', t('eq_speedup')],
+    ['nightcore', t('eq_nightcore')],
+    ['hyper', t('eq_hyper')],
+    ['daycore', t('eq_daycore')],
+    ['chopped', t('eq_chopped')],
+  ];
   const g = (gains && gains.length === 6) ? gains : EQ_ZERO;
+  const rate = clampPlaybackRate(playbackRate);
+  const keepPitch = preservesPitch !== false;
+  const rateLabel = (Math.round(rate * 100) / 100).toFixed(2).replace(/\.?0+$/, '') + '×';
   return (
-    <div ref={wrapRef} style={{
-      position:'absolute', right:36, bottom:8, width:228, zIndex:101,
+    <div ref={wrapRef} className="aoi-eq-pop" style={{
+      position:'absolute', right:36, bottom:8, width:268, zIndex:101,
       background:'rgba(16,16,20,0.97)', border:'1px solid rgba(255,255,255,0.06)',
       borderRadius:12, padding:'10px 10px 8px',
       boxShadow:'0 12px 32px rgba(0,0,0,0.45)',
@@ -2316,7 +2594,7 @@ function EqPopover({ gains, eqId, custom, onGains, onPreset, onSave, onDelete, o
       <div style={{fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', marginBottom:8}}>{t('eq')}</div>
       <div style={{display:'flex', gap:4, height:96, marginBottom:8, padding:'0 2px'}}>
         {EQ_BANDS.map((freq, i) => (
-          <div key={freq} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
+          <div key={freq} className="aoi-eq-band" style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4, animationDelay: (i * 35) + 'ms'}}>
             <input type="range" min="-12" max="12" step="0.5" value={g[i]}
               onChange={e => {
                 const next = g.slice();
@@ -2350,6 +2628,28 @@ function EqPopover({ gains, eqId, custom, onGains, onPreset, onSave, onDelete, o
             <span onClick={() => onDelete(c.name)} style={{cursor:'pointer', opacity:0.45, paddingLeft:2}}>×</span>
           </div>
         ))}
+      </div>
+      <div style={{fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'2px 0 6px'}}>{t('eq_speed')}</div>
+      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
+        <input type="range" min="0.5" max="2" step="0.05" value={rate}
+          onChange={e => onPlaybackRate?.(Number(e.target.value))}
+          style={{ flex:1, accentColor:'rgb(var(--accent-rgb))', cursor:'pointer' }}/>
+        <span style={{ fontSize:11, color:'rgba(255,255,255,0.7)', minWidth:36, textAlign:'right' }}>{rateLabel}</span>
+      </div>
+      <div style={{fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'2px 0 6px'}}>{t('eq_pitch')}</div>
+      <div style={{display:'flex', flexWrap:'wrap', gap:4, marginBottom:8}}>
+        {pitchPresets.map(([id, label]) => {
+          const preset = RATE_PITCH_PRESETS[id];
+          const active = preset && Math.abs(rate - preset.rate) < 0.03 && keepPitch === preset.preserve;
+          return (
+            <div key={id} onClick={() => onPlaybackRate?.(preset.rate, preset.preserve)}
+              style={{
+                fontSize:10, padding:'3px 7px', borderRadius:7, cursor:'pointer',
+                background: active ? 'rgba(var(--accent-rgb),0.18)' : 'rgba(255,255,255,0.04)',
+                color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.45)',
+              }}>{label}</div>
+          );
+        })}
       </div>
       <div style={{display:'flex', gap:6, alignItems:'center'}}>
         <input value={name} onChange={e => setName(e.target.value.slice(0, 18))}
@@ -2559,7 +2859,7 @@ function BreathingBorder({ isPlaying }) {
 }
 
 /* ── MagBtn ──────────────────────────────────────────────────────────────── */
-function MagBtn({ onClick, onHoldStart, onHoldEnd, holdMs=280, active, children, size=52, locked=false, title }) {
+function MagBtn({ onClick, onHoldStart, onHoldEnd, holdMs=280, active, children, size=52, locked=false, title, className }) {
   const held = useRef(false);
   const timer = useRef(null);
   const usingHold = typeof onHoldStart === 'function';
@@ -2572,7 +2872,7 @@ function MagBtn({ onClick, onHoldStart, onHoldEnd, holdMs=280, active, children,
     return wasHeld;
   };
   return (
-    <motion.button title={title}
+    <motion.button title={title} className={className}
       onClick={locked || usingHold ? undefined : onClick}
       onPointerDown={locked || !usingHold ? undefined : (e) => {
         if (e.button !== 0) return;
@@ -3095,12 +3395,15 @@ function HeroClone({ hero, exiting, reverse = false }) {
   );
 }
 
-function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen, onBack, onCreate, onRename, onDelete, onRemoveItem, onPlayTrack, onPlayScPlaylist, onSaveScPlaylists, activeId, loadingTrackId, errorTrackId, hideDividers, onContextMenu, likedIds, onLike, accentRGB, dockTrack, dockPlaying, progressRef, onDockToggle, onDockPrev, onDockNext, onDockOpen, onDockSeek }) {
+function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen, onBack, onCreate, onRename, onDelete, onRemoveItem, onPlayTrack, onPlayScPlaylist, onSaveScPlaylists, activeId, loadingTrackId, errorTrackId, hideDividers, onContextMenu, likedIds, onLike, accentRGB, sharedCrates, openShared, onSharedConsumed, onAddCurrentToShared, onRemoveSharedItem, onClearShared }) {
   const t = useLang();
   const lang = useContext(LangContext);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState('');
   const [tab, setTab] = useState('local');
+  const tabWrapRef = useRef(null);
+  const tabRefs = useRef({});
+  const [tabRail, setTabRail] = useState({ left: 0, width: 0 });
   const [scQ, setScQ] = useState('');
   const [scResults, setScResults] = useState([]);
   const [scLoading, setScLoading] = useState(false);
@@ -3109,26 +3412,27 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
   const [discoverResults, setDiscoverResults] = useState([]);
   const [scNeedLogin, setScNeedLogin] = useState(false);
   const [openSc, setOpenSc] = useState(null);
+  const [openSharedBox, setOpenSharedBox] = useState(null);
   const open = (playlists || []).find(p => p.id === openId) || null;
   const moods = window.AoiCustom?.SC_MOODS || [];
-  const dockOn = !!(dockTrack && dockTrack.title);
-
-  const dockBar = dockOn ? (
-    <SourceDeckPlayer
-      track={dockTrack}
-      isPlaying={dockPlaying}
-      progressRef={progressRef}
-      onToggle={onDockToggle}
-      onPrev={onDockPrev}
-      onNext={onDockNext}
-      onOpen={onDockOpen}
-      onSeek={onDockSeek}
-    />
-  ) : null;
-
   useEffect(() => {
-    if (!visible) setOpenSc(null);
+    if (!visible) { setOpenSc(null); setOpenSharedBox(null); }
   }, [visible]);
+  useEffect(() => {
+    if (!openShared?.friendUid) return;
+    setTab('shared');
+    setOpenSc(null);
+    setOpenSharedBox(openShared);
+    onSharedConsumed?.();
+  }, [openShared?.friendUid, openShared?.nonce]);
+  useLayoutEffect(() => {
+    const el = tabRefs.current[tab];
+    const wrap = tabWrapRef.current;
+    if (!el || !wrap) return;
+    const wr = wrap.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    setTabRail({ left: r.left - wr.left, width: r.width });
+  }, [tab, lang, visible]);
 
   const transStyle = {
     position:'absolute', inset:0,
@@ -3196,12 +3500,13 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
   const tabBtn = (id, label) => {
     const active = tab === id;
     return (
-      <div onClick={() => { setTab(id); if (id === 'sc') setScResults([]); }} style={{
+      <div ref={el => { tabRefs.current[id] = el; }}
+        onClick={() => { setTab(id); if (id === 'sc') setScResults([]); }} style={{
         fontSize:12, fontWeight:500, letterSpacing:'0.03em', cursor:'pointer', userSelect:'none',
-        padding:'6px 12px', borderRadius:8,
-        background: active ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+        padding:'6px 12px', borderRadius:8, position:'relative', zIndex:1,
+        background: 'transparent',
         color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.35)',
-        border: active ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+        border: '1px solid transparent',
       }}>{label}</div>
     );
   };
@@ -3266,15 +3571,15 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             {t('playlist_empty')}
           </div>
         ) : (
-          <div className="scroll-thin" style={{flex:1, overflowY:'auto', paddingBottom: dockOn ? 108 : 0}}>
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto'}}>
             {items.map((tr, i) => (
               <SearchTrackRow
                 key={tr.id || i}
                 track={tr}
                 isLiked={likedIds?.has(tr.id) || likedIds?.has(String(tr.id))}
                 onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
-                onClick={() => onPlayTrack(tr, items)}
-                onCoverClick={() => onPlayTrack(tr, items)}
+                onClick={() => onPlayTrack(tr, items, pl.title)}
+                onCoverClick={() => onPlayTrack(tr, items, pl.title)}
                 isActive={activeId != null && String(activeId) === String(tr.id)}
                 isLoading={loadingTrackId === tr.id}
                 isError={errorTrackId === tr.id}
@@ -3284,7 +3589,6 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             ))}
           </div>
         )}
-        {dockBar}
       </div>
     );
   }
@@ -3327,7 +3631,7 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             <span style={{fontSize:12, opacity:0.7}}>{t('playlist_hint')}</span>
           </div>
         ) : (
-          <div className="scroll-thin" style={{flex:1, overflowY:'auto', paddingBottom: dockOn ? 108 : 0}}>
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto'}}>
             {items.map((tr, i) => (
               <div key={tr.id || i} style={{display:'flex', alignItems:'center', gap:8}}>
                 <div style={{flex:1, minWidth:0}}>
@@ -3335,8 +3639,8 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
                     track={tr}
                     isLiked={likedIds?.has(tr.id) || likedIds?.has(String(tr.id))}
                     onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
-                    onClick={() => onPlayTrack(tr, items)}
-                    onCoverClick={() => onPlayTrack(tr, items)}
+                    onClick={() => onPlayTrack(tr, items, open.name)}
+                    onCoverClick={() => onPlayTrack(tr, items, open.name)}
                     isActive={activeId != null && String(activeId) === String(tr.id)}
                     isLoading={loadingTrackId === tr.id}
                     isError={errorTrackId === tr.id}
@@ -3350,7 +3654,70 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
             ))}
           </div>
         )}
-        {dockBar}
+      </div>
+    );
+  }
+
+  if (openSharedBox) {
+    const live = (sharedCrates || []).find(b => String(b.friendUid) === String(openSharedBox.friendUid)) || openSharedBox;
+    const items = live.items || [];
+    const title = sharedPlaylistName(t, live.friendName || openSharedBox.friendName);
+    return (
+      <div style={transStyle}>
+        <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:18}}>
+          <div onClick={() => setOpenSharedBox(null)} title={t('back')} style={{
+            width:32, height:32, borderRadius:9, cursor:'pointer',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(255,255,255,0.04)', color:'rgba(255,255,255,0.7)',
+          }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          </div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:16, fontWeight:700, color:'rgba(255,255,255,0.88)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+              {title}
+            </div>
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.35)', marginTop:2}}>{items.length}</div>
+          </div>
+          <div onClick={() => onAddCurrentToShared?.(live.friendUid, live.friendName || openSharedBox.friendName)} style={{
+            fontSize:12, color:'rgba(255,255,255,0.7)', cursor:'pointer',
+            background:'rgba(255,255,255,0.06)', borderRadius:8, padding:'6px 12px',
+          }}>{t('crate_add_current')}</div>
+          <div onClick={() => {
+            onClearShared?.(live.friendUid, live.friendName || openSharedBox.friendName);
+            setOpenSharedBox(null);
+          }} style={{
+            fontSize:11, color:'rgba(255,80,80,0.75)', cursor:'pointer', padding:'4px 8px',
+          }}>{t('playlist_delete')}</div>
+        </div>
+        {items.length === 0 ? (
+          <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'40px 0', textAlign:'center'}}>
+            {t('crate_empty')}<br/>
+            <span style={{fontSize:12, opacity:0.7}}>{t('crate_add_current')}</span>
+          </div>
+        ) : (
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto'}}>
+            {items.map((tr, i) => (
+              <div key={tr.id || i} style={{display:'flex', alignItems:'center', gap:8}}>
+                <div style={{flex:1, minWidth:0}}>
+                  <SearchTrackRow
+                    track={tr}
+                    isLiked={likedIds?.has(tr.id) || likedIds?.has(String(tr.id))}
+                    onLike={tr?.id && onLike ? () => onLike(tr) : undefined}
+                    onClick={() => onPlayTrack(tr, items, title)}
+                    onCoverClick={() => onPlayTrack(tr, items, title)}
+                    isActive={activeId != null && String(activeId) === String(tr.id)}
+                    isLoading={loadingTrackId === tr.id}
+                    isError={errorTrackId === tr.id}
+                    hideDividers={hideDividers}
+                    onContextMenu={onContextMenu}
+                  />
+                </div>
+                <div onClick={() => onRemoveSharedItem?.(live.friendUid, live.friendName || openSharedBox.friendName, tr)}
+                  style={{fontSize:16, color:'rgba(255,255,255,0.22)', cursor:'pointer', padding:'0 8px'}}>×</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -3358,10 +3725,12 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
   return (
     <div style={transStyle}>
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, gap:10, flexWrap:'wrap'}}>
-        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+        <div ref={tabWrapRef} className="aoi-pl-tabs">
+          <div className="aoi-pl-rail" style={{ transform: 'translateX(' + tabRail.left + 'px)', width: tabRail.width }}/>
           {tabBtn('local', t('playlist_local'))}
           {tabBtn('sc', t('playlist_sc'))}
           {tabBtn('discover', t('playlist_discover'))}
+          {tabBtn('shared', t('playlist_shared'))}
         </div>
         {tab === 'local' && (
           <div onClick={onCreate} style={{
@@ -3458,6 +3827,39 @@ function PlaylistView({ visible, playlists, scPlaylists, scAuth, openId, onOpen,
           )}
         </>
       )}
+
+      {tab === 'shared' && (
+        !(sharedCrates || []).length ? (
+          <div style={{fontSize:13, color:'rgba(255,255,255,0.32)', padding:'48px 0', textAlign:'center', lineHeight:1.6}}>
+            {t('crate_empty')}<br/>
+            <span style={{fontSize:12, opacity:0.7}}>{t('crate_create')}</span>
+          </div>
+        ) : (
+          <div className="scroll-thin" style={{flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:6}}>
+            {(sharedCrates || []).map(box => (
+              <div key={box.pairKey || box.friendUid} onClick={() => { onOpen?.(null); setOpenSharedBox(box); }}
+                style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  padding:'12px 14px', borderRadius:12, cursor:'pointer',
+                  background:'rgba(255,255,255,0.034)',
+                }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, color:'rgba(255,255,255,0.82)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                    {sharedPlaylistName(t, box.friendName)}
+                  </div>
+                  <div style={{fontSize:11, color:'rgba(255,255,255,0.28)', marginTop:2}}>{(box.items || []).length}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
     </div>
   );
 }
@@ -3471,6 +3873,7 @@ function RoomsView({
   busy = busy || {};
   const t = useLang();
   const [lobbyTab, setLobbyTab] = useState('setup');
+  const [codeWet, setCodeWet] = useState(false);
   const [memberMenu, setMemberMenu] = useState(null);
   const slots = slotsFromRoom(room);
   const suggestions = room.suggestions || [];
@@ -3515,7 +3918,8 @@ function RoomsView({
     const canMod = opts.host && m && !mine;
     const canLock = !!(opts.lockable && !m && opts.onLock);
     return (
-      <div key={slot.i}
+      <div key={m ? (m.id || m.uid || slot.i) : ('empty-' + slot.i)}
+        className={m ? 'aoi-slot-in' : undefined}
         onContextMenu={canMod ? (e) => {
           e.preventDefault();
           setMemberMenu({ member: m, x: e.clientX, y: e.clientY });
@@ -3590,7 +3994,8 @@ function RoomsView({
               </>
             )}
             {lobbyTab === 'join' && (
-              <div style={{display:'flex', gap:8}}>
+              <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                <div style={{display:'flex', gap:8}}>
                 <input value={joinCode} maxLength={6} spellCheck={false} autoCapitalize="characters"
                   placeholder={t('room_code_ph')}
                   onChange={e => onJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
@@ -3605,10 +4010,20 @@ function RoomsView({
                   opacity: joinCode.length >= 4 && !busy.join ? 1 : 0.35,
                   pointerEvents: (room.status === 'joining' || busy.join) ? 'none' : 'auto',
                 }}>{room.status === 'joining' ? t('loading') : t('room_join')}</button>
+                </div>
+                <div className="aoi-join-slots">
+                  {[0,1,2,3,4,5].map(i => (
+                    <div key={i} className={'aoi-join-slot' + (joinCode.length > i ? ' filled' : '') + (joinCode.length >= 6 ? ' ready' : '')}/>
+                  ))}
+                </div>
               </div>
             )}
             {room.status === 'reconnecting' && (
-              <div style={{fontSize:12, color:'rgba(255,255,255,0.32)'}}>{t('room_reconnecting')}</div>
+              <div style={{fontSize:12, color:'rgba(255,255,255,0.32)'}}>{t('room_reconnecting')}
+                <span className="aoi-ellipsis-dot">.</span>
+                <span className="aoi-ellipsis-dot" style={{animationDelay:'0.2s'}}>.</span>
+                <span className="aoi-ellipsis-dot" style={{animationDelay:'0.4s'}}>.</span>
+              </div>
             )}
             {room.error && <div style={{fontSize:12, color:'rgba(255,80,80,0.75)'}}>{room.error}</div>}
           </div>
@@ -3617,11 +4032,17 @@ function RoomsView({
         {inRoom && (
           <div style={{display:'flex', flexDirection:'column', gap:12, flex:1, minHeight:0}}>
             <div style={{display:'flex', alignItems:'center', gap:12, flexShrink:0}}>
-              <div onClick={busy.copy ? undefined : onCopy} title={t('room_copy')} style={{
+              <div onClick={busy.copy ? undefined : () => {
+                setCodeWet(true);
+                onCopy();
+                setTimeout(() => setCodeWet(false), 200);
+              }} title={t('room_copy')} className={'aoi-code-stamp' + (codeWet ? ' is-wet' : '')} style={{
                 fontSize:28, fontWeight:800, letterSpacing:'0.16em', color:'rgba(255,255,255,0.9)',
                 cursor: busy.copy ? 'default' : 'pointer', fontVariantNumeric:'tabular-nums',
                 opacity: busy.copy ? 0.5 : 1,
-              }}>{room.code}</div>
+              }}>{String(room.code || '').split('').map((ch, i) => (
+                <span key={i} style={{ animationDelay: (i * 40) + 'ms' }}>{ch}</span>
+              ))}</div>
               <button type="button" onClick={busy.leave ? undefined : onLeave} style={{
                 ...btn(false), marginLeft:'auto',
                 opacity: busy.leave ? 0.45 : 1,
@@ -3663,7 +4084,7 @@ function RoomsView({
                     <div style={{fontSize:12, color:'rgba(255,255,255,0.28)', paddingTop:8}}>{t('room_suggests_empty')}</div>
                   )}
                   {suggestions.map(s => (
-                    <div key={s.id} onClick={isHost && !busy.suggest ? () => onPlaySuggestion?.(s.track) : undefined}
+                    <div key={s.id} className="aoi-suggest-in" onClick={isHost && !busy.suggest ? () => onPlaySuggestion?.(s.track) : undefined}
                       style={{
                         display:'flex', gap:10, alignItems:'center',
                         background:'rgba(255,255,255,0.034)', borderRadius:12, padding:10,
@@ -3760,7 +4181,7 @@ function MemberContextMenu({ menu, onClose, onKick, onBan, onTransfer, busy }) {
 }
 
 /* ── Presence (online users) ─────────────────────────────────────────────── */
-function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onToggleFriend, isFriend }) {
+function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onUnblock, onToggleFriend, isFriend, isBlocked }) {
   const ref = useRef(null);
   const [pos, setPos] = useState({ x: menu.x, y: menu.y, ready: false });
   const t = useLang();
@@ -3789,11 +4210,11 @@ function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onT
       document.removeEventListener('keydown', onKey);
     };
   }, [onClose]);
-  const Item = ({ label, onClick, disabled }) => (
+  const Item = ({ label, onClick, disabled, danger }) => (
     <div onClick={disabled ? null : () => { onClick?.(menu.peer); onClose(); }}
       style={{
         padding:'7px 11px', borderRadius:7, fontSize:12.5,
-        color: disabled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.86)',
+        color: disabled ? 'rgba(255,255,255,0.25)' : danger ? 'rgba(255,140,140,0.9)' : 'rgba(255,255,255,0.86)',
         cursor: disabled ? 'default' : 'pointer', userSelect:'none',
       }}
       onMouseEnter={e => { if (!disabled) e.currentTarget.style.background='rgba(255,255,255,0.07)'; }}
@@ -3815,8 +4236,10 @@ function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onT
       <Item label={t('presence_open_profile')} disabled={!profile} onClick={onOpenProfile}/>
       <Item label={isFriend ? t('remove_friend') : t('add_friend')} onClick={onToggleFriend}/>
       <Item label={t('presence_invite')} onClick={onInvite}/>
-      <Item label={t('crate_add')} onClick={(p) => { try { window.__aoiAddCrate?.(p); } catch(_){} }}/>
-      <Item label={t('presence_block')} onClick={onBlock}/>
+      <Item label={t('crate_create')} onClick={(p) => { try { window.__aoiAddCrate?.(p); } catch(_){} }}/>
+      {isBlocked
+        ? <Item label={t('presence_unblock')} onClick={onUnblock}/>
+        : <Item label={t('presence_block')} onClick={onBlock} danger/>}
     </div>,
     document.body
   );
@@ -3824,12 +4247,19 @@ function PresenceUserMenu({ menu, onClose, onOpenProfile, onInvite, onBlock, onT
 
 function SharedCrateView({ open, items, myUid, onBack, onPlayTrack, onRemoveItem, onClear, onAddCurrent, activeId, loadingTrackId, errorTrackId, hideDividers, likedIds, onLike, onContextMenu, dockTrack, dockPlaying, progressRef, onDockToggle, onDockPrev, onDockNext, onDockOpen, onDockSeek }) {
   const t = useLang();
+  const onBackRef = useRef(onBack);
+  onBackRef.current = onBack;
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') onBack?.(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onBack]);
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      onBackRef.current?.();
+    };
+    // defer so the opening click / menu Escape cannot instantly dismiss
+    const tid = setTimeout(() => document.addEventListener('keydown', onKey, true), 80);
+    return () => { clearTimeout(tid); document.removeEventListener('keydown', onKey, true); };
+  }, [open]);
   if (!open) return null;
   const list = items || [];
   const dockOn = !!(dockTrack && dockTrack.title);
@@ -3846,7 +4276,10 @@ function SharedCrateView({ open, items, myUid, onBack, onPlayTrack, onRemoveItem
     />
   ) : null;
   return ReactDOM.createPortal(
-    <div style={{ position:'fixed', inset:0, zIndex:9850, background:'rgba(8,8,12,0.98)', display:'flex', flexDirection:'column' }}>
+    <div
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+      style={{ position:'fixed', inset:0, zIndex:9850, background:'rgba(8,8,12,0.98)', display:'flex', flexDirection:'column' }}>
       <div style={{ display:'flex', alignItems:'center', gap:12, padding:'22px 28px 14px', flexShrink:0, borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
         <div onClick={onBack} title={t('back')} style={{
           width:32, height:32, borderRadius:9, cursor:'pointer',
@@ -3914,7 +4347,7 @@ function SharedCrateView({ open, items, myUid, onBack, onPlayTrack, onRemoveItem
   );
 }
 
-function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, sharedCrates, onOpenSharedCrate }) {
+function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, presenceEnabled, onToggleVisible, friends, sharedCrates, onOpenSharedCrate, onUnblock }) {
   const t = useLang();
   useEffect(() => {
     if (!open) return;
@@ -3972,13 +4405,13 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
               ))}
             </div>
           )}
-          {visible.length === 0 ? (
+          {visible.length === 0 && (blocked || []).length === 0 ? (
             <div style={{ fontSize:13, color:'rgba(255,255,255,0.28)', textAlign:'center', padding:'48px 16px', lineHeight:1.5 }}>
               {t('presence_empty')}
             </div>
           ) : (
             <>
-              {friendPeers.length > 0 && (
+              {visible.length > 0 && friendPeers.length > 0 && (
                 <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>{t('friends_section')}</div>
               )}
               {friendPeers.map(p => {
@@ -4056,6 +4489,27 @@ function OnlinePanel({ open, onClose, peers, selfToken, blocked, onUserMenu, pre
               </div>
             );
           })}
+              {(blocked || []).length > 0 && (
+                <div style={{ marginTop:12 }}>
+                  <div style={{ fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.32)', margin:'4px 8px 8px' }}>{t('presence_blocked_section')}</div>
+                  {(blocked || []).map((b, i) => (
+                    <div key={'blk-'+(b.key || i)}
+                      style={{
+                        display:'flex', alignItems:'center', gap:12,
+                        padding:'10px 10px', borderRadius:12, marginBottom:4,
+                        background:'rgba(255,80,80,0.04)',
+                      }}>
+                      <div style={{ minWidth:0, flex:1 }}>
+                        <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{b.name || 'user'}</div>
+                      </div>
+                      <div onClick={() => onUnblock?.(b)}
+                        style={{ fontSize:11, color:'rgba(255,255,255,0.45)', cursor:'pointer', padding:'4px 8px', borderRadius:7, background:'rgba(255,255,255,0.05)', flexShrink:0 }}>
+                        {t('presence_unblock')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -4183,7 +4637,7 @@ function PresenceBar({ profile, connected, count, onAvatarClick, onCountClick, c
       </div>
       <div style={{ minWidth:0, flex:1, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
         <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-          <div style={{
+          <div className={connected ? 'aoi-presence-on' : undefined} style={{
             width:7, height:7, borderRadius:99, flexShrink:0,
             background: dotColor,
             boxShadow: connected ? '0 0 8px rgba(74,222,128,0.4)' : 'none',
@@ -4318,7 +4772,7 @@ function Sidebar({ navActive, onNav, libCollapsed, onToggleLib, inPlayer, scAuth
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
             )}/>
-          {roomLive && <div style={{
+          {roomLive && <div className="aoi-room-live" style={{
             position:'absolute', right:3, top:3, width:7, height:7, borderRadius:99,
             background:'var(--accent)', boxShadow:'0 0 0 2px #07070a',
           }}/>}
@@ -4478,13 +4932,9 @@ function CrossfadeSlider({ value, onChange }) {
           valueRef.current = v;
           setLive(v);
         }}>
-        <div style={{width:'100%', height:6, borderRadius:3, background:'rgba(255,255,255,0.07)', position:'relative', overflow:'hidden'}}>
-          <div style={{
-            position:'absolute', left:0, top:0, height:'100%',
-            width:`${pct}%`, borderRadius:3,
-            background:'#c8c8c8',
-            boxShadow: pct > 0 ? '0 0 8px rgba(178,178,178,0.45)' : 'none',
-          }}/>
+        <div className="aoi-xfade">
+          <div className="aoi-xfade-a" style={{ width: pct > 0 ? `${Math.max(18, 100 - pct * 0.45)}%` : '0%' }}/>
+          <div className="aoi-xfade-b" style={{ width: pct > 0 ? `${Math.max(18, pct * 0.7)}%` : '0%' }}/>
         </div>
       </div>
       <span style={{fontSize:12, color:'rgba(255,255,255,0.32)', minWidth:28, textAlign:'right'}}>
@@ -4536,7 +4986,7 @@ function ClearCacheCard({ Card, Row, onClearCoversCache, onClearLikesCache }) {
 }
 
 /* ── SettingsView ─────────────────────────────────────────────────────────── */
-function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFolder, onClearCoversCache, onClearLikesCache, appAccent, onOpenMini, appVersion }) {
+function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFolder, onClearCoversCache, onClearLikesCache, appAccent, onOpenMini, appVersion, onToast }) {
   const t = useLang();
   const [themeCopied, setThemeCopied] = useState(false);
   const set = (k, v) => onSettings({ ...settings, [k]: v });
@@ -4989,8 +5439,17 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
         <Row label={t('notif_sound')} sub={t('notif_sound_sub')}><Toggle k="notifSound"/></Row>
         <Row label={t('quiet_hours')} sub={t('quiet_hours_sub')}><Toggle k="quietHours"/></Row>
         <Row label={t('deep_work')} sub={t('deep_work_sub')}>
-          <div onClick={() => set('deepWorkUntil', Date.now() + 3 * 60 * 60 * 1000)}
-            style={{ fontSize:12, color:'rgba(255,255,255,0.55)', cursor:'pointer', background:'rgba(255,255,255,0.055)', borderRadius:7, padding:'5px 12px' }}>3h</div>
+          <div onClick={() => {
+            const active = (Number(settings.deepWorkUntil) || 0) > Date.now();
+            set('deepWorkUntil', active ? 0 : Date.now() + 3 * 60 * 60 * 1000);
+          }}
+            style={{
+              fontSize:12,
+              color: (Number(settings.deepWorkUntil) || 0) > Date.now() ? 'rgba(255,180,120,0.9)' : 'rgba(255,255,255,0.55)',
+              cursor:'pointer',
+              background: (Number(settings.deepWorkUntil) || 0) > Date.now() ? 'rgba(255,140,80,0.12)' : 'rgba(255,255,255,0.055)',
+              borderRadius:7, padding:'5px 12px',
+            }}>{(Number(settings.deepWorkUntil) || 0) > Date.now() ? 'OFF' : '3h'}</div>
         </Row>
         <Row label={t('candle_timer')}><Toggle k="candleSleep"/></Row>
         <Row label={t('black_lift')} sub={t('black_lift_sub')}>
@@ -5101,7 +5560,7 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
         </Row>
       </Card>
     </>),
-    about: (
+    about: (<>
       <Card>
         <div style={{display:'flex', alignItems:'center', gap:12, padding:'14px 16px 10px'}}>
           <AoiMark size={40} radius={10} className="aoi-logo-breathe"/>
@@ -5110,9 +5569,75 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
             <div style={{fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:2}}>{appVersion || window.appInfo?.version || '—'}</div>
           </div>
         </div>
-        <Row label={t('stack')} last><span style={{fontSize:12, color:'rgba(255,255,255,0.3)'}}>Tauri · React</span></Row>
+        <Row label={t('stack')}><span style={{fontSize:12, color:'rgba(255,255,255,0.3)'}}>Tauri · React</span></Row>
+        <Row label={t('aoi_uid')} sub={t('aoi_uid_sub')} last>
+          <div onClick={async () => {
+            const shown = formatAoiUid(settings.soundcloudAuth?.aoiNo);
+            if (!shown) return;
+            try { await navigator.clipboard.writeText(shown); } catch {}
+            onToast?.(t('aoi_uid_copied'));
+          }} style={{
+            fontSize:13, fontWeight:650, letterSpacing:'0.04em', fontVariantNumeric:'tabular-nums',
+            color: formatAoiUid(settings.soundcloudAuth?.aoiNo) ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.32)',
+            cursor: formatAoiUid(settings.soundcloudAuth?.aoiNo) ? 'pointer' : 'default',
+          }}>{formatAoiUid(settings.soundcloudAuth?.aoiNo) || (!settings.soundcloudAuth ? t('aoi_uid_none') : t('aoi_uid_wait'))}</div>
+        </Row>
       </Card>
-    ),
+      <Card title={t('credits_title')}>
+        <div style={{ padding:'18px 20px 16px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14 }}>
+            <div style={{
+              width:44, height:44, borderRadius:14, flexShrink:0,
+              background:'linear-gradient(145deg, rgba(var(--accent-rgb),0.35), rgba(255,255,255,0.06))',
+              border:'1px solid rgba(255,255,255,0.08)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:18, fontWeight:700, color:'rgba(255,255,255,0.88)', letterSpacing:'-0.03em',
+            }}>aoi</div>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:14, fontWeight:650, color:'rgba(255,255,255,0.88)' }}>{t('credits_dev')}</div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', marginTop:3, lineHeight:1.45 }}>{t('credits_sub')}</div>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <a href="https://t.me/speedfingers" target="_blank" rel="noreferrer"
+              onClick={e => { e.preventDefault(); window.electronAPI?.openUrl?.('https://t.me/speedfingers'); }}
+              style={{
+                flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                padding:'10px 12px', borderRadius:11, textDecoration:'none', cursor:'pointer',
+                background:'rgba(34,158,217,0.12)', border:'1px solid rgba(34,158,217,0.22)',
+                color:'rgba(255,255,255,0.88)', fontSize:12.5, fontWeight:600, fontFamily:'inherit',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background='rgba(34,158,217,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='rgba(34,158,217,0.12)'; }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12a.43.43 0 01.14.28c.01.06.02.2 0 .31z"/></svg>
+              {t('credits_tg')}
+            </a>
+            <div
+              onClick={async () => {
+                try { await navigator.clipboard.writeText('emopara'); } catch {}
+                window.electronAPI?.openUrl?.('https://discord.com/channels/@me');
+                onToast?.(t('credits_dc_copied'));
+              }}
+              style={{
+                flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                padding:'10px 12px', borderRadius:11, cursor:'pointer',
+                background:'rgba(88,101,242,0.14)', border:'1px solid rgba(88,101,242,0.28)',
+                color:'rgba(255,255,255,0.88)', fontSize:12.5, fontWeight:600, fontFamily:'inherit',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background='rgba(88,101,242,0.22)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='rgba(88,101,242,0.14)'; }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.01.05-.01.07 0c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07 0c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.02.02.05.03.08.02c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12z"/></svg>
+              {t('credits_dc')}
+            </div>
+          </div>
+          <div style={{ marginTop:12, fontSize:11, color:'rgba(255,255,255,0.28)', letterSpacing:'0.02em' }}>
+            @speedfingers · emopara
+          </div>
+        </div>
+      </Card>
+    </>),
   };
 
   return (
@@ -5162,7 +5687,7 @@ function SettingsView({ settings, onSettings, visible, onScanTracks, onClearFold
           fontSize:11, fontWeight:500, color:'rgba(255,255,255,0.22)',
           letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:22,
         }}>{SECS.find(s=>s.id===sec)?.label}</div>
-        <div style={{maxWidth:480}}>
+        <div key={sec} className="aoi-settings-sec" style={{maxWidth:480}}>
           {content[sec]}
         </div>
       </div>
@@ -5257,7 +5782,7 @@ function SoundCloudView({
           <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
         </svg>
         {notifUnread > 0 && (
-          <div style={{
+          <div key={notifUnread} className="aoi-badge-roll" style={{
             position:'absolute', top:6, right:6, minWidth:14, height:14, borderRadius:99,
             background:'rgb(var(--accent-rgb))', color:'#0a0a0c',
             fontSize:8, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center',
@@ -5315,8 +5840,8 @@ function SoundCloudView({
                     background: active ? 'rgba(var(--accent-rgb),0.1)' : 'rgba(255,255,255,0.03)',
                     cursor: active ? 'default' : 'pointer',
                   }}>
-                  <div style={{ width:28, height:28, borderRadius:99, overflow:'hidden', background:'#111' }}>
-                    {acc.avatarUrl ? <img src={acc.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : null}
+                  <div className="aoi-account-slip" style={{ width:28, height:28, borderRadius:99, overflow:'hidden', background:'#111' }}>
+                    {acc.avatarUrl ? <img key={acc.userId || acc.username} src={acc.avatarUrl} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : null}
                   </div>
                   <div style={{ flex:1, minWidth:0, fontSize:12.5, color:'rgba(255,255,255,0.75)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                     {acc.username || t('unknown')}{active ? ' · ' + t('accounts_active') : ''}
@@ -5346,7 +5871,7 @@ function SoundCloudView({
           <div style={{fontSize:12,color:'rgba(255,255,255,0.22)',lineHeight:1.6}}>{t('sc_hint').split('\n').map((l,i)=><span key={i}>{l}{i===0&&<br/>}</span>)}</div>
         </div>
         {error && <div style={{fontSize:11,color:'rgba(255,80,60,0.7)'}}>{error}</div>}
-        <button onClick={handleLogin} disabled={loading} style={{
+        <button onClick={handleLogin} disabled={loading} className={loading ? 'aoi-login-wash' : undefined} style={{
           background: loading ? 'rgba(255,85,0,0.08)' : 'rgba(255,85,0,0.12)',
           border:'none', borderRadius:10, padding:'9px 18px',
           fontSize:13, fontWeight:500, color:'rgba(255,130,60,0.9)',
@@ -5357,7 +5882,7 @@ function SoundCloudView({
   );
 }
 
-/* ── SourceDeckPlayer — compact dock for search / playlists ─────────────── */
+/* ── SourceDeckPlayer — compact dock for shared crate ───────────────────── */
 function SourceDeckPlayer({ track, isPlaying, progressRef, onToggle, onPrev, onNext, onOpen, onSeek }) {
   const t = useLang();
   const [, setTick] = useState(0);
@@ -5522,7 +6047,6 @@ function SearchTrackRow({ track, isLiked, onLike, onClick, onCoverClick, isLoadi
 const SearchView = React.forwardRef(function SearchView({
   visible, scAuth, likedIds, onLike, onPlayTrack, onSelectTrack, onResultsLoaded, onArtistClick,
   loadingTrackId, errorTrackId, hideDividers, onContextMenu, activeId,
-  dockTrack, dockPlaying, progressRef, onDockToggle, onDockPrev, onDockNext, onDockOpen, onDockSeek,
 }, ref) {
   const T = useLang();
   const inputRef = useRef(null);
@@ -5548,7 +6072,6 @@ const SearchView = React.forwardRef(function SearchView({
   }));
 
   const hasResults = results.length > 0 || users.length > 0;
-  const dockOn = !!(dockTrack && dockTrack.title);
 
   const doSearch = async (q, off = 0) => {
     if (!q.trim() || !scAuth) return;
@@ -5644,8 +6167,8 @@ const SearchView = React.forwardRef(function SearchView({
           className="scroll-thin"
           style={{
             position:'absolute', left:0, right:10,
-            top:'calc(8% + 76px)', bottom: dockOn ? 108 : 0,
-            overflowY:'auto', padding:`16px 52px ${dockOn ? 120 : 32}px`,
+            top:'calc(8% + 76px)', bottom: 0,
+            overflowY:'auto', padding:'16px 52px 32px',
             willChange:'transform',
           }}>
           {users.length > 0 && (
@@ -5702,18 +6225,6 @@ const SearchView = React.forwardRef(function SearchView({
             </div>
           )}
         </div>
-      )}
-      {dockOn && (
-        <SourceDeckPlayer
-          track={dockTrack}
-          isPlaying={dockPlaying}
-          progressRef={progressRef}
-          onToggle={onDockToggle}
-          onPrev={onDockPrev}
-          onNext={onDockNext}
-          onOpen={onDockOpen}
-          onSeek={onDockSeek}
-        />
       )}
     </div>
   );
@@ -5902,12 +6413,11 @@ function ArtistView({ artist, visible, onClose, scAuth, likedIds, onLike, onPlay
       }}>
         {/* blur background — prefer banner, fallback to avatar */}
         {(bannerUrl || avatarUrl) && (
-          <img src={bannerUrl || avatarUrl} style={{
+          <img src={bannerUrl || avatarUrl} className="aoi-artist-banner" style={{
             position: 'absolute', inset: '-40px',
             width: 'calc(100% + 80px)', height: 'calc(100% + 80px)',
             objectFit: 'cover',
             filter: 'blur(56px) saturate(1.3) brightness(0.5)',
-            transform: 'scale(1.06)',
           }}/>
         )}
         {/* gradient overlay */}
@@ -5982,12 +6492,13 @@ function ArtistView({ artist, visible, onClose, scAuth, likedIds, onLike, onPlay
             marginTop: 10,
           }}>
             {(profile?.followersCount > 0) && (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.01em' }}>
+              <div key={profile.followersCount} className="aoi-badge-roll" style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.01em' }}>
                 {profile.followersCount.toLocaleString()} {t('followers')}
               </div>
             )}
             {profileId && scAuth && isFollowing !== null && (
               <button
+                className={'aoi-follow-wipe' + (isFollowing ? ' is-on' : ' is-off')}
                 disabled={followBusy}
                 onClick={handleSubscribeClick}
                 onMouseEnter={e => {
@@ -6423,6 +6934,7 @@ function App() {
   const [hero,               setHero]               = useState(null);
   const [playerVisible,      setPlayerVisible]      = useState(false);
   const [playbackDock,       setPlaybackDock]       = useState(null);
+  const [queueSession,       setQueueSession]       = useState(null);
   const [homeVisible,        setHomeVisible]        = useState(true);
   const [heroExiting,        setHeroExiting]        = useState(false);
   const [reverseHero,        setReverseHero]        = useState(null);
@@ -6441,6 +6953,11 @@ function App() {
     discordTimestamp: 'progress', discordPause: 'show', discordCover: true,
     accentMode: 'default', playlists: [],
     eqId: 'flat', eqGains: [0, 0, 0, 0, 0, 0], eqCustom: [],
+    volume: 0.7,
+    shuffle: false,
+    repeat: 'off',
+    playbackRate: 1,
+    preservesPitch: true,
     miniAlwaysOnTop: true,
     presenceEnabled: true,
     blockedPresence: [],
@@ -6475,7 +6992,7 @@ function App() {
     navDockAlpha: 100,
     navDockDim: 0,
     uiShow: null,
-    useAoiProxy: false,
+    useAoiProxy: true,
     hideListening: false,
     scPlaylists: [],
   });
@@ -6493,6 +7010,7 @@ function App() {
   const [stationActive, setStationActive] = useState(null);
   const [sleepOn,       setSleepOn]       = useState(false);
   const [sleepRemain,   setSleepRemain]   = useState(0);
+  const [needleHold,    setNeedleHold]    = useState(false);
   const [eqOpen,        setEqOpen]        = useState(false);
   const [someoneElse,   setSomeoneElse]   = useState(false);
   const [presenceConnected, setPresenceConnected] = useState(false);
@@ -6513,7 +7031,9 @@ function App() {
   const [accentRGB,     setAccentRGB]     = useState(null);
   const [sharedCrates, setSharedCrates] = useState([]);
   const [openSharedCrate, setOpenSharedCrate] = useState(null);
+  const [openSharedFriend, setOpenSharedFriend] = useState(null);
   const [room, setRoom] = useState({ role: null, code: '', members: [], status: 'idle', error: null, hostLeft: false, track: null, slots: emptyRoomSlots(), suggestions: [], you: null, locks: null });
+  const [roomPlay, setRoomPlay] = useState(null);
   const [roomDraftLocks, setRoomDraftLocks] = useState(() => Array.from({ length: 8 }, () => false));
   const [roomJoinCode, setRoomJoinCode] = useState('');
   const [roomBusy, setRoomBusy] = useState({});
@@ -6580,6 +7100,7 @@ function App() {
   const outgoingRef   = useRef(null);
   const hlsRef        = useRef(null);
   const hlsOutRef     = useRef(null);
+  const hlsPeekRef    = useRef(null);
   const fadingRef     = useRef(false);
   const cfLockRef     = useRef(false);
   const repeatRef     = useRef('off');
@@ -6618,6 +7139,11 @@ function App() {
   const stationQueueRef   = useRef(null);
   const scShuffleOrderRef = useRef([]);
   const scShuffleIdxRef   = useRef(-1);
+  const localShuffleOrderRef = useRef([]);
+  const localShuffleIdxRef   = useRef(-1);
+  const recentPlayIdsRef     = useRef([]);
+  const settingsDiskOkRef    = useRef(false);
+  const settingsSaveGenRef   = useRef(0);
   const scPlayingTrackRef = useRef(null);
   const volumeRef         = useRef(0.7);
   const shuffleRef        = useRef(false);
@@ -6631,13 +7157,13 @@ function App() {
   const playSrcCacheRef   = useRef({});
   const peekingRef        = useRef(false);
   const peekTimerRef      = useRef(null);
-  const aftertasteRef     = useRef(false);
-  const aftertasteRafRef  = useRef(null);
   const finishingBarRef   = useRef(false);
   const lastToggleRef     = useRef(0);
   const sleepTimerRef     = useRef(null);
-  const sleepStartVolRef  = useRef(0.7);
-  const sleepApplyingRef  = useRef(false);
+  const volMixRef         = useRef({ sleep: 1, duck: 1, fadeIn: 1, fadeOut: 1 });
+  const roomRateRef       = useRef(null);
+  const playLoggedRef     = useRef('');
+  const fadePrevRef       = useRef(null);
   const settingsRef       = useRef({});
   const crossfadeRafRef   = useRef(null);
   scTracksRef.current = scTracks;
@@ -6651,6 +7177,17 @@ function App() {
   eqGainsRef.current   = settings.eqGains || EQ_ZERO;
   scPlayingTrackRef.current = scPlayingTrack;
   settingsRef.current  = settings;
+  const playedId = scPlayingTrack?.id ?? tracks[trackIdx]?.id;
+  if (playedId != null) {
+    const sid = String(playedId);
+    if (recentPlayIdsRef.current[0] !== sid) {
+      recentPlayIdsRef.current = [sid, ...recentPlayIdsRef.current.filter(x => x !== sid)].slice(0, 12);
+    }
+  }
+
+  function shuffleBag(list, currentId) {
+    return buildScShuffle(list || [], currentId, recentPlayIdsRef.current);
+  }
 
   repeatRef.current    = repeat;
   const roomRef = useRef(room);
@@ -6666,7 +7203,7 @@ function App() {
   const roomProfile = roomProfileOf(settings.soundcloudAuth);
   const roomName = roomProfile.name;
   const track = scPlayingTrack || tracks[trackIdx] || tracks[0] || { id:0, title:'', artist:'', duration:0, color:'#333' };
-  const sleepyEdge = sleepOn && sleepRemain > 0 && sleepRemain <= 20;
+  const sleepyEdge = sleepOn && sleepRemain > 0 && (settings.candleSleep || sleepRemain <= 20);
 
   useEffect(() => {
     if (!track?.coverUrl) { setAccentRGB(null); return; }
@@ -6769,7 +7306,21 @@ function App() {
       if (!stop) {
         setPresenceConnected(!!(res && res.ok));
         if (res && Array.isArray(res.friendCrates)) {
-          setSharedCrates(res.friendCrates.filter(b => b && b.friendUid));
+          const friendBeatMeta = resolveFriendBeatMeta(settingsRef.current?.friends, presencePeersRef.current);
+          setSharedCrates(prev => mergeSharedCratesFromBeat(prev, res.friendCrates, friendBeatMeta.friendUids));
+        }
+        if (res && res.aoiNo) {
+          const n = Number(res.aoiNo);
+          if (Number.isFinite(n) && n > 0) {
+            setSettings(s => {
+              if (!s.soundcloudAuth || s.soundcloudAuth.aoiNo === n) return s;
+              const auth = { ...s.soundcloudAuth, aoiNo: n };
+              const scAccounts = (s.scAccounts || []).map(a =>
+                String(a.userId || '') === String(auth.userId || '') ? { ...a, aoiNo: n } : a
+              );
+              return { ...s, soundcloudAuth: auth, scAccounts };
+            });
+          }
         }
         if (res && Array.isArray(res.invites) && res.invites.length) {
           const added = applyPresenceInvites(res.invites, seenInviteRef.current, t, () => {
@@ -6798,7 +7349,7 @@ function App() {
     };
     beat();
     const night = settingsRef.current?.quietHours !== false && (new Date().getHours() < 7 || new Date().getHours() >= 23);
-    const beatMs = night ? 5000 : 1000;
+    const beatMs = night ? 2000 : 1000;
     const id = setInterval(beat, beatMs);
     const onVis = () => { if (document.visibilityState === 'visible') beat(); };
     document.addEventListener('visibilitychange', onVis);
@@ -7008,23 +7559,43 @@ function App() {
   /* загружаем настройки и треки при старте */
   useEffect(() => {
     (async () => {
+      let diskOk = false;
       try {
         const saved = await window.electronAPI.loadSettings();
+        diskOk = true;
         if (saved && Object.keys(saved).length) {
           const migrated = migratePlayerBgSettings(saved);
           if (!migrated.musicFolder && migrated.soundcloudAuth) migrated.sourceMode = 'sc';
+          migrated.preservesPitch = inferPreservesPitch(migrated.playbackRate, migrated.preservesPitch);
           setSettings(s => ({ ...s, ...migrated }));
+          if (typeof migrated.volume === 'number' && Number.isFinite(migrated.volume)) {
+            setVolume(Math.max(0, Math.min(1, migrated.volume)));
+          }
+          if (migrated.shuffle === true) setShuffle(true);
+          if (migrated.repeat === 'all' || migrated.repeat === 'one') setRepeat(migrated.repeat);
+          let localLen = 0;
           if (migrated.musicFolder) {
-            const local = await window.electronAPI.scanMusicFolder(migrated.musicFolder);
-            if (local.length > 0) {
-              const ct = saved.customTitles || {};
-              const withCustom = local.map(t => ct[t.path] ? { ...t, title: ct[t.path] } : t);
-              setTracks(withCustom);
-              loadCovers(withCustom);
-            }
+            const local = await window.electronAPI.scanMusicFolder(migrated.musicFolder, migrated.minDuration ?? 30);
+            const ct = saved.customTitles || {};
+            const withCustom = (local || []).map(t => ct[t.path] ? { ...t, title: ct[t.path] } : t);
+            localLen = withCustom.length;
+            setTracks(withCustom);
+            if (withCustom.length) loadCovers(withCustom);
+          }
+          const pq = migrated.playbackQueue;
+          if (pq && pq.session && pq.session.kind && Array.isArray(pq.session.items) && pq.session.items.length) {
+            applyQueueSession(pq.session.kind, pq.session.items.slice(0, 200), pq.session.title || '');
+          }
+          if (pq && typeof pq.trackIdx === 'number' && pq.trackIdx >= 0 && pq.trackIdx < localLen) {
+            setTrackIdx(pq.trackIdx);
+          }
+          if (pq && pq.scId != null && pq.session && Array.isArray(pq.session.items)) {
+            const found = pq.session.items.find(x => String(x.id) === String(pq.scId));
+            if (found && !found.path) setScPlayingTrack(found);
           }
         }
       } catch {}
+      settingsDiskOkRef.current = diskOk;
       setSettingsHydrated(true);
     })();
   }, []);
@@ -7035,10 +7606,53 @@ function App() {
 
   /* сохраняем настройки при изменении */
   useEffect(() => {
-    if (!settingsHydrated) return;
+    if (!settingsHydrated || !settingsDiskOkRef.current) return;
+    const gen = ++settingsSaveGenRef.current;
     const toSave = settings.soundcloudAuth ? settings : { ...settings, sourceMode: 'local' };
-    try { window.electronAPI.saveSettings(toSave); } catch {}
+    const id = setTimeout(() => {
+      if (gen !== settingsSaveGenRef.current) return;
+      try { window.electronAPI.saveSettings(toSave); } catch {}
+    }, 180);
+    return () => clearTimeout(id);
   }, [settings, settingsHydrated]);
+
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    setSettings(s => s.volume === volume ? s : { ...s, volume });
+  }, [volume, settingsHydrated]);
+
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    setSettings(s => (s.shuffle === shuffle && s.repeat === repeat) ? s : { ...s, shuffle, repeat });
+  }, [shuffle, repeat, settingsHydrated]);
+
+  useEffect(() => {
+    if (!settingsHydrated) return;
+    const session = queueSession && Array.isArray(queueSession.items)
+      ? {
+          kind: queueSession.kind,
+          title: queueSession.title || '',
+          items: queueSession.items.slice(0, 200).map(x => ({
+            id: x.id,
+            path: x.path || null,
+            title: x.title,
+            artist: x.artist,
+            coverUrl: x.coverUrl || x.artworkUrl || null,
+            duration: x.duration || 0,
+            permalinkUrl: x.permalinkUrl || null,
+            artworkUrl: x.artworkUrl || x.coverUrl || null,
+          })),
+        }
+      : null;
+    const scId = scPlayingTrack?.id ?? null;
+    const sig = `${session ? session.kind + ':' + session.title + ':' + session.items.length : ''}|${trackIdx}|${scId}`;
+    setSettings(s => {
+      const prev = s.playbackQueue;
+      const prevSig = `${prev?.session ? prev.session.kind + ':' + (prev.session.title || '') + ':' + (prev.session.items || []).length : ''}|${prev?.trackIdx}|${prev?.scId ?? null}`;
+      if (prevSig === sig) return s;
+      return { ...s, playbackQueue: { session, trackIdx, scId } };
+    });
+  }, [queueSession, trackIdx, scPlayingTrack?.id, settingsHydrated]);
 
   useEffect(() => {
     try { window.electronAPI.setLoginItem?.(settings.startWithWindows); } catch {}
@@ -7085,6 +7699,14 @@ function App() {
     audioRef.current = a;
     a.volume = volumeRef.current;
     b.volume = volumeRef.current;
+    applyPlaybackToEls([a, b], a, settingsRef.current?.playbackRate, settingsRef.current?.preservesPitch !== false);
+    const persistRate = () => applyPlaybackSettings();
+    const onBufWait = (e) => {
+      if (e.target === audioRef.current) document.getElementById('app-shell')?.classList.add('buffering');
+    };
+    const onBufPlay = (e) => {
+      if (e.target === audioRef.current) document.getElementById('app-shell')?.classList.remove('buffering');
+    };
 
     const wake = () => { ensureEqChain(); resumeEqCtx(eqCtxRef); };
     document.addEventListener('pointerdown', wake, { capture: true });
@@ -7095,12 +7717,30 @@ function App() {
       if (!audio.duration || !isFinite(audio.duration)) return;
       progressRef.current = audio.currentTime / audio.duration;
       discordProgressRef.current = progressRef.current;
-      if (repeatRef.current === 'one' || fadingRef.current || cfLockRef.current || aftertasteRef.current || peekingRef.current || finishingBarRef.current) return;
-      const cf = settingsRef.current?.crossfade || 0;
-      if (cf <= 0 || !isPlayingRef.current) return;
-      const win = Math.min(cf, Math.max(0.45, audio.duration * 0.35));
-      const remaining = audio.duration - audio.currentTime;
-      if (audio.duration > win + 0.4 && remaining <= win && remaining > 0.05) {
+      const tid = String(scPlayingTrackRef.current?.id || tracksRef.current[trackIdxRef.current]?.id || '');
+      if (tid && playLoggedRef.current !== tid && (audio.currentTime >= 30 || progressRef.current >= 0.5)) {
+        playLoggedRef.current = tid;
+        const tr = scPlayingTrackRef.current || tracksRef.current[trackIdxRef.current];
+        try {
+          window.electronAPI?.logPlay?.({
+            id: tid,
+            title: tr?.title || '',
+            artist: tr?.artist || '',
+            ts: Date.now(),
+          });
+        } catch {}
+      }
+      if (repeatRef.current === 'one' || fadingRef.current || cfLockRef.current || peekingRef.current || finishingBarRef.current) return;
+      const base = settingsRef.current?.crossfade || 0;
+      if (base <= 0 || !isPlayingRef.current) return;
+      const curTr = scPlayingTrackRef.current || tracksRef.current[trackIdxRef.current];
+      const nxtTr = peekNextTrack();
+      const cf = window.AoiNight?.crossfadeSeconds?.(base, curTr, nxtTr) ?? base;
+      const rate = clampPlaybackRate(settingsRef.current?.playbackRate);
+      const wallDur = audio.duration / rate;
+      const win = Math.min(cf, Math.max(0.45, wallDur * 0.35));
+      const remaining = (audio.duration - audio.currentTime) / rate;
+      if (wallDur > win + 0.4 && remaining <= win && remaining > 0.05) {
         cfLockRef.current = true;
         handleNextRef.current?.('fade');
       }
@@ -7111,12 +7751,16 @@ function App() {
         try { audio.pause(); audio.removeAttribute('src'); audio.load(); } catch {}
         return;
       }
-      if (cfLockRef.current || aftertasteRef.current || peekingRef.current || finishingBarRef.current) return;
+      if (cfLockRef.current || peekingRef.current || finishingBarRef.current) return;
       handleNextRef.current?.('ended');
     };
     [a, b].forEach(el => {
       el.addEventListener('timeupdate', onTime);
       el.addEventListener('ended', onEnded);
+      el.addEventListener('loadeddata', persistRate);
+      el.addEventListener('waiting', onBufWait);
+      el.addEventListener('playing', onBufPlay);
+      el.addEventListener('canplay', onBufPlay);
     });
 
     return () => {
@@ -7124,6 +7768,10 @@ function App() {
       [a, b].forEach(el => {
         el.removeEventListener('timeupdate', onTime);
         el.removeEventListener('ended', onEnded);
+        el.removeEventListener('loadeddata', persistRate);
+        el.removeEventListener('waiting', onBufWait);
+        el.removeEventListener('playing', onBufPlay);
+        el.removeEventListener('canplay', onBufPlay);
         el.pause();
         el.src = '';
       });
@@ -7144,22 +7792,27 @@ function App() {
     const swap = beginTrackChange();
     const incoming = swap.audio;
     if (!incoming) return;
+    playLoggedRef.current = '';
+    stopNeedle();
     incoming.src = window.electronAPI.fileSrc
       ? window.electronAPI.fileSrc(track.path)
       : ('file:///' + track.path.replace(/\\/g, '/'));
     if (track.id != null) playSrcCacheRef.current[String(track.id)] = incoming.src;
     incoming.load();
+    applyPlaybackSettings();
     incoming.addEventListener('loadedmetadata', () => {
       const dur = Math.floor(incoming.duration);
       if (dur) setTracks(prev => prev.map((t, i) => i === trackIdx ? { ...t, duration: dur } : t));
     }, { once: true });
     if (isPlayingRef.current) {
       playAudio(incoming).then(() => {
-        if (swap.overlap) startOverlapFade(swap.outgoing, incoming, swap.cf);
-        else startFadeIn(incoming);
+        if (swap.overlap) startOverlapFade(swap.outgoing, incoming, fadePrevRef.current, track);
+        else startFadeIn(incoming, fadePrevRef.current, track);
+        fadePrevRef.current = track;
       }).catch(() => setIsPlaying(false));
     } else {
-      incoming.volume = volumeRef.current;
+      volMixRef.current.fadeIn = 1;
+      paintVolumes();
     }
     progressRef.current = 0;
   }, [trackIdx, track?.path, scPlayingTrack]);
@@ -7172,12 +7825,12 @@ function App() {
       if (!audio.src) { setIsPlaying(false); return; }
       playAudio(audio).catch(() => setIsPlaying(false));
     } else {
-      aftertasteRef.current = false;
-      if (aftertasteRafRef.current) cancelAnimationFrame(aftertasteRafRef.current);
       stopNeedle();
       cancelAnimationFrame(crossfadeRafRef.current);
       fadingRef.current = false;
-      if (!trackSwitchingRef.current) audio.volume = volumeRef.current;
+      volMixRef.current.fadeIn = 1;
+      volMixRef.current.fadeOut = 1;
+      if (!trackSwitchingRef.current) paintVolumes();
       audio.pause();
       const out = outgoingRef.current;
       if (out) { try { out.pause(); } catch {} }
@@ -7187,8 +7840,7 @@ function App() {
   /* громкость */
   useEffect(() => {
     volumeRef.current = volume;
-    if (fadingRef.current) return;
-    if (audioRef.current) audioRef.current.volume = volume;
+    paintVolumes();
   }, [volume]);
 
   /* titlebar / nav-dock progress indicator */
@@ -7256,10 +7908,11 @@ function App() {
       shell.classList.add('has-played');
       if (!settings.hasPlayedOnce && isPlaying) setSettings(s => ({ ...s, hasPlayedOnce: true }));
     }
-    shell.classList.toggle('pause-rain', !isPlaying && !!(scPlayingTrack || tracks[trackIdx]));
+    shell.classList.remove('pause-rain');
     document.documentElement.style.setProperty('--black-lift', String(settings.blackLift || 0));
+    shell.classList.toggle('candle-sleep', !!(sleepOn && settings.candleSleep));
     document.documentElement.classList.toggle('aoi-cinema', !!(window.AoiNight?.prefersReducedMotion?.()));
-  }, [isPlaying, settings.blackLift, settings.hasPlayedOnce, settingsHydrated, scPlayingTrack, trackIdx, tracks]);
+  }, [isPlaying, settings.blackLift, settings.candleSleep, sleepOn, settings.hasPlayedOnce, settingsHydrated, scPlayingTrack, trackIdx, tracks]);
 
   // R45 deep work — auto-resume presence when timer expires
   useEffect(() => {
@@ -7290,7 +7943,9 @@ function App() {
       sessionStorage.setItem(key, '1');
       const q = settings.dawnQueue || [];
       if (q.length && !isPlayingRef.current) {
-        handleScTrackClick(q[0], -1, false);
+        const item = q[0];
+        if (item?.path) playPlaylistItem(item);
+        else if (scAuthRef.current) handleScTrackClick(item, -1, false);
       }
     }, 30000);
     return () => clearInterval(id);
@@ -7303,14 +7958,8 @@ function App() {
     }
     setSleepOn(false);
     setSleepRemain(0);
-    if (restore) {
-      const v = sleepStartVolRef.current;
-      sleepApplyingRef.current = true;
-      setVolume(v);
-      volumeRef.current = v;
-      if (audioRef.current) audioRef.current.volume = v;
-      sleepApplyingRef.current = false;
-    }
+    volMixRef.current.sleep = 1;
+    paintVolumes();
   }, []);
 
   const toggleSleep = useCallback(() => {
@@ -7319,32 +7968,25 @@ function App() {
       return;
     }
     const SLEEP_MINUTES = 100;
-    const startVol = Math.max(0.01, volumeRef.current);
-    sleepStartVolRef.current = startVol;
     setSleepOn(true);
     setSleepRemain(SLEEP_MINUTES);
+    volMixRef.current.sleep = 1;
+    paintVolumes();
     let tick = 0;
     sleepTimerRef.current = setInterval(() => {
       tick += 1;
       const remain = SLEEP_MINUTES - tick;
-      const next = Math.max(0, startVol * (remain / SLEEP_MINUTES));
-      sleepApplyingRef.current = true;
-      setVolume(next);
-      volumeRef.current = next;
-      if (audioRef.current) audioRef.current.volume = next;
-      sleepApplyingRef.current = false;
+      volMixRef.current.sleep = Math.max(0, remain / SLEEP_MINUTES);
+      paintVolumes();
       setSleepRemain(remain);
       if (remain <= 0) {
         clearInterval(sleepTimerRef.current);
         sleepTimerRef.current = null;
         setSleepOn(false);
         setSleepRemain(0);
+        volMixRef.current.sleep = 1;
         setIsPlaying(false);
-        sleepApplyingRef.current = true;
-        setVolume(startVol);
-        volumeRef.current = startVol;
-        if (audioRef.current) audioRef.current.volume = startVol;
-        sleepApplyingRef.current = false;
+        paintVolumes();
       }
     }, 60 * 1000);
   }, [stopSleep]);
@@ -7356,16 +7998,13 @@ function App() {
   /* live-применение громкости при драге слайдера — без ререндера App.
      state коммитится один раз на mouseup через setVolume */
   const handleVolumeLive = useCallback((v) => {
-    if (sleepTimerRef.current && !sleepApplyingRef.current) stopSleep(false);
+    if (sleepTimerRef.current) stopSleep(false);
     volumeRef.current = v;
-    if (fadingRef.current) return;
-    if (audioRef.current) audioRef.current.volume = v;
-    const out = outgoingRef.current;
-    if (out) { try { out.volume = v; } catch {} }
+    paintVolumes();
   }, [stopSleep]);
 
   const handleVolumeChange = useCallback((v) => {
-    if (sleepTimerRef.current && !sleepApplyingRef.current) stopSleep(false);
+    if (sleepTimerRef.current) stopSleep(false);
     setVolume(v);
   }, [stopSleep]);
 
@@ -7463,7 +8102,7 @@ function App() {
     discordTimerRef.current = setTimeout(() => {
       const s = settingsRef.current;
       if (!s.discordRpc) { window.electronAPI?.discordClear?.(); return; }
-      if (!track || !track.title) { window.electronAPI?.discordClear?.(); return; }
+      if (!track) { window.electronAPI?.discordClear?.(); return; }
       if (!isPlaying && s.discordPause === 'hide') { window.electronAPI?.discordClear?.(); return; }
       let coverUrl = null;
       if (s.discordCover !== false) {
@@ -7471,9 +8110,9 @@ function App() {
         coverUrl = pickDiscordCover(track, cached?.artworkUrl || cached?.coverUrl);
       }
       window.electronAPI?.discordUpdate?.({
-        title:     track.title,
+        title:     track.title || '—',
         artist:    track.artist,
-        duration:  track.duration,
+        duration:  (Number(track.duration) || 0) / clampPlaybackRate(roomRateRef.current?.rate ?? s.playbackRate),
         progress:  discordProgressRef.current,
         coverUrl,
         permalinkUrl: track.permalinkUrl || null,
@@ -7483,7 +8122,7 @@ function App() {
       });
     }, 200);
     return () => clearTimeout(discordTimerRef.current);
-  }, [track?.id, track?.title, track?.artist, track?.coverUrl, track?.artworkUrl, isPlaying, settings.discordRpc, settings.discordTimestamp, settings.discordPause, settings.discordCover, room.role, room.members, room.hostLeft]);
+  }, [track?.id, track?.title, track?.artist, track?.coverUrl, track?.artworkUrl, isPlaying, settings.discordRpc, settings.discordTimestamp, settings.discordPause, settings.discordCover, settings.playbackRate, room.role, room.members, room.hostLeft]);
 
   useEffect(() => () => {
     clearTimeout(discordTimerRef.current);
@@ -7495,12 +8134,20 @@ function App() {
       const cur = scPlayingTrackRef.current;
       if (cur) {
         const list = stationQueueRef.current || searchQueueRef.current || playlistQueueRef.current || (searchRef.current ? filteredScRef.current : scTracksRef.current);
-        scShuffleOrderRef.current = buildScShuffle(list, cur.id);
+        scShuffleOrderRef.current = shuffleBag(list, cur.id);
         scShuffleIdxRef.current = 0;
+      }
+      const localList = searchRef.current ? filteredRef.current : tracksRef.current;
+      const localCur = tracksRef.current[trackIdxRef.current];
+      if (localList && localList.length) {
+        localShuffleOrderRef.current = shuffleBag(localList, localCur?.id);
+        localShuffleIdxRef.current = 0;
       }
     } else {
       scShuffleOrderRef.current = [];
       scShuffleIdxRef.current = -1;
+      localShuffleOrderRef.current = [];
+      localShuffleIdxRef.current = -1;
     }
   }, [shuffle]);
 
@@ -7582,6 +8229,8 @@ function App() {
       isPlaying: isPlayingRef.current,
       progress: progressRef.current,
       duration: (cur && cur.duration) || track.duration || 0,
+      playbackRate: clampPlaybackRate(settingsRef.current?.playbackRate),
+      preservesPitch: settingsRef.current?.preservesPitch !== false,
     });
     setRoom(r => ({ ...r, track: packed }));
   }
@@ -7591,6 +8240,15 @@ function App() {
     if (!state) return;
     applyingRoomRef.current = true;
     roomApplyWantPlayRef.current = !!state.isPlaying;
+    if (state.playbackRate != null) {
+      const packed = {
+        rate: clampPlaybackRate(state.playbackRate),
+        preserve: state.preservesPitch !== false,
+      };
+      roomRateRef.current = packed;
+      setRoomPlay(packed);
+      applyPlaybackSettings();
+    }
     const tr = state.track;
     setRoom(r => ({ ...r, track: tr, hostLeft: false }));
     if (!tr) { setIsPlaying(false); applyingRoomRef.current = false; return; }
@@ -7605,7 +8263,10 @@ function App() {
         const ready = audio && audio.duration && !isNaN(audio.duration) && (!changed || sameTrack);
         const dur = (ready && audio.duration) || state.duration || tr.duration || 0;
         let prog = Number(state.progress) || 0;
-        if (state.isPlaying && state.at && dur > 0) prog += ((Date.now() - state.at) / 1000) / dur;
+        if (state.isPlaying && state.at && dur > 0) {
+          const rate = clampPlaybackRate(state.playbackRate ?? roomRateRef.current?.rate ?? 1);
+          prog += ((Date.now() - state.at) / 1000) * rate / dur;
+        }
         prog = Math.max(0, Math.min(0.999, prog));
         if (ready) {
           try { audio.currentTime = prog * audio.duration; } catch {}
@@ -8014,23 +8675,30 @@ function App() {
   };
 
   window.__aoiAddCrate = async (peer) => {
-    const tr = scPlayingTrackRef.current || tracksRef.current[trackIdxRef.current];
-    if (!tr) { showToast(t('crate_need_track')); return; }
     const s = settingsRef.current;
     const uid = s?.soundcloudAuth?.userId;
     if (!uid) { showToast(t('crate_need_login')); return; }
     const friendUid = resolvePeerUid(peer, presencePeersRef.current);
     if (!friendUid) { showToast(t('crate_need_friend')); return; }
     const p = roomProfileOf(s.soundcloudAuth);
-    const item = packCrateTrack(tr, s.soundcloudAuth, p);
-    if (!item?.id) return;
     try {
-      const res = await window.AoiRooms?.crateAdd?.({
-        uid, friendUid, name: p.name, friendName: peer?.name || '', item,
+      const res = await window.AoiRooms?.crateCreate?.({
+        uid, friendUid, name: p.name, friendName: peer?.name || '',
       });
       if (res?.ok && res.crate) {
         setSharedCrates(prev => upsertSharedCrate(prev, res.crate));
-        showToast(t('crate_added_ok'));
+        setOpenSharedCrate(null);
+        setPlaybackDock(null);
+        setOpenPlaylistId(null);
+        setOpenSharedFriend({
+          friendUid,
+          friendName: peer?.name || res.crate.friendName || '',
+          nonce: Date.now(),
+        });
+        setOnlinePanelOpen(false);
+        setPresenceUserMenu(null);
+        handleNav('playlists');
+        showToast(t('crate_created'));
       } else showToast(t('crate_add_fail'));
     } catch { showToast(t('crate_add_fail')); }
   };
@@ -8040,18 +8708,19 @@ function App() {
     : null;
   const sharedCrateItems = sharedCrateBox?.items || [];
 
-  const postSharedCrate = async (path, body) => {
+  const postSharedCrate = async (path, body, target) => {
     const uid = settings.soundcloudAuth?.userId;
-    if (!uid || !openSharedCrate?.friendUid) return null;
+    const friendUid = target?.friendUid || openSharedCrate?.friendUid;
+    if (!uid || !friendUid) return null;
     const p = roomProfileOf(settings.soundcloudAuth);
     try {
       const fn = window.AoiRooms?.['crate' + path];
       if (!fn) return null;
       return await fn({
         uid,
-        friendUid: openSharedCrate.friendUid,
+        friendUid,
         name: p.name,
-        friendName: openSharedCrate.friendName || '',
+        friendName: target?.friendName || openSharedCrate?.friendName || '',
         ...body,
       });
     } catch { return null; }
@@ -8081,7 +8750,34 @@ function App() {
   const handleClearSharedCrate = async () => {
     if (!openSharedCrate) return;
     const res = await postSharedCrate('Clear', {});
-    if (res?.ok) setSharedCrates(prev => upsertSharedCrate(prev, res.crate || { friendUid: openSharedCrate.friendUid, friendName: openSharedCrate.friendName, items: [] }));
+    if (res?.ok) setSharedCrates(prev => upsertSharedCrate(prev, res.crate || { friendUid: openSharedCrate.friendUid, friendName: openSharedCrate.friendName, items: [], gone: true }));
+  };
+
+  const handleAddToSharedFriend = async (friendUid, friendName) => {
+    const tr = scPlayingTrack || track;
+    if (!tr) { showToast(t('crate_need_track')); return; }
+    const uid = settings.soundcloudAuth?.userId;
+    if (!uid) { showToast(t('crate_need_login')); return; }
+    const p = roomProfileOf(settings.soundcloudAuth);
+    const item = packCrateTrack(tr, settings.soundcloudAuth, p);
+    if (!item?.id) return;
+    const res = await postSharedCrate('Add', { item }, { friendUid, friendName });
+    if (res?.ok && res.crate) {
+      setSharedCrates(prev => upsertSharedCrate(prev, res.crate));
+      showToast(t('crate_added_ok'));
+    } else showToast(t('crate_add_fail'));
+  };
+
+  const handleRemoveSharedFriendItem = async (friendUid, friendName, item) => {
+    if (!item?.id || !friendUid) return;
+    const res = await postSharedCrate('Remove', { itemId: item.id }, { friendUid, friendName });
+    if (res?.ok) setSharedCrates(prev => upsertSharedCrate(prev, res.crate || { friendUid, friendName, items: [] }));
+  };
+
+  const handleClearSharedFriend = async (friendUid, friendName) => {
+    if (!friendUid) return;
+    const res = await postSharedCrate('Clear', {}, { friendUid, friendName });
+    if (res?.ok) setSharedCrates(prev => upsertSharedCrate(prev, res.crate || { friendUid, friendName, items: [], gone: true }));
   };
 
   const handlePresenceBlock = (peer) => {
@@ -8094,6 +8790,22 @@ function App() {
       return { ...s, blockedPresence: blocked };
     });
     showToast(t('presence_blocked'));
+  };
+
+  const handlePresenceUnblock = (peerOrBlock) => {
+    const key = peerOrBlock?.key || presencePeerKey(peerOrBlock);
+    if (!key && !peerOrBlock?.uid && !peerOrBlock?.token) return;
+    setSettings(s => ({
+      ...s,
+      blockedPresence: (s.blockedPresence || []).filter(b => {
+        if (!b) return false;
+        if (key && b.key === key) return false;
+        if (peerOrBlock?.uid && b.uid && String(b.uid) === String(peerOrBlock.uid)) return false;
+        if (peerOrBlock?.token && b.token && b.token === peerOrBlock.token) return false;
+        return true;
+      }),
+    }));
+    showToast(t('presence_unblocked'));
   };
 
   const handleToggleDraftLock = (slot, locked) => {
@@ -8153,6 +8865,42 @@ function App() {
     handleScTrackClick(tr, -1, false);
   };
 
+  function enterPlayer() {
+    setHomeVisible(false);
+    setPlayerVisible(true);
+    setView('player');
+    setNavActive('library');
+  }
+
+  function applyQueueSession(kind, items, title) {
+    const list = Array.isArray(items) ? items.slice() : [];
+    if (kind === 'search') {
+      searchQueueRef.current = list;
+      playlistQueueRef.current = null;
+      crateQueueRef.current = null;
+      stationQueueRef.current = null;
+    } else if (kind === 'playlist') {
+      playlistQueueRef.current = list;
+      searchQueueRef.current = null;
+      crateQueueRef.current = null;
+      stationQueueRef.current = null;
+    } else if (kind === 'crate') {
+      crateQueueRef.current = list;
+      searchQueueRef.current = null;
+      playlistQueueRef.current = null;
+      stationQueueRef.current = null;
+    }
+    setStationActive(null);
+    setQueueSession({ kind, items: list, title: title || '' });
+  }
+
+  function clearQueueSession() {
+    searchQueueRef.current = null;
+    playlistQueueRef.current = null;
+    crateQueueRef.current = null;
+    setQueueSession(null);
+  }
+
   function playPlaylistItem(tr) {
     if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
     if (tr?.path) {
@@ -8162,17 +8910,19 @@ function App() {
       else showToast(t('track_unavailable'));
       return;
     }
-    handleScTrackClick(tr, -1, true);
+    handleScTrackClick(tr, -1, false);
   }
 
   function playSearchItem(tr, queue) {
     if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
-    playlistQueueRef.current = null;
-    crateQueueRef.current = null;
-    stationQueueRef.current = null;
-    searchQueueRef.current = queue || searchQueueRef.current;
-    setPlaybackDock('search');
-    handleScTrackClick(tr, -1, true);
+    applyQueueSession('search', queue || searchQueueRef.current, t('queue_search'));
+    setPlaybackDock(null);
+    enterPlayer();
+    if (tr?.id) {
+      setLibScrollTargetId(tr.id);
+      setLibScrollTrigger(v => v + 1);
+    }
+    handleScTrackClick(tr, -1, false);
   }
 
   async function playCrateItem(item, queue) {
@@ -8183,6 +8933,7 @@ function App() {
     searchQueueRef.current = null;
     stationQueueRef.current = null;
     crateQueueRef.current = queue || crateQueueRef.current;
+    applyQueueSession('crate', crateQueueRef.current, t('crate_title') || '');
     setPlaybackDock('crate');
     if (tr.path) {
       const li = tracks.findIndex(x => x.path === tr.path || String(x.id) === String(tr.id));
@@ -8251,8 +9002,36 @@ function App() {
     attachEq(pool[1], 'b');
     eqAttachedRef.current = true;
   }
+  function paintVolumes() {
+    const cur = audioRef.current;
+    const out = outgoingRef.current;
+    const other = otherAudio(cur);
+    const x = volMixRef.current;
+    const m = volumeRef.current;
+    const sd = x.sleep * x.duck;
+    const clamp = (v) => Math.max(0, Math.min(1, v));
+    try {
+      if (out && fadingRef.current) {
+        out.volume = clamp(m * x.fadeOut * sd);
+        if (cur) cur.volume = clamp(m * x.fadeIn * sd);
+      } else if (peekingRef.current) {
+        if (cur) cur.volume = clamp(m * 0.38 * sd);
+        if (other && other !== cur) other.volume = clamp(m * 0.42 * sd);
+      } else if (cur) {
+        cur.volume = clamp(m * (fadingRef.current ? x.fadeIn : 1) * sd);
+      }
+    } catch {}
+  }
+  function applyPlaybackSettings() {
+    const s = settingsRef.current || {};
+    const room = roomRef.current.role === 'guest' ? roomRateRef.current : null;
+    const rate = room ? room.rate : s.playbackRate;
+    const keep = room ? room.preserve : s.preservesPitch !== false;
+    applyPlaybackToEls(audioPoolRef.current, audioRef.current, rate, keep);
+  }
   function playAudio(audio) {
     if (!audio) return Promise.reject(new Error('no audio'));
+    applyPlaybackSettings();
     ensureEqChain();
     return resumeEqCtx(eqCtxRef).then(() => audio.play());
   }
@@ -8262,37 +9041,6 @@ function App() {
     ['a', 'b'].forEach(k => {
       (eqFiltersRef.current[k] || []).forEach((f, i) => { try { f.gain.value = g[i] || 0; } catch {} });
     });
-  }
-  function cancelAftertaste() {
-    aftertasteRef.current = false;
-    if (aftertasteRafRef.current) cancelAnimationFrame(aftertasteRafRef.current);
-    aftertasteRafRef.current = null;
-    const audio = audioRef.current;
-    if (audio && !fadingRef.current && !peekingRef.current) {
-      try { audio.volume = volumeRef.current; } catch {}
-    }
-  }
-  function startAftertaste(done) {
-    const audio = audioRef.current;
-    if (!audio || !audio.duration) { done?.(); return; }
-    aftertasteRef.current = true;
-    const loopStart = Math.max(0, audio.duration - 0.42);
-    const t0 = performance.now();
-    try { audio.currentTime = loopStart; audio.volume = volumeRef.current * 0.2; playAudio(audio).catch(() => {}); } catch {}
-    const tick = () => {
-      if (!aftertasteRef.current) return;
-      if (performance.now() - t0 > 2800) {
-        aftertasteRef.current = false;
-        done?.();
-        return;
-      }
-      try {
-        if (audio.currentTime >= audio.duration - 0.04) audio.currentTime = loopStart;
-        audio.volume = volumeRef.current * 0.2;
-      } catch {}
-      aftertasteRafRef.current = requestAnimationFrame(tick);
-    };
-    aftertasteRafRef.current = requestAnimationFrame(tick);
   }
   function peekNextTrack() {
     const plist = playlistQueueRef.current;
@@ -8331,30 +9079,42 @@ function App() {
     if (!list || !list.length) return null;
     if (shuffleRef.current) {
       const cur = tracksRef.current[trackIdxRef.current];
-      let n; do { n = Math.floor(Math.random() * list.length); } while (list[n] === cur && list.length > 1);
-      return list[n];
+      let order = localShuffleOrderRef.current;
+      if (!order.length) {
+        order = shuffleBag(list, cur?.id);
+        localShuffleOrderRef.current = order;
+        localShuffleIdxRef.current = 0;
+      }
+      const ni = localShuffleIdxRef.current + 1;
+      if (ni < order.length) return list.find(t => t.id === order[ni]) || null;
+      return repeatRef.current === 'all' ? (list.find(t => t.id === order[0]) || list[0]) : null;
     }
     const curIdx = list.indexOf(tracksRef.current[trackIdxRef.current]);
     if (curIdx < 0) return list[0];
     if (curIdx + 1 < list.length) return list[curIdx + 1];
     return repeatRef.current === 'all' ? list[0] : null;
   }
+  function destroyPeekHls() {
+    if (hlsPeekRef.current) {
+      try { hlsPeekRef.current.destroy(); } catch {}
+      hlsPeekRef.current = null;
+    }
+  }
   function stopNeedle() {
-    if (!peekingRef.current && !peekTimerRef.current) return;
+    if (!peekingRef.current && !peekTimerRef.current && !hlsPeekRef.current) return;
     peekingRef.current = false;
     if (peekTimerRef.current) { clearTimeout(peekTimerRef.current); peekTimerRef.current = null; }
+    destroyPeekHls();
     const cur = audioRef.current;
     const other = otherAudio(cur);
     if (other && other !== cur) {
       try { other.pause(); other.removeAttribute('src'); other.load(); } catch {}
     }
-    if (cur && !fadingRef.current && !aftertasteRef.current) {
-      try { cur.volume = volumeRef.current; } catch {}
-    }
+    paintVolumes();
   }
   function startNeedle() {
     if (roomRef.current.role === 'guest') return;
-    if (fadingRef.current || outgoingRef.current || peekingRef.current || aftertasteRef.current || finishingBarRef.current) return;
+    if (fadingRef.current || outgoingRef.current || peekingRef.current || finishingBarRef.current) return;
     const next = peekNextTrack();
     if (!next) return;
     const rawSrc = next.path
@@ -8366,28 +9126,38 @@ function App() {
     const other = otherAudio(cur);
     if (!other || other === cur) return;
     peekingRef.current = true;
-    try { other.pause(); other.src = src; other.volume = Math.max(0.08, volumeRef.current * 0.42); other.load(); } catch { peekingRef.current = false; return; }
-    if (cur && isPlayingRef.current) { try { cur.volume = volumeRef.current * 0.38; } catch {} }
+    try { other.pause(); } catch { peekingRef.current = false; return; }
+    applyPlaybackSettings();
+    paintVolumes();
     const playPeek = () => { if (peekingRef.current) playAudio(other).catch(() => {}); };
-    other.addEventListener('canplay', playPeek, { once: true });
+    if (isProbablyHlsUrl(src) && typeof Hls !== 'undefined' && Hls.isSupported()) {
+      destroyPeekHls();
+      const hls = new Hls({ startLevel: 0, capLevelToPlayerSize: true });
+      hlsPeekRef.current = hls;
+      hls.loadSource(src);
+      hls.attachMedia(other);
+      hls.on(Hls.Events.MANIFEST_PARSED, playPeek);
+    } else {
+      try { other.src = src; other.load(); } catch { peekingRef.current = false; paintVolumes(); return; }
+      other.addEventListener('canplay', playPeek, { once: true });
+    }
     peekTimerRef.current = setTimeout(() => {
-      if (!peekingRef.current) return;
-      try { other.pause(); } catch {}
-      if (cur && !fadingRef.current) { try { cur.volume = volumeRef.current; } catch {} }
+      peekTimerRef.current = null;
+      stopNeedle();
     }, 1500);
   }
   function finishBarThenQuit() {
     if (finishingBarRef.current) return;
     finishingBarRef.current = true;
     stopNeedle();
-    cancelAftertaste();
     const done = () => { try { window.electronAPI?.quit?.(); } catch { window.electronAPI?.close?.(); } };
     const audio = audioRef.current;
     const playing = isPlayingRef.current && audio && !audio.paused;
     if (!playing) { done(); return; }
     const pos = audio.currentTime || 0;
-    let wait = 2 - (pos % 2);
-    if (wait < 0.08) wait = 2;
+    const rate = clampPlaybackRate(settingsRef.current?.playbackRate);
+    let wait = (2 - (pos % 2)) / rate;
+    if (wait < 0.08 / rate) wait = 2 / rate;
     wait = Math.min(wait, 4);
     setTimeout(done, wait * 1000);
   }
@@ -8396,7 +9166,7 @@ function App() {
     if (finishingBarRef.current) return;
     if (peekingRef.current) stopNeedle();
     // E12 sleep by tracks
-    if ((settingsRef.current?.sleepTracksLeft || 0) > 0 && (src === 'ended' || src === 'aftertaste' || src === 'user')) {
+    if ((settingsRef.current?.sleepTracksLeft || 0) > 0 && (src === 'ended' || src === 'user')) {
       const left = (settingsRef.current.sleepTracksLeft || 0) - 1;
       setSettings(s => ({ ...s, sleepTracksLeft: Math.max(0, left) }));
       if (left <= 0) {
@@ -8404,14 +9174,6 @@ function App() {
         try { audioRef.current?.pause(); } catch {}
         return;
       }
-    }
-    if (aftertasteRef.current) {
-      if (src === 'ended') return;
-      cancelAftertaste();
-    }
-    if (src === 'ended' && repeatRef.current !== 'one' && (settingsRef.current.crossfade || 0) <= 0) {
-      startAftertaste(() => handleNextRef.current?.('aftertaste'));
-      return;
     }
     trackDirRef.current = 'next';
     const stopHere = () => { cfLockRef.current = false; setIsPlaying(false); };
@@ -8453,7 +9215,7 @@ function App() {
         scShuffleIdxRef.current++;
         if (scShuffleIdxRef.current >= scShuffleOrderRef.current.length) {
           if (repeat === 'all') {
-            scShuffleOrderRef.current = buildScShuffle(list, null);
+            scShuffleOrderRef.current = shuffleBag(list, null);
             scShuffleIdxRef.current = 0;
           } else { stopHere(); return; }
         }
@@ -8478,8 +9240,23 @@ function App() {
     if (!list || !list.length) { stopHere(); return; }
     if (shuffle) {
       const cur = tracks[trackIdx];
-      let n; do { n = Math.floor(Math.random()*list.length); } while (list[n] === cur && list.length > 1);
-      setTrackIdx(tracks.indexOf(list[n]));
+      let order = localShuffleOrderRef.current;
+      if (!order.length) {
+        order = shuffleBag(list, cur?.id);
+        localShuffleOrderRef.current = order;
+        localShuffleIdxRef.current = 0;
+      }
+      localShuffleIdxRef.current++;
+      if (localShuffleIdxRef.current >= order.length) {
+        if (repeat === 'all') {
+          order = shuffleBag(list, null);
+          localShuffleOrderRef.current = order;
+          localShuffleIdxRef.current = 0;
+        } else { stopHere(); return; }
+      }
+      const nextTrack = list.find(t => t.id === order[localShuffleIdxRef.current]);
+      if (nextTrack) setTrackIdx(tracks.indexOf(nextTrack));
+      else { stopHere(); return; }
       progressRef.current = 0; return;
     }
     const curIdx = list.indexOf(tracks[trackIdx]);
@@ -8500,6 +9277,26 @@ function App() {
   handleNextRef.current = handleNext;
 
   useEffect(() => { applyEqGains(settings.eqGains || EQ_ZERO); }, [settings.eqGains]);
+  useEffect(() => {
+    applyPlaybackSettings();
+    if (roomRef.current.role === 'host') sendHostStateRef.current?.();
+  }, [settings.playbackRate, settings.preservesPitch]);
+  useEffect(() => {
+    if (room.role === 'guest') return;
+    if (roomRateRef.current) {
+      roomRateRef.current = null;
+      setRoomPlay(null);
+      applyPlaybackSettings();
+    }
+  }, [room.role]);
+  useEffect(() => {
+    window.__aoiSetDuck = (f) => {
+      volMixRef.current.duck = Math.max(0, Math.min(1, Number(f)));
+      if (!isFinite(volMixRef.current.duck)) volMixRef.current.duck = 1;
+      paintVolumes();
+    };
+    return () => { try { delete window.__aoiSetDuck; } catch {} };
+  }, []);
 
   function handlePrev() {
     if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
@@ -8517,6 +9314,7 @@ function App() {
       let i = plist.findIndex(x => String(x.id) === String(curId) || (curPath && x.path === curPath));
       if (i < 0) { playPlaylistItem(plist[plist.length - 1]); return; }
       if (i > 0) playPlaylistItem(plist[i - 1]);
+      else if (repeat === 'all') playPlaylistItem(plist[plist.length - 1]);
       return;
     }
     const clist = crateQueueRef.current;
@@ -8526,6 +9324,7 @@ function App() {
       let i = clist.findIndex(x => String(x.id) === String(curId) || (curPath && x.path === curPath));
       if (i < 0) { playCrateItem(clist[clist.length - 1], clist); return; }
       if (i > 0) playCrateItem(clist[i - 1], clist);
+      else if (repeat === 'all') playCrateItem(clist[clist.length - 1], clist);
       return;
     }
     if (scPlayingTrack) {
@@ -8537,6 +9336,11 @@ function App() {
           scShuffleIdxRef.current = pi;
           const prevTrack = list.find(t => t.id === scShuffleOrderRef.current[pi]);
           if (prevTrack) handleScTrackClick(prevTrack, scTracksRef.current.indexOf(prevTrack), true, 0, -1);
+        } else if (repeat === 'all') {
+          const last = scShuffleOrderRef.current.length - 1;
+          scShuffleIdxRef.current = last;
+          const prevTrack = list.find(t => t.id === scShuffleOrderRef.current[last]);
+          if (prevTrack) handleScTrackClick(prevTrack, scTracksRef.current.indexOf(prevTrack), true, 0, -1);
         }
         return;
       }
@@ -8547,6 +9351,7 @@ function App() {
       }
       const pi = curIdx - 1;
       if (pi >= 0) handleScTrackClick(list[pi], scTracksRef.current.indexOf(list[pi]), true, 0, -1);
+      else if (repeat === 'all') handleScTrackClick(list[list.length - 1], scTracksRef.current.indexOf(list[list.length - 1]), true, 0, -1);
       return;
     }
     const list = searchRef.current ? filteredRef.current : tracks;
@@ -8569,20 +9374,23 @@ function App() {
     cancelAnimationFrame(crossfadeRafRef.current); // отменяем fade если был
     fadingRef.current = false;
     cfLockRef.current = false;
-    cancelAftertaste();
+    volMixRef.current.fadeIn = 1;
+    volMixRef.current.fadeOut = 1;
     stopNeedle();
     stopOutgoingHard();
     const audio = audioRef.current;
     if (audio?.duration) {
       audio.currentTime = v * audio.duration;
-      audio.volume = volumeRef.current; // восстанавливаем громкость после seek
     }
+    paintVolumes();
     if (roomRef.current.role === 'host') {
       window.AoiRooms?.sendState({
         track: packRoomTrack(track),
         isPlaying: isPlayingRef.current,
         progress: v,
         duration: track.duration || 0,
+        playbackRate: clampPlaybackRate(settingsRef.current?.playbackRate),
+        preservesPitch: settingsRef.current?.preservesPitch !== false,
       });
     }
     clearTimeout(discordTimerRef.current);
@@ -8754,16 +9562,17 @@ function App() {
   const handleScanTracks = useCallback(async (folder) => {
     try {
       const local = await window.electronAPI.scanMusicFolder(folder, minDurationRef.current);
-      if (local.length > 0) {
-        const ct = customTitlesRef.current;
-        const withCustom = local.map(t => ct[t.path] ? { ...t, title: ct[t.path] } : t);
-        setTracks(withCustom);
-        setTrackIdx(0);
-        setIsPlaying(false);
-        progressRef.current = 0;
-        loadCovers(withCustom);
-      }
-    } catch {}
+      const ct = customTitlesRef.current;
+      const withCustom = (local || []).map(t => ct[t.path] ? { ...t, title: ct[t.path] } : t);
+      setTracks(withCustom);
+      setTrackIdx(0);
+      setIsPlaying(false);
+      progressRef.current = 0;
+      if (withCustom.length) loadCovers(withCustom);
+    } catch {
+      const tL = k => STRINGS[langRef.current]?.[k] ?? STRINGS.ru[k] ?? k;
+      showToast(tL('load_failed'));
+    }
   }, []);
 
   const handleClearCoversCache = useCallback(async () => {
@@ -8817,14 +9626,14 @@ function App() {
     try {
       while (url && pages < 20) {
         const res = await window.electronAPI.scFetch(url, auth.token, auth.clientId);
-        if (res.error) { setScError(`${STRINGS[langRef.current]?.api_err ?? 'api error'}: ${res.error}`); break; }
+        if (scFailed(res)) { setScError(`${STRINGS[langRef.current]?.api_err ?? 'api error'}: ${res.error}`); break; }
         const collection = Array.isArray(res.data) ? res.data : (res.data?.collection || []);
         if (!collection.length && pages === 0 && !res.data?.next_href) {
           const alt = await window.electronAPI.scFetch(
             `https://api-v2.soundcloud.com/me/likes/tracks?limit=200&linked_partitioning=1`,
             auth.token, auth.clientId
           );
-          if (!alt.error) {
+          if (!scFailed(alt)) {
             const altCol = Array.isArray(alt.data) ? alt.data : (alt.data?.collection || []);
             for (const item of altCol) {
               const t = item.track || item;
@@ -8902,7 +9711,7 @@ function App() {
     try {
       while (url && pages < 20 && !foundKnown) {
         const res = await window.electronAPI.scFetch(url, auth.token, auth.clientId);
-        if (res.error) { setScError(`${STRINGS[langRef.current]?.api_err ?? 'api error'}: ${res.error}`); break; }
+        if (scFailed(res)) { setScError(`${STRINGS[langRef.current]?.api_err ?? 'api error'}: ${res.error}`); break; }
         if (!res.data) break;
         const collection = Array.isArray(res.data) ? res.data : (res.data.collection || []);
         if (!collection.length) break;
@@ -8987,18 +9796,22 @@ function App() {
   }, []);
   const handleScAddAccount = useCallback(async () => {
     try {
+      try { window.electronAPI.scClearSession?.(); } catch {}
       const creds = await window.electronAPI.scLogin();
       if (creds && creds.token) handleScLogin(creds);
     } catch {}
   }, [handleScLogin]);
   const handleScSwitchAccount = useCallback((acc) => {
     if (!acc?.token) return;
+    try { window.electronAPI.scClearSession?.(); } catch {}
     handleScLogin(acc);
   }, [handleScLogin]);
   const handleScLogout = useCallback(() => {
     scCacheRef.current = [];
     scCacheMapRef.current = new Map();
     try { window.electronAPI.scSaveLikesCache([]); } catch {}
+    try { window.electronAPI.scClearLikesCache?.(); } catch {}
+    try { window.electronAPI.scClearSession?.(); } catch {}
     setScPlayingTrack(null);
     setIsPlaying(false);
     cfLockRef.current = false;
@@ -9010,6 +9823,8 @@ function App() {
     playlistQueueRef.current = null;
     searchQueueRef.current = null;
     stationQueueRef.current = null;
+    crateQueueRef.current = null;
+    setQueueSession(null);
     setSettings(s => ({ ...s, soundcloudAuth: null, sourceMode: 'local' }));
     setPlayerVisible(false);
     setHomeVisible(false);
@@ -9069,9 +9884,10 @@ function App() {
     if (!searchQueueRef.current) return;
     searchQueueRef.current = [...searchQueueRef.current, ...newTracks];
     if (scShuffleOrderRef.current.length > 0) {
-      const shuffledNew = buildScShuffle(newTracks, null);
+      const shuffledNew = shuffleBag(newTracks, null);
       scShuffleOrderRef.current = [...scShuffleOrderRef.current, ...shuffledNew];
     }
+    setQueueSession(q => q && q.kind === 'search' ? { ...q, items: searchQueueRef.current } : q);
   }
 
   function showToast(msg) {
@@ -9088,16 +9904,27 @@ function App() {
     cancelAnimationFrame(crossfadeRafRef.current);
     const base = settingsRef.current?.crossfade || 0;
     const cf = window.AoiNight?.crossfadeSeconds?.(base, prevTrack, nextTrack) ?? base;
-    if (cf <= 0 || fadingRef.current) { audio.volume = volumeRef.current; return; }
+    if (cf <= 0 || fadingRef.current) {
+      volMixRef.current.fadeIn = 1;
+      fadingRef.current = false;
+      paintVolumes();
+      return;
+    }
     fadingRef.current = true;
-    audio.volume = 0;
+    volMixRef.current.fadeIn = 0;
+    paintVolumes();
     const startMs = performance.now();
     const tick = (now) => {
       const t = Math.min(1, (now - startMs) / (cf * 1000));
       const e = t * t * (3 - 2 * t);
-      try { audio.volume = volumeRef.current * e; } catch {}
+      volMixRef.current.fadeIn = e;
+      paintVolumes();
       if (t < 1) crossfadeRafRef.current = requestAnimationFrame(tick);
-      else { fadingRef.current = false; try { audio.volume = volumeRef.current; } catch {} }
+      else {
+        fadingRef.current = false;
+        volMixRef.current.fadeIn = 1;
+        paintVolumes();
+      }
     };
     crossfadeRafRef.current = requestAnimationFrame(tick);
   }
@@ -9138,7 +9965,9 @@ function App() {
     }
     const incoming = otherAudio(cur);
     try { incoming.pause(); } catch {}
-    incoming.volume = 0;
+    volMixRef.current.fadeIn = 0;
+    volMixRef.current.fadeOut = 1;
+    paintVolumes();
     if (hlsRef.current) {
       hlsOutRef.current = hlsRef.current;
       hlsRef.current = null;
@@ -9148,23 +9977,29 @@ function App() {
     return { audio: incoming, overlap: true, outgoing: cur, cf };
   }
 
-  function startOverlapFade(outgoing, incoming, cf) {
-    if (!outgoing || !incoming) { startFadeIn(incoming); return; }
+  function startOverlapFade(outgoing, incoming, prevTrack, nextTrack) {
+    if (!outgoing || !incoming) { startFadeIn(incoming, prevTrack, nextTrack); return; }
+    const base = settingsRef.current?.crossfade || 0;
+    const cf = window.AoiNight?.crossfadeSeconds?.(base, prevTrack, nextTrack) ?? base;
     fadingRef.current = true;
+    volMixRef.current.fadeOut = 1;
+    volMixRef.current.fadeIn = 0;
     cancelAnimationFrame(crossfadeRafRef.current);
     const start = performance.now();
     const ms = Math.max(120, (cf || 1) * 1000);
     const tick = (now) => {
       const t = Math.min(1, (now - start) / ms);
       const e = t * t * (3 - 2 * t);
-      const vol = volumeRef.current;
-      try { outgoing.volume = vol * (1 - e); } catch {}
-      try { incoming.volume = vol * e; } catch {}
+      volMixRef.current.fadeOut = 1 - e;
+      volMixRef.current.fadeIn = e;
+      paintVolumes();
       if (t < 1) crossfadeRafRef.current = requestAnimationFrame(tick);
       else {
         fadingRef.current = false;
         cfLockRef.current = false;
-        try { incoming.volume = vol; } catch {}
+        volMixRef.current.fadeIn = 1;
+        volMixRef.current.fadeOut = 1;
+        paintVolumes();
         try { outgoing.pause(); outgoing.removeAttribute('src'); outgoing.load(); } catch {}
         if (outgoingRef.current === outgoing) outgoingRef.current = null;
         if (hlsOutRef.current) { try { hlsOutRef.current.destroy(); } catch {} hlsOutRef.current = null; }
@@ -9175,12 +10010,15 @@ function App() {
 
   function destroyHls() {
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+    destroyPeekHls();
   }
 
   async function handleScTrackClick(scTrack, idx, autoSkip = false, skipCount = 0, direction = 1, fromRoom = false) {
     if (roomRef.current.role === 'guest' && !fromRoom) { showToast(t('room_host_controls')); return; }
     const gen = ++scClickGenRef.current;
     trackSwitchingRef.current = true;
+    playLoggedRef.current = '';
+    stopNeedle();
     setScPlayingIdx(idx);
     progressRef.current = 0;
     setLoadingTrackId(scTrack.id);
@@ -9190,7 +10028,7 @@ function App() {
 
     if (!autoSkip && shuffle) {
       const list = stationQueueRef.current || searchQueueRef.current || playlistQueueRef.current || (searchRef.current ? filteredScRef.current : scTracksRef.current);
-      scShuffleOrderRef.current = buildScShuffle(list, scTrack.id);
+      scShuffleOrderRef.current = shuffleBag(list, scTrack.id);
       scShuffleIdxRef.current = 0;
     }
 
@@ -9211,7 +10049,7 @@ function App() {
           if (nextTrack) { handleScTrackClick(nextTrack, scTracksRef.current.indexOf(nextTrack), true, skipCount + 1, direction); return; }
         }
         if (repeat === 'all' && direction > 0 && skipCount < order.length) {
-          const newOrder = buildScShuffle(list, null);
+          const newOrder = shuffleBag(list, null);
           scShuffleOrderRef.current = newOrder;
           scShuffleIdxRef.current = 0;
           const nextTrack = list.find(t => t.id === newOrder[0]);
@@ -9266,6 +10104,7 @@ function App() {
 
     if (gen !== scClickGenRef.current) return;
     let proxyAttempt = 0;
+    let hlsFatalTries = 0;
     const useProxy = settingsRef.current?.useAoiProxy;
     const pickProxyUrl = () => proxyMediaUrl(resolvedUrl, useProxy, proxyAttempt);
     let proxiedUrl = pickProxyUrl();
@@ -9290,8 +10129,10 @@ function App() {
     audio.addEventListener('playing', () => {
       if (gen !== scClickGenRef.current) return;
       trackSwitchingRef.current = false;
-      if (swap.overlap) startOverlapFade(swap.outgoing, audio, swap.cf);
-      else startFadeIn(audio);
+      try { window.AoiRooms?.rememberProxyBase?.(proxiedUrl); } catch {}
+      if (swap.overlap) startOverlapFade(swap.outgoing, audio, fadePrevRef.current, scTrack);
+      else startFadeIn(audio, fadePrevRef.current, scTrack);
+      fadePrevRef.current = scTrack;
     }, { once: true });
 
     if (isHls && typeof Hls !== 'undefined' && Hls.isSupported()) {
@@ -9306,13 +10147,19 @@ function App() {
         hlsRef.current = hls;
         hls.loadSource(srcUrl);
         hls.attachMedia(audio);
-        const shellBuf = document.getElementById('app-shell');
-        audio.addEventListener('waiting', () => shellBuf?.classList.add('buffering'));
-        audio.addEventListener('playing', () => shellBuf?.classList.remove('buffering'));
-        audio.addEventListener('canplay', () => shellBuf?.classList.remove('buffering'));
+        applyPlaybackSettings();
         hls.on(Hls.Events.ERROR, (_, data) => {
           if (gen !== scClickGenRef.current) return;
           if (!data.fatal) return;
+          hlsFatalTries++;
+          if (hlsFatalTries > 3) {
+            trackSwitchingRef.current = false;
+            setLoadingTrackId(null);
+            cfLockRef.current = false;
+            markError();
+            if (autoSkip) skipInDirection();
+            return;
+          }
           retryProxy();
           setTimeout(() => {
             if (gen !== scClickGenRef.current) return;
@@ -9339,16 +10186,25 @@ function App() {
     } else {
       const onAudioErr = () => {
         if (gen !== scClickGenRef.current) return;
+        if (proxyAttempt >= 3) {
+          audio.removeEventListener('error', onAudioErr);
+          trackSwitchingRef.current = false;
+          setLoadingTrackId(null);
+          cfLockRef.current = false;
+          markError();
+          if (autoSkip) skipInDirection();
+          return;
+        }
         retryProxy();
-        audio.removeEventListener('error', onAudioErr);
         audio.src = pickProxyUrl();
         audio.load();
-        audio.addEventListener('error', onAudioErr);
+        applyPlaybackSettings();
         if (shouldPlay) playAudio(audio).catch(() => {});
       };
       audio.addEventListener('error', onAudioErr);
       audio.src = proxiedUrl;
       audio.load();
+      applyPlaybackSettings();
       audio.addEventListener('loadedmetadata', () => {
         if (gen !== scClickGenRef.current) return;
         const dur = Math.floor(audio.duration);
@@ -9374,8 +10230,7 @@ function App() {
       setIsPlaying(true);
     };
     const startPlay = () => {
-      playlistQueueRef.current = null;
-      searchQueueRef.current = null;
+      clearQueueSession();
       if (sourceMode === 'sc') {
         const scIdx = scTracks.indexOf(tr);
         if (scIdx >= 0) handleScTrackClick(tr, scIdx);
@@ -9590,6 +10445,8 @@ function App() {
       stationQueueRef.current = mapped;
       playlistQueueRef.current = null;
       searchQueueRef.current = null;
+      crateQueueRef.current = null;
+      setQueueSession(null);
       setStationActive({ origTrack: track, tracks: mapped });
       setPlayerVisible(true);
       setView('player');
@@ -9668,6 +10525,16 @@ function App() {
   const activeListPlayingId = sourceMode === 'sc'
     ? (scPlayingTrack ? scPlayingTrack.id : null)
     : (scPlayingTrack ? null : track?.id);
+  const sessionItems = queueSession?.items || [];
+  const sessionFiltered = (queueSession && searchLower)
+    ? sessionItems.filter(x =>
+        (x.title || '').toLowerCase().includes(searchLower) ||
+        (x.artist || '').toLowerCase().includes(searchLower))
+    : sessionItems;
+  const queueItems = stationActive ? stationActive.tracks : (queueSession ? sessionFiltered : activeList);
+  const queuePlayingId = stationActive
+    ? (scPlayingTrack ? scPlayingTrack.id : null)
+    : (queueSession ? (scPlayingTrack?.id || track?.id) : activeListPlayingId);
 
   const showWelcome = !settings.musicFolder && !settings.soundcloudAuth;
 
@@ -9760,10 +10627,9 @@ function App() {
         ? pl._cachedItems
         : await fetchScPlaylistTracks(pl, auth, STRINGS[lang]?.no_title || '—');
       if (!items.length) { showToast(t('playlist_empty')); return; }
-      playlistQueueRef.current = items;
-      searchQueueRef.current = null;
-      stationQueueRef.current = null;
-      setPlaybackDock('playlist');
+      applyQueueSession('playlist', items, pl.title || '');
+      setPlaybackDock(null);
+      enterPlayer();
       handleScTrackClick(items[0], -1, false);
     } catch {
       showToast(t('sc_error') || 'error');
@@ -10101,19 +10967,24 @@ function App() {
           }}>
           <PlayerBgDimOverlay dim={settings.playerBgLibDim} />
           <div style={{position:'relative', zIndex:1, flex:1, minHeight:0, display:'flex', flexDirection:'column'}}>
-          {stationActive ? (
+          {stationActive || queueSession ? (
             <div style={{padding:'12px 14px 10px', flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center'}}>
               <div style={{
                 fontSize:10, letterSpacing:'0.13em', textTransform:'uppercase',
                 color:'rgba(255,255,255,0.32)', fontWeight:600, marginBottom:4,
                 textAlign:'center',
-              }}>{t('station_for')}</div>
+              }}>{stationActive ? t('station_for') : (queueSession.title || (queueSession.kind === 'search' ? t('queue_search') : t('nav_playlists')))}</div>
+              {stationActive && (
               <div style={{
                 fontSize:13, color:'rgba(255,255,255,0.88)', fontWeight:500,
                 overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                 maxWidth:'100%', textAlign:'center',
               }}>{stationActive.origTrack.title}</div>
-              <div onClick={handleExitStation} style={{
+              )}
+              <div onClick={() => {
+                if (stationActive) handleExitStation();
+                else clearQueueSession();
+              }} style={{
                 marginTop:9,
                 padding:'4px 14px',
                 fontSize:10.5, fontWeight:500, letterSpacing:'0.02em',
@@ -10127,7 +10998,29 @@ function App() {
               }}
                 onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.09)'; e.currentTarget.style.color='rgba(255,255,255,0.82)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='rgba(255,255,255,0.55)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'; }}
-              >{t('station_exit')}</div>
+              >{stationActive ? t('station_exit') : t('queue_exit')}</div>
+              {queueSession && (
+              <div style={{
+                position:'relative', width:'100%', marginTop:10,
+                background: searchFocused ? 'rgba(255,255,255,0.065)' : 'rgba(255,255,255,0.04)',
+                borderRadius:11, transition:'background 0.18s',
+              }}>
+                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2"
+                  viewBox="0 0 24 24" style={{position:'absolute', left:13, top:'50%', translate:'0 -50%', pointerEvents:'none', color: searchFocused ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.22)', transition:'color 0.18s'}}>
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input
+                  className="aoi-focus-hand"
+                  value={search}
+                  onChange={e=>setSearch(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  placeholder={t('search_short')}
+                  style={{width:'100%', background:'none', border:'none', outline:'none',
+                          padding:'8px 32px',
+                          color:'rgba(255,255,255,0.78)', fontSize:12.5, fontFamily:'inherit', textAlign:'center'}}/>
+              </div>
+              )}
             </div>
           ) : (
             <div style={{padding:'12px 10px 8px', flexShrink:0}}>
@@ -10163,8 +11056,8 @@ function App() {
             </div>
           )}
           <VirtualTrackList
-            items={stationActive ? stationActive.tracks : activeList}
-            activeId={stationActive ? (scPlayingTrack ? scPlayingTrack.id : null) : activeListPlayingId}
+            items={queueItems}
+            activeId={queuePlayingId}
             loadingId={loadingTrackId}
             errorId={errorTrackId}
             onClickItem={item => {
@@ -10173,12 +11066,17 @@ function App() {
                 handleScTrackClick(item, -1);
                 return;
               }
+              if (queueSession) {
+                if (queueSession.kind === 'playlist') playPlaylistItem(item);
+                else if (queueSession.kind === 'crate') playCrateItem(item, queueSession.items);
+                else handleScTrackClick(item, -1, false);
+                return;
+              }
               if (sourceMode === 'sc') {
-                searchQueueRef.current = null;
-                playlistQueueRef.current = null;
+                clearQueueSession();
                 handleScTrackClick(item, scTracksRef.current.indexOf(item));
               } else {
-                playlistQueueRef.current = null;
+                clearQueueSession();
                 const idx = tracks.indexOf(item);
                 if (!scPlayingTrack && idx === trackIdx) { setIsPlaying(true); return; }
                 setScPlayingTrack(null);
@@ -10271,7 +11169,7 @@ function App() {
               <div key={track.id + '-title'} className="track-meta-in" style={{textAlign:'center', marginBottom:14, width:'100%'}}>
                 {editingTitle ? (
                   <div style={{display:'flex', justifyContent:'center', width:'100%'}}>
-                    <div style={{
+                    <div className="aoi-title-edit" style={{
                       display:'inline-flex', alignItems:'center',
                       background:'rgba(255,255,255,0.055)',
                       borderRadius:11, padding:'7px 18px',
@@ -10355,13 +11253,13 @@ function App() {
               {uiShow.playerProgress !== false && (
               <ProgressBar progressRef={progressRef} total={track.duration || 0}
                 onSeek={handleSeek} isPlaying={isPlaying} visible={playerVisible}
-                accentRGB={appAccent}/>
+                accentRGB={appAccent} rate={roomPlay?.rate ?? settings.playbackRate}/>
               )}
             {(()=>{ const P = { spring:0.055, damping:0.84, clamp:10 }; return (
             <div style={{display:'flex', alignItems:'center', gap:14, justifyContent:'center', marginTop:16}}>
               {scPlayingTrack && <div style={{width:27, marginRight:14, flexShrink:0}}/>}
               {uiShow.playerShuffle !== false && (
-              <MagBtn onClick={()=>setShuffle(s=>!s)} active={shuffle} size={'clamp(40px, 5.2vw, 58px)'} physics={P}>
+              <MagBtn className={shuffle ? 'aoi-shuffle-on' : 'aoi-shuffle-off'} onClick={()=>setShuffle(s=>!s)} active={shuffle} size={'clamp(40px, 5.2vw, 58px)'} physics={P}>
                 <img src="./assets/shuffle.png" style={{width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)',filter:'brightness(0) invert(1)',opacity:shuffle?1:0.38,transition:'opacity 0.2s ease'}}/>
               </MagBtn>
               )}
@@ -10372,14 +11270,17 @@ function App() {
                 if (roomRef.current.role === 'guest') { showToast(t('room_host_controls')); return; }
                 setIsPlaying(p=>!p);
               }} physics={P}/>
-              <MagBtn onClick={() => handleNext('user')} onHoldStart={startNeedle} onHoldEnd={stopNeedle} title={t('needle_fwd')} size={'clamp(46px, 6vw, 66px)'} physics={P}>
-                <img src="./assets/forward.png" style={{width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)',filter:'brightness(0) invert(1)',opacity:0.38}}/>
-              </MagBtn>
+              <div className={'aoi-needle-wrap' + (needleHold ? ' is-hold' : '')}>
+                <div className="aoi-needle-hair" aria-hidden/>
+                <MagBtn onClick={() => handleNext('user')} onHoldStart={() => { setNeedleHold(true); startNeedle(); }} onHoldEnd={() => { setNeedleHold(false); stopNeedle(); }} title={t('needle_fwd')} size={'clamp(46px, 6vw, 66px)'} physics={P}>
+                  <img src="./assets/forward.png" style={{width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)',filter:'brightness(0) invert(1)',opacity:0.38}}/>
+                </MagBtn>
+              </div>
               {uiShow.playerRepeat !== false && (
               <MagBtn onClick={()=>setRepeat(r=>r==='off'?'all':r==='all'?'one':'off')} active={repeat!=='off'} size={'clamp(40px, 5.2vw, 58px)'} physics={P}>
                 <div style={{position:'relative',width:'clamp(18px, 2.2vw, 26px)',height:'clamp(18px, 2.2vw, 26px)'}}>
-                  <img src="./assets/repeat.png"  style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',filter:'brightness(0) invert(1)',opacity:repeat==='off'?0.38:repeat==='all'?1:0,transition:'opacity 0.2s ease'}}/>
-                  <img src="./assets/repeat1.png" style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',filter:'brightness(0) invert(1)',opacity:repeat==='one'?1:0,transition:'opacity 0.2s ease'}}/>
+                  <img className="aoi-repeat-ico" src="./assets/repeat.png"  style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',filter:'brightness(0) invert(1)',opacity:repeat==='off'?0.38:repeat==='all'?1:0,transition:'opacity 0.2s ease'}}/>
+                  <img className="aoi-repeat-ico" src="./assets/repeat1.png" style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',filter:'brightness(0) invert(1)',opacity:repeat==='one'?1:0,transition:'opacity 0.2s ease'}}/>
                 </div>
               </MagBtn>
               )}
@@ -10450,6 +11351,16 @@ function App() {
                 });
               }}
               onClose={() => setEqOpen(false)}
+              playbackRate={settings.playbackRate || 1}
+              preservesPitch={settings.preservesPitch !== false}
+              onPlaybackRate={(r, preserve) => {
+                const rate = clampPlaybackRate(r);
+                const keep = preserve == null
+                  ? (settingsRef.current?.preservesPitch !== false)
+                  : !!preserve;
+                setSettings(s => ({ ...s, playbackRate: rate, preservesPitch: keep }));
+                applyPlaybackToEls(audioPoolRef.current, audioRef.current, rate, keep);
+              }}
             />
           )}
           <div onClick={goMini} title={t('mini_player')}
@@ -10474,17 +11385,18 @@ function App() {
               color: sleepOn ? 'var(--accent)' : 'rgba(255,255,255,0.32)',
               transition:'color 0.2s ease',
             }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <svg className={sleepOn ? 'aoi-moon-wane' : undefined} width="15" height="15" viewBox="0 0 24 24" fill="currentColor"
+              style={sleepOn ? { clipPath: 'inset(0 ' + Math.round((1 - Math.max(0, Math.min(1, sleepRemain / 100))) * 100) + '% 0 0)' } : undefined}>
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
             </svg>
-            {sleepOn && <span style={{fontSize:8, letterSpacing:'0.04em', fontVariantNumeric:'tabular-nums', opacity:0.85}}>{sleepRemain}</span>}
+            {sleepOn && <span key={sleepRemain} className="aoi-sleep-digit" style={{fontSize:8, letterSpacing:'0.04em', fontVariantNumeric:'tabular-nums', opacity:0.85}}>{sleepRemain}</span>}
           </div>
         </div>
         )}
           </div>
         )}
 
-        <SettingsView settings={settings} onSettings={setSettings} visible={view==='settings'} onScanTracks={handleScanTracks} onClearFolder={handleClearFolder} onClearCoversCache={handleClearCoversCache} onClearLikesCache={handleClearLikesCache} appAccent={appAccent} onOpenMini={goMini} appVersion={appVersion}/>
+        <SettingsView settings={settings} onSettings={setSettings} visible={view==='settings'} onScanTracks={handleScanTracks} onClearFolder={handleClearFolder} onClearCoversCache={handleClearCoversCache} onClearLikesCache={handleClearLikesCache} appAccent={appAccent} onOpenMini={goMini} appVersion={appVersion} onToast={showToast}/>
         <SoundCloudView
           visible={view==='soundcloud'}
           scAuth={settings.soundcloudAuth||null}
@@ -10504,17 +11416,9 @@ function App() {
         />
         <SearchView ref={searchViewRef} visible={view==='search'} scAuth={settings.soundcloudAuth||null}
           likedIds={likedIds} onLike={handleLike}
-          activeId={playbackDock === 'search' ? (scPlayingTrack?.id || null) : null}
+          activeId={scPlayingTrack?.id || null}
           onPlayTrack={(tr, queue) => playSearchItem(tr, queue)}
           onSelectTrack={(tr, queue) => playSearchItem(tr, queue)}
-          dockTrack={playbackDock === 'search' ? (scPlayingTrack || null) : null}
-          dockPlaying={isPlaying}
-          progressRef={progressRef}
-          onDockToggle={() => setIsPlaying(v => !v)}
-          onDockPrev={handlePrev}
-          onDockNext={handleNext}
-          onDockOpen={openFullPlayer}
-          onDockSeek={handleSeek}
           onResultsLoaded={handleSearchResultsLoaded}
           onArtistClick={handleOpenArtist}
           loadingTrackId={loadingTrackId} errorTrackId={errorTrackId}
@@ -10534,30 +11438,30 @@ function App() {
           onRemoveItem={handleRemovePlaylistItem}
           onPlayScPlaylist={handlePlayScPlaylist}
           onSaveScPlaylists={(list) => setSettings(s => ({ ...s, scPlaylists: list }))}
-          onPlayTrack={(tr, items) => {
-            playlistQueueRef.current = items || null;
-            searchQueueRef.current = null;
-            crateQueueRef.current = null;
-            stationQueueRef.current = null;
-            setPlaybackDock('playlist');
+          onPlayTrack={(tr, items, title) => {
+            applyQueueSession('playlist', items, title || '');
+            setPlaybackDock(null);
+            enterPlayer();
+            if (tr?.id) {
+              setLibScrollTargetId(tr.id);
+              setLibScrollTrigger(v => v + 1);
+            }
             playPlaylistItem(tr);
           }}
-          activeId={playbackDock === 'playlist' ? (scPlayingTrack?.id || track?.id) : (scPlayingTrack?.id || track?.id)}
-          dockTrack={playbackDock === 'playlist' ? (scPlayingTrack || track) : null}
-          dockPlaying={isPlaying}
-          progressRef={progressRef}
-          onDockToggle={() => setIsPlaying(v => !v)}
-          onDockPrev={handlePrev}
-          onDockNext={handleNext}
-          onDockOpen={openFullPlayer}
-          onDockSeek={handleSeek}
+          activeId={scPlayingTrack?.id || track?.id}
           loadingTrackId={loadingTrackId}
           errorTrackId={errorTrackId}
           hideDividers={settings.hideDividers}
           likedIds={likedIds}
           onLike={handleLike}
           onContextMenu={(tr, x, y) => setTrackMenu({ track: tr, x, y })}
-          accentRGB={appAccent}/>
+          accentRGB={appAccent}
+          sharedCrates={sharedCrates}
+          openShared={openSharedFriend}
+          onSharedConsumed={() => setOpenSharedFriend(null)}
+          onAddCurrentToShared={handleAddToSharedFriend}
+          onRemoveSharedItem={handleRemoveSharedFriendItem}
+          onClearShared={handleClearSharedFriend}/>
         <RoomsView
           visible={view==='rooms'}
           room={room}
@@ -10586,8 +11490,8 @@ function App() {
         <ArtistView artist={artistView} visible={view==='artist'} onClose={handleCloseArtist} scAuth={settings.soundcloudAuth||null} artistCacheRef={artistCacheRef}
           hideDividers={settings.hideDividers}
           likedIds={likedIds} onLike={handleLike}
-          onPlayTrack={tr => { playlistQueueRef.current = null; searchQueueRef.current = null; stationQueueRef.current = null; handleScTrackClick(tr, -1); }}
-          onSelectTrack={tr => { playlistQueueRef.current = null; searchQueueRef.current = null; stationQueueRef.current = null; handleScTrackClick(tr, -1); setPlayerVisible(true); setView('player'); setNavActive('library'); }}
+          onPlayTrack={tr => { clearQueueSession(); stationQueueRef.current = null; handleScTrackClick(tr, -1); }}
+          onSelectTrack={tr => { clearQueueSession(); stationQueueRef.current = null; handleScTrackClick(tr, -1); setPlayerVisible(true); setView('player'); setNavActive('library'); }}
           loadingTrackId={loadingTrackId} errorTrackId={errorTrackId}
           onFollow={handleFollow} onCheckFollow={checkFollow}
           onContextMenu={(tr, x, y) => setTrackMenu({ track: tr, x, y })}/>
@@ -10599,7 +11503,11 @@ function App() {
             display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
             pointerEvents:'auto',
           }}>
-            <div style={{ width:28, height:28, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.08)', borderTopColor:'rgba(255,255,255,0.55)', animation:'spin 0.8s linear infinite', marginBottom:16 }}/>
+            <div className="aoi-mark-row" aria-hidden>
+              <div className="aoi-mark-bar" style={{ width:4, height:12, borderRadius:2, background:'rgba(255,255,255,0.55)', animationDelay:'0ms' }}/>
+              <div className="aoi-mark-bar" style={{ width:4, height:20, borderRadius:2, background:'rgba(255,255,255,0.7)', animationDelay:'140ms' }}/>
+              <div className="aoi-mark-bar" style={{ width:4, height:16, borderRadius:2, background:'rgba(255,255,255,0.45)', animationDelay:'280ms' }}/>
+            </div>
             <div style={{ fontSize:14, fontWeight:600, color:'rgba(255,255,255,0.88)' }}>{t('update_auto')}</div>
             <div style={{ fontSize:12, color:'rgba(255,255,255,0.38)', marginTop:6 }}>{t('update_auto_sub')}</div>
           </div>
@@ -10648,9 +11556,16 @@ function App() {
           friends={settings.friends || []}
           sharedCrates={sharedCrates}
           onOpenSharedCrate={(peer) => {
-            setOnlinePanelOpen(false);
-            setOpenSharedCrate(peer);
+            setOpenSharedCrate(null);
+            setOpenSharedFriend({
+              friendUid: peer.friendUid,
+              friendName: peer.friendName,
+              nonce: Date.now(),
+            });
+            setTimeout(() => setOnlinePanelOpen(false), 0);
+            handleNav('playlists');
           }}
+          onUnblock={handlePresenceUnblock}
           presenceEnabled={settings.presenceEnabled !== false}
           onToggleVisible={v => setSettings(s => ({ ...s, presenceEnabled: !!v }))}
           onUserMenu={(peer, x, y) => setPresenceUserMenu({ peer, x, y })}
@@ -10696,8 +11611,10 @@ function App() {
             onOpenProfile={handlePresenceOpenProfile}
             onInvite={handlePresenceInvite}
             onBlock={handlePresenceBlock}
+            onUnblock={handlePresenceUnblock}
             onToggleFriend={handlePresenceToggleFriend}
             isFriend={window.AoiNight?.isFriend?.(settings.friends || [], presenceUserMenu.peer)}
+            isBlocked={isPresenceBlocked(presenceUserMenu.peer, settings.blockedPresence || [])}
           />
         )}
 

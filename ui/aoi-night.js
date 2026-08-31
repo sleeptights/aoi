@@ -46,15 +46,23 @@
     opts = opts || {};
     var factor = opts.factor != null ? opts.factor : 0.28;
     var ms = opts.ms != null ? opts.ms : 1600;
+    if (duckTimer) {
+      clearTimeout(duckTimer);
+      duckTimer = null;
+    }
+    if (typeof window.__aoiSetDuck === 'function') {
+      window.__aoiSetDuck(clamp01(factor));
+      duckTimer = setTimeout(function () {
+        window.__aoiSetDuck(1);
+        duckTimer = null;
+      }, ms);
+      return;
+    }
     var audios = [];
     try {
       document.querySelectorAll('audio').forEach(function (a) { audios.push(a); });
     } catch (e) {}
     if (!audios.length) return;
-    if (duckTimer) {
-      clearTimeout(duckTimer);
-      duckTimer = null;
-    }
     if (duckOrig == null) {
       duckOrig = audios.map(function (a) { return a.volume; });
     }

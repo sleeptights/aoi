@@ -56,6 +56,7 @@ pub fn run() {
             soundcloud::sc_check_covers,
             soundcloud::sc_cache_cover,
             soundcloud::sc_clear_covers_cache,
+            soundcloud::sc_clear_session,
             soundcloud::sc_clear_likes_cache,
             soundcloud::sc_load_likes_cache,
             soundcloud::sc_save_likes_cache,

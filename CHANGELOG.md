@@ -22,6 +22,9 @@ big customization drop: dock the nav anywhere, resize the queue, hide what you l
 
 ## changelog
 
+- **1.2.6a** — settings save race/wipe, SC logout clears cookies, local shuffle bag, dawn local, queue/volume persist
+
+
 - **faster invites** — presence beat every ~1s (was ~30s path on old builds)
 - **shared crate sync** — friend crates push to worker and show in online panel
 - **aoi proxy** — optional SoundCloud proxy through worker (no VPN toggle in settings)

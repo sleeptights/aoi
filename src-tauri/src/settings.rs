@@ -1,7 +1,13 @@
 use serde_json::{json, Value};
+use std::sync::{Mutex, OnceLock};
 use std::{fs, path::PathBuf};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_autostart::ManagerExt;
+
+fn save_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 pub fn app_data_dir(app: &AppHandle) -> PathBuf {
     app.path().app_data_dir().unwrap_or_else(|_| {
@@ -92,6 +98,7 @@ pub fn load_settings(app: AppHandle) -> Value {
 
 #[tauri::command]
 pub fn save_settings(app: AppHandle, data: Value) -> Result<(), String> {
+    let _guard = save_lock().lock().unwrap_or_else(|e| e.into_inner());
     let dir = app_data_dir(&app);
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = settings_path(&app);

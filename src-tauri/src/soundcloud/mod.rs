@@ -160,6 +160,13 @@ pub fn sc_clear_covers_cache(app: AppHandle) -> Result<u64, String> {
 }
 
 #[tauri::command]
+pub fn sc_clear_session(app: AppHandle) -> Result<bool, String> {
+    write::close_bridge(&app);
+    fetch::clear_cookie_jar(&app);
+    Ok(true)
+}
+
+#[tauri::command]
 pub fn sc_clear_likes_cache(app: AppHandle) -> Result<bool, String> {
     match fs::remove_file(sc_likes_file(&app)) {
         Ok(()) => Ok(true),

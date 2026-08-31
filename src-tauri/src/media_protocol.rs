@@ -3,7 +3,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use tauri::http::{header::*, Request, Response, StatusCode};
 
-const MAX_RANGE: u64 = 1000 * 1024;
+const MAX_RANGE: u64 = 8 * 1024 * 1024;
 const MAX_FULL: u64 = 32 * 1024 * 1024;
 
 pub fn response(app: &tauri::AppHandle, request: Request<Vec<u8>>) -> Response<Vec<u8>> {

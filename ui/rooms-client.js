@@ -279,6 +279,10 @@
     return cratePost('add', opts);
   };
 
+  window.AoiRooms.crateCreate = function (opts) {
+    return cratePost('create', opts);
+  };
+
   window.AoiRooms.crateRemove = function (opts) {
     return cratePost('remove', opts);
   };
@@ -311,8 +315,23 @@
 
   window.AoiRooms.proxyScUrl = function (url, attempt) {
     var list = window.AoiRooms.proxyCandidates(url);
+    try {
+      var prefer = localStorage.getItem('aoi_proxy_base') || '';
+      if (prefer) {
+        var preferred = prefer.replace(/\/+$/, '') + '/sc/proxy?url=' + encodeURIComponent(String(url || ''));
+        list = [preferred].concat(list.filter(function (x) { return x !== preferred; }));
+      }
+    } catch (e) {}
     var i = Math.max(0, Number(attempt) || 0);
     return list[i % list.length];
+  };
+
+  window.AoiRooms.rememberProxyBase = function (proxiedUrl) {
+    try {
+      var u = String(proxiedUrl || '');
+      var m = u.match(/^(https:\/\/[^/]+)\/sc\/proxy\?/i);
+      if (m && m[1]) localStorage.setItem('aoi_proxy_base', m[1]);
+    } catch (e) {}
   };
 
   window.AoiRooms.presenceLeave = function () {
@@ -441,7 +460,7 @@
       if (gen !== self._gen || self.ws !== ws) return;
       self._clearPing();
       if (self.closed) return;
-      var wait = Math.min(6000, 400 * Math.pow(2, self.retry++));
+      var wait = Math.min(4000, 250 * Math.pow(2, self.retry++));
       setTimeout(function () {
         if (gen !== self._gen || self.closed) return;
         self._open();
