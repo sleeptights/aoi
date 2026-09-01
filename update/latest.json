@@ -1,13 +1,13 @@
 ﻿{
-    "notes":  "aoi 1.2.2-m",
+    "notes":  "aoi 1.2.6-a",
     "changelog":  [
-                      "shared playlist with friends: one list per pair, both can add tracks",
-                      "shared crate: play queue, likes, dock player, live sync via worker",
-                      "auto-update on app restart from GitHub releases",
-                      "version compare: letter bumps (1.2.2-l -\u003e 1.2.2-m)",
-                      "discord: listening mode with progress bar and room companions"
+                      "settings: fix save races and failed-load profile wipe",
+                      "soundcloud: clear cookie jar and bridge on logout or account switch",
+                      "playback: local shuffle bag, dawn local tracks, queue/volume/repeat persist",
+                      "engine: volume mixer, HLS retry cap, crossfade wall-time, rooms playback rate",
+                      "likes GET uses scFailed; sc_write.log redacts session tokens"
                   ],
-    "url":  "https://github.com/sleeptights/aoi/releases/download/v1.2.2-m/aoi-setup-win-x64.exe",
-    "version":  "1.2.2-m",
-    "sha256":  "a8ac02ae025fc0667f18db3feca6b7ac129f9b79fc66e914128ba817f32165a4"
+    "url":  "https://github.com/sleeptights/aoi/releases/download/v1.2.6-a/aoi-setup-win-x64.exe",
+    "version":  "1.2.6-a",
+    "sha256":  "08915c4bde8bbe44e5537529e7c170e8acd1d51e63c46f4a77ca663744f50356"
 }

@@ -19,17 +19,20 @@ Write-Host "sha256: $sha" -ForegroundColor Green
 
 $notes = "aoi $version"
 $changelog = @(
-  'shared playlist with friends: one list per pair, both can add tracks',
-  'shared crate: play queue, likes, dock player, live sync via worker',
-  'auto-update on app restart from GitHub releases',
-  'version compare: letter bumps (1.2.2-l -> 1.2.2-m)',
-  'discord: listening mode with progress bar and room companions'
+  'settings: fix save races and failed-load profile wipe',
+  'soundcloud: clear cookie jar and bridge on logout or account switch',
+  'playback: local shuffle bag, dawn local tracks, queue/volume/repeat persist',
+  'engine: volume mixer, HLS retry cap, crossfade wall-time, rooms playback rate',
+  'likes GET uses scFailed; sc_write.log redacts session tokens'
 )
 
 $gh = "$env:LOCALAPPDATA\aoi-tools\gh\gh.exe"
 $releaseUrl = ''
 if (Test-Path $gh) {
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
   $status = & $gh auth status 2>&1 | Out-String
+  $ErrorActionPreference = $prevEap
   if ($status -match 'Logged in') {
     Write-Host 'Creating GitHub release...' -ForegroundColor Cyan
     $tag = "v$version"
