@@ -19,11 +19,10 @@ Write-Host "sha256: $sha" -ForegroundColor Green
 
 $notes = "aoi $version"
 $changelog = @(
-  'fix SoundCloud playback after AAC HLS migration (Dec 2025)',
-  'proxy allowlist: playback.media-streaming.soundcloud.cloud',
-  'prefer AAC HLS over deprecated progressive MP3',
-  'media: try CDN direct first, then aoi proxy fallback',
-  'HLS segment requests routed through proxy when needed'
+  'fix WebView2 crash 0xe0000008 on SoundCloud play (EQ + CORS)',
+  'proxy-first media again — direct CDN without ACAO crashes createMediaElementSource',
+  'safe HLS loader rewrites segment URLs without xhr.open',
+  'keep AAC HLS allowlist for playback.media-streaming.soundcloud.cloud'
 )
 
 $gh = "$env:LOCALAPPDATA\aoi-tools\gh\gh.exe"

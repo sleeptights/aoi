@@ -322,14 +322,14 @@
   window.AoiRooms.proxyCandidates = function (url) {
     var u = String(url || '');
     if (!u) return [u];
-    // Media: try CDN direct first (CORS), then worker mirrors — avoids dead air when
-    // proxy allowlist/quota breaks after SoundCloud AAC HLS migration.
+    // Proxy-first when host is allowlisted: WebView2 + createMediaElementSource (EQ)
+    // crashes (0xe0000008) on direct CDN without CORS. Worker adds ACAO *.
     var proxied = window.AoiRooms.canProxyScHost(u)
       ? window.AoiRooms.proxyBases().map(function (b) {
           return b + '/sc/proxy?url=' + encodeURIComponent(u);
         })
       : [];
-    return [u].concat(proxied);
+    return proxied.concat([u]);
   };
 
   window.AoiRooms.proxyScUrl = function (url, attempt) {
@@ -338,8 +338,7 @@
       var prefer = localStorage.getItem('aoi_proxy_base') || '';
       if (prefer && window.AoiRooms.canProxyScHost(url)) {
         var preferred = prefer.replace(/\/+$/, '') + '/sc/proxy?url=' + encodeURIComponent(String(url || ''));
-        // Keep direct-first; preferred proxy becomes first fallback.
-        list = [list[0]].concat([preferred], list.slice(1).filter(function (x) { return x !== preferred && x !== list[0]; }));
+        list = [preferred].concat(list.filter(function (x) { return x !== preferred; }));
       }
     } catch (e) {}
     var i = Math.max(0, Number(attempt) || 0);

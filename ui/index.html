@@ -719,6 +719,39 @@ function applyPlaybackToEls(pool, current, rate, preserve) {
 function isProbablyHlsUrl(url) {
   return /\.m3u8(\?|#|$)/i.test(String(url || ''));
 }
+function isAoiProxyMediaUrl(url) {
+  return /\/sc\/proxy\?/i.test(String(url || ''));
+}
+/** Rewrite absolute SC CDN URLs through aoi proxy without re-opening XHR (WebView2-safe). */
+function makeScHlsLoader(getAttempt) {
+  if (typeof Hls === 'undefined' || !Hls.DefaultConfig || !Hls.DefaultConfig.loader) return undefined;
+  const Base = Hls.DefaultConfig.loader;
+  return class AoiScLoader extends Base {
+    load(context, config, callbacks) {
+      try {
+        const raw = context && context.url;
+        if (raw && !isAoiProxyMediaUrl(raw) && window.AoiRooms?.canProxyScHost?.(raw)) {
+          const via = proxyMediaUrl(raw, true, typeof getAttempt === 'function' ? getAttempt() : 0);
+          if (via) context.url = via;
+        }
+      } catch {}
+      return super.load(context, config, callbacks);
+    }
+  };
+}
+function setAudioCorsForSrc(audio, src) {
+  if (!audio) return;
+  try {
+    // crossOrigin + MediaElementSource needs ACAO. Proxy/media:// have it; raw CDN often does not
+    // and WebView2 can hard-crash (0xe0000008) instead of soft-failing.
+    if (isAoiProxyMediaUrl(src) || /^media:/i.test(String(src || ''))) {
+      audio.crossOrigin = 'anonymous';
+    } else {
+      audio.removeAttribute('crossorigin');
+      audio.crossOrigin = null;
+    }
+  } catch {}
+}
 function inferPreservesPitch(rate, explicit) {
   if (explicit === true || explicit === false) return explicit;
   const r = clampPlaybackRate(rate);
@@ -7812,6 +7845,7 @@ function App() {
     incoming.src = window.electronAPI.fileSrc
       ? window.electronAPI.fileSrc(track.path)
       : ('file:///' + track.path.replace(/\\/g, '/'));
+    setAudioCorsForSrc(incoming, incoming.src);
     if (track.id != null) playSrcCacheRef.current[String(track.id)] = incoming.src;
     incoming.load();
     applyPlaybackSettings();
@@ -9147,13 +9181,23 @@ function App() {
     const playPeek = () => { if (peekingRef.current) playAudio(other).catch(() => {}); };
     if (isProbablyHlsUrl(src) && typeof Hls !== 'undefined' && Hls.isSupported()) {
       destroyPeekHls();
-      const hls = new Hls({ startLevel: 0, capLevelToPlayerSize: true });
+      setAudioCorsForSrc(other, src);
+      const peekOpts = { startLevel: 0, capLevelToPlayerSize: true };
+      if (settingsRef.current?.useAoiProxy) {
+        const Loader = makeScHlsLoader(() => 0);
+        if (Loader) peekOpts.loader = Loader;
+      }
+      const hls = new Hls(peekOpts);
       hlsPeekRef.current = hls;
       hls.loadSource(src);
       hls.attachMedia(other);
       hls.on(Hls.Events.MANIFEST_PARSED, playPeek);
     } else {
-      try { other.src = src; other.load(); } catch { peekingRef.current = false; paintVolumes(); return; }
+      try {
+        setAudioCorsForSrc(other, src);
+        other.src = src;
+        other.load();
+      } catch { peekingRef.current = false; paintVolumes(); return; }
       other.addEventListener('canplay', playPeek, { once: true });
     }
     peekTimerRef.current = setTimeout(() => {
@@ -10145,13 +10189,14 @@ function App() {
     const audio = swap.audio;
     if (!audio) { setLoadingTrackId(null); return; }
     const shouldPlay = applyingRoomRef.current ? !!roomApplyWantPlayRef.current : true;
-    try { audio.crossOrigin = 'anonymous'; } catch {}
+    setAudioCorsForSrc(audio, proxiedUrl);
 
     const retryProxy = () => {
       if (gen !== scClickGenRef.current) return;
       proxyAttempt++;
       proxiedUrl = pickProxyUrl();
       playSrcCacheRef.current[String(scTrack.id)] = proxiedUrl;
+      setAudioCorsForSrc(audio, proxiedUrl);
       setScPlayingTrack(prev => prev ? { ...prev, resolvedUrl: proxiedUrl } : prev);
     };
 
@@ -10169,19 +10214,16 @@ function App() {
       const mountHls = (srcUrl) => {
         if (gen !== scClickGenRef.current) return;
         if (hlsRef.current) { try { hlsRef.current.destroy(); } catch {} hlsRef.current = null; }
-        const hls = new Hls({
+        setAudioCorsForSrc(audio, srcUrl);
+        const hlsOpts = {
           startLevel: q === 'sq' ? 0 : -1,
           capLevelToPlayerSize: q !== 'hq',
-          xhrSetup: (xhr, reqUrl) => {
-            if (!useProxy) return;
-            if (/\/sc\/proxy\?/i.test(String(reqUrl || ''))) return;
-            if (!window.AoiRooms?.canProxyScHost?.(reqUrl)) return;
-            try {
-              const via = proxyMediaUrl(reqUrl, true, proxyAttempt);
-              if (via && via !== reqUrl) xhr.open('GET', via, true);
-            } catch {}
-          },
-        });
+        };
+        if (useProxy) {
+          const Loader = makeScHlsLoader(() => proxyAttempt);
+          if (Loader) hlsOpts.loader = Loader;
+        }
+        const hls = new Hls(hlsOpts);
         hlsRef.current = hls;
         hls.loadSource(srcUrl);
         hls.attachMedia(audio);
@@ -10234,12 +10276,15 @@ function App() {
           return;
         }
         retryProxy();
-        audio.src = pickProxyUrl();
+        const nextSrc = pickProxyUrl();
+        setAudioCorsForSrc(audio, nextSrc);
+        audio.src = nextSrc;
         audio.load();
         applyPlaybackSettings();
         if (shouldPlay) playAudio(audio).catch(() => {});
       };
       audio.addEventListener('error', onAudioErr);
+      setAudioCorsForSrc(audio, proxiedUrl);
       audio.src = proxiedUrl;
       audio.load();
       applyPlaybackSettings();

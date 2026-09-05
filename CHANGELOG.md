@@ -22,6 +22,7 @@ big customization drop: dock the nav anywhere, resize the queue, hide what you l
 
 ## changelog
 
+- **1.2.6c** — fix WebView2 crash on SC play (CORS + EQ); proxy-first media again
 - **1.2.6b** — fix SoundCloud playback after AAC HLS migration (proxy allowlist + prefer HLS)
 - **1.2.6a** — settings save race/wipe, SC logout clears cookies, local shuffle bag, dawn local, queue/volume persist
 
