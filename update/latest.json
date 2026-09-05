@@ -1,13 +1,13 @@
 ﻿{
-    "notes":  "aoi 1.2.6-a",
+    "notes":  "aoi 1.2.6-b",
     "changelog":  [
-                      "settings: fix save races and failed-load profile wipe",
-                      "soundcloud: clear cookie jar and bridge on logout or account switch",
-                      "playback: local shuffle bag, dawn local tracks, queue/volume/repeat persist",
-                      "engine: volume mixer, HLS retry cap, crossfade wall-time, rooms playback rate",
-                      "likes GET uses scFailed; sc_write.log redacts session tokens"
+                      "fix SoundCloud playback after AAC HLS migration (Dec 2025)",
+                      "proxy allowlist: playback.media-streaming.soundcloud.cloud",
+                      "prefer AAC HLS over deprecated progressive MP3",
+                      "media: try CDN direct first, then aoi proxy fallback",
+                      "HLS segment requests routed through proxy when needed"
                   ],
-    "url":  "https://github.com/sleeptights/aoi/releases/download/v1.2.6-a/aoi-setup-win-x64.exe",
-    "version":  "1.2.6-a",
-    "sha256":  "08915c4bde8bbe44e5537529e7c170e8acd1d51e63c46f4a77ca663744f50356"
+    "url":  "https://github.com/sleeptights/aoi/releases/download/v1.2.6-b/aoi-setup-win-x64.exe",
+    "version":  "1.2.6-b",
+    "sha256":  "7233ec05c73179c22d821a99745a98261f751d5cce0a224bf5c6a69d23cfa72c"
 }

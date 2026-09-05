@@ -19,11 +19,11 @@ Write-Host "sha256: $sha" -ForegroundColor Green
 
 $notes = "aoi $version"
 $changelog = @(
-  'settings: fix save races and failed-load profile wipe',
-  'soundcloud: clear cookie jar and bridge on logout or account switch',
-  'playback: local shuffle bag, dawn local tracks, queue/volume/repeat persist',
-  'engine: volume mixer, HLS retry cap, crossfade wall-time, rooms playback rate',
-  'likes GET uses scFailed; sc_write.log redacts session tokens'
+  'fix SoundCloud playback after AAC HLS migration (Dec 2025)',
+  'proxy allowlist: playback.media-streaming.soundcloud.cloud',
+  'prefer AAC HLS over deprecated progressive MP3',
+  'media: try CDN direct first, then aoi proxy fallback',
+  'HLS segment requests routed through proxy when needed'
 )
 
 $gh = "$env:LOCALAPPDATA\aoi-tools\gh\gh.exe"

@@ -160,7 +160,8 @@ export default {
 
     if (url.pathname === '/sc/proxy') {
       const target = url.searchParams.get('url') || '';
-      const okProxy = /^https:\/\/(api-v2\.soundcloud\.com|api\.soundcloud\.com|sndcdn\.com|[\w.-]+\.sndcdn\.com)\//.test(target);
+      // AAC HLS lives on *.soundcloud.cloud (post Dec 2025); keep classic sndcdn + API hosts.
+      const okProxy = /^https:\/\/(api-v2\.soundcloud\.com|api\.soundcloud\.com|sndcdn\.com|[\w.-]+\.sndcdn\.com|playback\.media-streaming\.soundcloud\.cloud|[\w.-]+\.soundcloud\.cloud)\//.test(target);
       if (!okProxy) {
         return json({ error: 'bad_url' }, 400);
       }

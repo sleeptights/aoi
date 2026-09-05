@@ -1,6 +1,6 @@
 [package]
 name = "aoi"
-version = "1.2.6-a"
+version = "1.2.6-b"
 description = "aoi music player"
 authors = []
 edition = "2021"

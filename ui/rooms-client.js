@@ -305,21 +305,41 @@
     return bases;
   };
 
+  window.AoiRooms.canProxyScHost = function (url) {
+    try {
+      var h = new URL(String(url || '')).hostname.toLowerCase();
+      return h === 'api-v2.soundcloud.com'
+        || h === 'api.soundcloud.com'
+        || h === 'sndcdn.com'
+        || h.endsWith('.sndcdn.com')
+        || h === 'playback.media-streaming.soundcloud.cloud'
+        || h.endsWith('.soundcloud.cloud');
+    } catch (e) {
+      return false;
+    }
+  };
+
   window.AoiRooms.proxyCandidates = function (url) {
     var u = String(url || '');
     if (!u) return [u];
-    return window.AoiRooms.proxyBases().map(function (b) {
-      return b + '/sc/proxy?url=' + encodeURIComponent(u);
-    }).concat([u]);
+    // Media: try CDN direct first (CORS), then worker mirrors — avoids dead air when
+    // proxy allowlist/quota breaks after SoundCloud AAC HLS migration.
+    var proxied = window.AoiRooms.canProxyScHost(u)
+      ? window.AoiRooms.proxyBases().map(function (b) {
+          return b + '/sc/proxy?url=' + encodeURIComponent(u);
+        })
+      : [];
+    return [u].concat(proxied);
   };
 
   window.AoiRooms.proxyScUrl = function (url, attempt) {
     var list = window.AoiRooms.proxyCandidates(url);
     try {
       var prefer = localStorage.getItem('aoi_proxy_base') || '';
-      if (prefer) {
+      if (prefer && window.AoiRooms.canProxyScHost(url)) {
         var preferred = prefer.replace(/\/+$/, '') + '/sc/proxy?url=' + encodeURIComponent(String(url || ''));
-        list = [preferred].concat(list.filter(function (x) { return x !== preferred; }));
+        // Keep direct-first; preferred proxy becomes first fallback.
+        list = [list[0]].concat([preferred], list.slice(1).filter(function (x) { return x !== preferred && x !== list[0]; }));
       }
     } catch (e) {}
     var i = Math.max(0, Number(attempt) || 0);

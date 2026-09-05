@@ -919,9 +919,23 @@ function scFailed(res) {
   return e != null && e !== false && e !== '';
 }
 
+function pickScTranscodings(t) {
+  const list = Array.isArray(t?.media?.transcodings) ? t.media.transcodings : [];
+  const key = tc => `${tc?.preset || ''} ${tc?.format?.mime_type || ''}`.toLowerCase();
+  const progressive = list.find(tc => tc?.format?.protocol === 'progressive' && tc?.url);
+  // SoundCloud removed progressive / HLS MP3+Opus after 2025-12-31 — prefer AAC HLS.
+  const hlsAac = list.find(tc => tc?.format?.protocol === 'hls' && tc?.url && /aac|mp4|mpeg-4/.test(key(tc)));
+  const hlsAny = list.find(tc => tc?.format?.protocol === 'hls' && tc?.url);
+  const hls = hlsAac || hlsAny;
+  return {
+    streamUrl: progressive?.url || null,
+    hlsUrl: hls?.url || null,
+    preferHls: !!(hlsAac || (!progressive && hls)),
+  };
+}
+
 function mapScTrack(t, noTitle) {
-  const progressive = t.media?.transcodings?.find(tc => tc.format?.protocol === 'progressive');
-  const hls = t.media?.transcodings?.find(tc => tc.format?.protocol === 'hls');
+  const streams = pickScTranscodings(t);
   return {
     id: t.id,
     title: t.title || noTitle || '—',
@@ -935,8 +949,9 @@ function mapScTrack(t, noTitle) {
     artworkUrl: t.artwork_url ? t.artwork_url.replace('-large', '-t500x500') : null,
     likesCount: t.likes_count || 0,
     playCount: t.playback_count || 0,
-    streamUrl: progressive?.url || null,
-    hlsUrl: hls?.url || null,
+    streamUrl: streams.streamUrl,
+    hlsUrl: streams.hlsUrl,
+    preferHls: streams.preferHls,
     permalinkUrl: t.permalink_url || null,
   };
 }
@@ -10081,16 +10096,28 @@ function App() {
     let resolvedUrl = null;
     let isHls = false;
 
-    if (scTrack.streamUrl) {
-      const res = await window.electronAPI.scFetch(scTrack.streamUrl, auth.token, auth.clientId);
-      if (gen !== scClickGenRef.current) return;
-      if (res.data?.url) resolvedUrl = res.data.url;
+    const tryResolve = async (endpoint, asHls) => {
+      if (!endpoint) return 'miss';
+      const res = await window.electronAPI.scFetch(endpoint, auth.token, auth.clientId);
+      if (gen !== scClickGenRef.current) return 'stale';
+      if (res?.data?.url) {
+        resolvedUrl = res.data.url;
+        isHls = !!asHls || isProbablyHlsUrl(res.data.url);
+        return 'ok';
+      }
+      return 'miss';
+    };
+
+    // Prefer AAC HLS after SoundCloud dropped progressive MP3 (Dec 2025).
+    let resolveState = 'miss';
+    if (scTrack.preferHls || (!scTrack.streamUrl && scTrack.hlsUrl)) {
+      resolveState = await tryResolve(scTrack.hlsUrl, true);
+      if (resolveState === 'miss') resolveState = await tryResolve(scTrack.streamUrl, false);
+    } else {
+      resolveState = await tryResolve(scTrack.streamUrl, false);
+      if (resolveState === 'miss') resolveState = await tryResolve(scTrack.hlsUrl, true);
     }
-    if (!resolvedUrl && scTrack.hlsUrl) {
-      const res = await window.electronAPI.scFetch(scTrack.hlsUrl, auth.token, auth.clientId);
-      if (gen !== scClickGenRef.current) return;
-      if (res.data?.url) { resolvedUrl = res.data.url; isHls = true; }
-    }
+    if (resolveState === 'stale') return;
 
     if (!resolvedUrl) {
       if (gen !== scClickGenRef.current) return;
@@ -10103,6 +10130,8 @@ function App() {
     }
 
     if (gen !== scClickGenRef.current) return;
+    // Absolute CDN playlists sometimes need a second hop if JSON still points at an API/auth URL.
+    if (isProbablyHlsUrl(resolvedUrl)) isHls = true;
     let proxyAttempt = 0;
     let hlsFatalTries = 0;
     const useProxy = settingsRef.current?.useAoiProxy;
@@ -10143,6 +10172,15 @@ function App() {
         const hls = new Hls({
           startLevel: q === 'sq' ? 0 : -1,
           capLevelToPlayerSize: q !== 'hq',
+          xhrSetup: (xhr, reqUrl) => {
+            if (!useProxy) return;
+            if (/\/sc\/proxy\?/i.test(String(reqUrl || ''))) return;
+            if (!window.AoiRooms?.canProxyScHost?.(reqUrl)) return;
+            try {
+              const via = proxyMediaUrl(reqUrl, true, proxyAttempt);
+              if (via && via !== reqUrl) xhr.open('GET', via, true);
+            } catch {}
+          },
         });
         hlsRef.current = hls;
         hls.loadSource(srcUrl);
